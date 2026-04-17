@@ -4,6 +4,7 @@ import { StatusBar } from '@/components/layout/StatusBar';
 import { ResizablePanel } from '@/components/layout/ResizablePanel';
 import { FileTree } from '@/components/collection/FileTree';
 import { WelcomePage } from '@/components/welcome/WelcomePage';
+import { RequestEditor } from '@/components/editor/RequestEditor';
 import { useEditorStore } from '@/stores/editor-store';
 import { useCollectionStore } from '@/stores/collection-store';
 
@@ -25,9 +26,7 @@ export function App() {
 
         <div className="flex-1 overflow-hidden">
           {activeFilePath ? (
-            <div className="h-full flex items-center justify-center text-text-muted text-sm">
-              Editor for {activeFilePath} — coming in Task 7
-            </div>
+            <RequestEditor filePath={activeFilePath} />
           ) : (
             <WelcomePage />
           )}

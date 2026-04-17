@@ -9,21 +9,22 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@codemirror/autocomplete": "^6.18.0",
+    "@codemirror/commands": "^6.10.3",
+    "@codemirror/lang-javascript": "^6.2.2",
+    "@codemirror/lang-json": "^6.0.1",
+    "@codemirror/language": "^6.10.0",
+    "@codemirror/state": "^6.5.0",
+    "@codemirror/view": "^6.35.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "ivkjs": "^0.1.0",
+    "lucide-react": "^0.468.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.1.0",
-    "zustand": "^5.0.3",
-    "@codemirror/view": "^6.35.0",
-    "@codemirror/state": "^6.5.0",
-    "@codemirror/lang-json": "^6.0.1",
-    "@codemirror/lang-javascript": "^6.2.2",
-    "@codemirror/language": "^6.10.0",
-    "@codemirror/autocomplete": "^6.18.0",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
     "tailwind-merge": "^2.6.0",
-    "lucide-react": "^0.468.0"
+    "zustand": "^5.0.3"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",
