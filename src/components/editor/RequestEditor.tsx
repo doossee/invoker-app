@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { parseIvk, type IvkRequest, type HttpMethod } from 'ivkjs';
 import { useCollectionStore } from '@/stores/collection-store';
 import { useEditorStore } from '@/stores/editor-store';
@@ -10,6 +10,7 @@ import { AuthTab } from './AuthTab';
 import { ScriptsTab } from './ScriptsTab';
 import { VarsTab } from './VarsTab';
 import { ParamsTab } from './ParamsTab';
+import { ResponsePanel } from './ResponsePanel';
 
 interface Props {
   filePath: string;
@@ -22,6 +23,9 @@ export function RequestEditor({ filePath }: Props) {
   const getFileByPath = useCollectionStore((s) => s.getFileByPath);
   const activeTab = useEditorStore((s) => s.activeTab) as TabName;
   const setActiveTab = useEditorStore((s) => s.setActiveTab);
+  const responseHeight = useEditorStore((s) => s.responseHeight);
+  const setResponseHeight = useEditorStore((s) => s.setResponseHeight);
+  const isDraggingResize = useRef(false);
 
   const file = getFileByPath(filePath);
 
@@ -93,6 +97,32 @@ export function RequestEditor({ filePath }: Props) {
     [],
   );
 
+  const onResizeMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      isDraggingResize.current = true;
+      const startY = e.clientY;
+      const startHeight = responseHeight;
+
+      const onMouseMove = (ev: MouseEvent) => {
+        if (!isDraggingResize.current) return;
+        const delta = startY - ev.clientY;
+        const newHeight = Math.max(100, Math.min(600, startHeight + delta));
+        setResponseHeight(newHeight);
+      };
+
+      const onMouseUp = () => {
+        isDraggingResize.current = false;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+      };
+
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    },
+    [responseHeight, setResponseHeight],
+  );
+
   if (!request) {
     return (
       <div className="h-full flex items-center justify-center text-text-muted text-sm">
@@ -153,12 +183,14 @@ export function RequestEditor({ filePath }: Props) {
         )}
       </div>
 
-      {/* Response Panel — placeholder until Task 8 */}
-      {result && (
-        <div className="border-t border-border p-3 text-xs text-text-dim">
-          Response: {result.response.status} ({result.response.time}ms)
-        </div>
-      )}
+      {/* Response Panel with resize handle */}
+      <div
+        className="h-1 cursor-row-resize hover:bg-accent/30 transition-colors flex-shrink-0 border-t border-border"
+        onMouseDown={onResizeMouseDown}
+      />
+      <div className="flex-shrink-0 overflow-hidden" style={{ height: responseHeight }}>
+        <ResponsePanel result={result} loading={loading} />
+      </div>
     </div>
   );
 }
