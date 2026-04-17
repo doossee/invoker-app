@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TopBar } from '@/components/layout/TopBar';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { StatusBar } from '@/components/layout/StatusBar';
@@ -13,6 +13,7 @@ import { EnvSettings } from '@/components/env/EnvSettings';
 import { useEditorStore } from '@/stores/editor-store';
 import { useCollectionStore } from '@/stores/collection-store';
 import { useDocsStore } from '@/stores/docs-store';
+import { watchCollection, loadCollection } from '@/lib/file-system';
 
 export function App() {
   const [envSettingsOpen, setEnvSettingsOpen] = useState(false);
@@ -23,6 +24,17 @@ export function App() {
   const setSidebarWidth = useEditorStore((s) => s.setSidebarWidth);
   const activeFilePath = useCollectionStore((s) => s.activeFilePath);
   const activeDocPath = useDocsStore((s) => s.activeDocPath);
+  const collectionPath = useCollectionStore((s) => s.collectionPath);
+
+  useEffect(() => {
+    if (!collectionPath) return;
+    const unwatch = watchCollection(collectionPath, async () => {
+      const data = await loadCollection(collectionPath);
+      useCollectionStore.getState().loadCollection({ ivkFiles: data.ivkFiles, basePath: data.basePath });
+      useDocsStore.getState().loadDocs(data.mdFiles);
+    });
+    return unwatch;
+  }, [collectionPath]);
 
   return (
     <div className="h-screen flex flex-col bg-bg text-text-primary overflow-hidden">

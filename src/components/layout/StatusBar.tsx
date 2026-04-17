@@ -6,6 +6,11 @@ export function StatusBar() {
   const envs = useEnvStore((s) => s.settings.environments);
   const activeEnv = envs[activeEnvIndex];
   const fileCount = useCollectionStore((s) => s.files.length);
+  const collectionPath = useCollectionStore((s) => s.collectionPath);
+
+  const folderLabel = collectionPath
+    ? collectionPath.split('/').filter(Boolean).pop() ?? collectionPath
+    : '(sample)';
 
   return (
     <div className="h-6 bg-surface border-t flex items-center px-3 gap-4 text-[11px] text-text-muted flex-shrink-0">
@@ -16,6 +21,7 @@ export function StatusBar() {
         </span>
       )}
       <span>{fileCount} requests</span>
+      <span className="ml-auto truncate max-w-xs">{folderLabel}</span>
     </div>
   );
 }
