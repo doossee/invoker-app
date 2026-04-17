@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { RunResult } from 'ivkjs';
+import type { SiteConfig } from '@/types/site-config';
 
 interface EditorState {
   sidebarWidth: number;
@@ -7,12 +8,14 @@ interface EditorState {
   activeTab: string;
   sidebarView: 'collection' | 'docs';
   responseCache: Record<string, RunResult>;
+  siteConfig: SiteConfig | null;
   setSidebarWidth: (w: number) => void;
   setResponseHeight: (h: number) => void;
   setActiveTab: (tab: string) => void;
   setSidebarView: (view: 'collection' | 'docs') => void;
   cacheResponse: (path: string, result: RunResult) => void;
   getResponse: (path: string) => RunResult | undefined;
+  setSiteConfig: (config: SiteConfig | null) => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -21,6 +24,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   activeTab: 'body',
   sidebarView: 'collection',
   responseCache: {},
+  siteConfig: null,
 
   setSidebarWidth: (w) => {
     set({ sidebarWidth: w });
@@ -41,4 +45,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     })),
 
   getResponse: (path) => get().responseCache[path],
+
+  setSiteConfig: (config) => set({ siteConfig: config }),
 }));

@@ -13,7 +13,9 @@ import { EnvSettings } from '@/components/env/EnvSettings';
 import { useEditorStore } from '@/stores/editor-store';
 import { useCollectionStore } from '@/stores/collection-store';
 import { useDocsStore } from '@/stores/docs-store';
-import { watchCollection, loadCollection } from '@/lib/file-system';
+import { useEnvStore } from '@/stores/env-store';
+import { watchCollection, loadCollection, loadFromManifest } from '@/lib/file-system';
+import { isPublished } from '@/lib/platform';
 
 export function App() {
   const [envSettingsOpen, setEnvSettingsOpen] = useState(false);
@@ -22,9 +24,34 @@ export function App() {
   const setSidebarView = useEditorStore((s) => s.setSidebarView);
   const sidebarWidth = useEditorStore((s) => s.sidebarWidth);
   const setSidebarWidth = useEditorStore((s) => s.setSidebarWidth);
+  const setSiteConfig = useEditorStore((s) => s.setSiteConfig);
   const activeFilePath = useCollectionStore((s) => s.activeFilePath);
   const activeDocPath = useDocsStore((s) => s.activeDocPath);
   const collectionPath = useCollectionStore((s) => s.collectionPath);
+
+  // Published mode: load manifest at startup
+  useEffect(() => {
+    if (!isPublished()) return;
+
+    loadFromManifest().then((data) => {
+      useCollectionStore.getState().loadCollection({
+        ivkFiles: data.ivkFiles,
+        basePath: data.basePath,
+      });
+      useDocsStore.getState().loadDocs(data.mdFiles);
+
+      // Docs-first for published sites
+      useEditorStore.getState().setSidebarView('docs');
+
+      // Apply author default env vars
+      if (data.config?.defaults) {
+        useEnvStore.getState().setAuthorDefaults(data.config.defaults);
+      }
+
+      // Store config for TopBar to read
+      setSiteConfig(data.config ?? null);
+    });
+  }, [setSiteConfig]);
 
   useEffect(() => {
     if (!collectionPath) return;

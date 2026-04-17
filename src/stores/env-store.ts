@@ -1,11 +1,14 @@
 import { create } from 'zustand';
 import { EnvManager, DEFAULT_SETTINGS, type InvokerSettings } from 'ivkjs';
+import { isPublished } from '@/lib/platform';
 
-const STORAGE_KEY = 'invoker:env';
+function getStorageKey(): string {
+  return isPublished() ? 'invoker:visitor-env' : 'invoker:env';
+}
 
 function loadSettings(): InvokerSettings {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = localStorage.getItem(getStorageKey());
     if (stored) return JSON.parse(stored) as InvokerSettings;
   } catch {
     // ignore
@@ -39,11 +42,14 @@ function loadSettings(): InvokerSettings {
 interface EnvState {
   settings: InvokerSettings;
   envManager: EnvManager;
+  authorDefaults: Record<string, string>;
   setActiveEnv: (index: number) => void;
   setVariable: (name: string, value: string) => void;
   addEnvironment: (name: string) => void;
   deleteEnvironment: (index: number) => void;
   persist: () => void;
+  setAuthorDefaults: (defaults: Record<string, string>) => void;
+  resetToDefaults: () => void;
 }
 
 export const useEnvStore = create<EnvState>((set, get) => {
@@ -54,6 +60,7 @@ export const useEnvStore = create<EnvState>((set, get) => {
   return {
     settings,
     envManager,
+    authorDefaults: {},
 
     setActiveEnv: (index) => {
       set((state) => ({
@@ -89,7 +96,33 @@ export const useEnvStore = create<EnvState>((set, get) => {
     },
 
     persist: () => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(get().settings));
+      localStorage.setItem(getStorageKey(), JSON.stringify(get().settings));
+    },
+
+    setAuthorDefaults: (defaults) => {
+      set({ authorDefaults: defaults });
+      const state = get();
+      const env = state.settings.environments[state.settings.activeEnvironmentIndex];
+      if (env) {
+        for (const [key, value] of Object.entries(defaults)) {
+          if (!env.variables[key]) {
+            env.variables[key] = value;
+          }
+        }
+        set({ settings: { ...state.settings } });
+      }
+      get().persist();
+    },
+
+    resetToDefaults: () => {
+      const state = get();
+      const defaults = state.authorDefaults;
+      const env = state.settings.environments[state.settings.activeEnvironmentIndex];
+      if (env) {
+        env.variables = { ...defaults };
+        set({ settings: { ...state.settings } });
+      }
+      get().persist();
     },
   };
 });

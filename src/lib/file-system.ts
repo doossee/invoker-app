@@ -1,6 +1,7 @@
 import { isTauri } from './platform';
 import { sampleCollection, type CollectionFile } from '@/data/sample-collection';
 import { sampleDocs, type DocFile } from '@/data/sample-docs';
+import type { SiteConfig } from '@/types/site-config';
 
 export interface CollectionData {
   basePath: string;
@@ -53,6 +54,17 @@ export async function loadCollection(folderPath: string | null): Promise<Collect
   ivkFiles.sort((a, b) => a.path.localeCompare(b.path));
   mdFiles.sort((a, b) => a.path.localeCompare(b.path));
   return { basePath: folderPath, ivkFiles, mdFiles };
+}
+
+export async function loadFromManifest(): Promise<CollectionData & { config?: SiteConfig }> {
+  const { loadManifest } = await import('./manifest-loader');
+  const manifest = await loadManifest();
+  return {
+    basePath: '(published)',
+    ivkFiles: manifest.ivkFiles.map(f => ({ path: f.path, name: f.name, content: f.content })),
+    mdFiles: manifest.mdFiles.map(f => ({ path: f.path, title: f.title, content: f.content })),
+    config: manifest.config,
+  };
 }
 
 export function watchCollection(folderPath: string, onChange: () => void): () => void {
