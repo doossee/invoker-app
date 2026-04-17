@@ -1,6 +1,18 @@
-import { FetchTransport } from 'ivkjs';
+import { FetchTransport, type HttpTransport } from 'ivkjs';
+import { isTauri } from './platform';
 
-// Browser mode: standard fetch (subject to CORS).
-// In future Spec 3, this will be swapped for TauriTransport when
-// running inside the Tauri shell (CORS-free).
+let _transport: HttpTransport | null = null;
+
+export async function getTransport(): Promise<HttpTransport> {
+  if (_transport) return _transport;
+  if (isTauri()) {
+    const { TauriTransport } = await import('./tauri-transport');
+    _transport = new TauriTransport();
+  } else {
+    _transport = new FetchTransport();
+  }
+  return _transport;
+}
+
+// Sync fallback for initial render
 export const transport = new FetchTransport();

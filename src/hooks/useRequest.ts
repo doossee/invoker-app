@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { RequestRunner, type IvkRequest, type RunResult } from 'ivkjs';
-import { transport } from '@/lib/transport';
+import { getTransport } from '@/lib/transport';
 import { useEnvStore } from '@/stores/env-store';
 import { useEditorStore } from '@/stores/editor-store';
 
@@ -17,7 +17,8 @@ export function useRequest(filePath: string | null) {
     async (request: IvkRequest): Promise<RunResult> => {
       setLoading(true);
       try {
-        const runner = new RequestRunner(envManager, transport);
+        const currentTransport = await getTransport();
+        const runner = new RequestRunner(envManager, currentTransport);
         const result = await runner.run(request);
         if (filePath) cacheResponse(filePath, result);
         return result;
