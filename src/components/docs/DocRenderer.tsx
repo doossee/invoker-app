@@ -2,6 +2,7 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { sampleDocs } from '@/data/sample-docs';
+import { IvkBlock } from './IvkBlock';
 
 interface Props {
   docPath: string;
@@ -37,12 +38,7 @@ export function DocRenderer({ docPath }: Props) {
       const codeString = String(children).replace(/\n$/, '');
 
       if (lang === 'ivk') {
-        // IvkBlock will be added in Task 4; for now render a placeholder
-        return (
-          <div className="my-3 rounded-lg border border-border bg-surface p-4 text-xs font-mono text-text-dim">
-            <span className="text-accent">[ivk]</span> {codeString}
-          </div>
-        );
+        return <IvkBlock source={codeString} />;
       }
 
       if (lang || className) {

@@ -16,8 +16,9 @@ import { useDocsStore } from '@/stores/docs-store';
 
 export function App() {
   const [envSettingsOpen, setEnvSettingsOpen] = useState(false);
-  const [sidebarView, setSidebarView] = useState<'collection' | 'docs'>('collection');
 
+  const sidebarView = useEditorStore((s) => s.sidebarView);
+  const setSidebarView = useEditorStore((s) => s.setSidebarView);
   const sidebarWidth = useEditorStore((s) => s.sidebarWidth);
   const setSidebarWidth = useEditorStore((s) => s.setSidebarWidth);
   const activeFilePath = useCollectionStore((s) => s.activeFilePath);
