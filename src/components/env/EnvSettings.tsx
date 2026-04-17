@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Plus, Trash2, ChevronDown, ChevronRight, Copy } from 'lucide-react';
+import { X, Plus, Trash2, ChevronDown, ChevronRight, Copy, RotateCcw } from 'lucide-react';
 import { useEnvStore } from '@/stores/env-store';
 import { KeyValueTable } from '@/components/shared/KeyValueTable';
+import { isPublished } from '@/lib/platform';
 import type { IvkEnvironment } from 'ivkjs';
 
 interface Props {
@@ -22,6 +23,9 @@ export function EnvSettings({ onClose }: Props) {
   const addEnvironment = useEnvStore((s) => s.addEnvironment);
   const deleteEnvironment = useEnvStore((s) => s.deleteEnvironment);
   const persist = useEnvStore((s) => s.persist);
+  const resetToDefaults = useEnvStore((s) => s.resetToDefaults);
+  const authorDefaults = useEnvStore((s) => s.authorDefaults);
+  const hasDefaults = isPublished() && Object.keys(authorDefaults).length > 0;
 
   const envs: IvkEnvironment[] = settings.environments;
 
@@ -244,6 +248,22 @@ export function EnvSettings({ onClose }: Props) {
             </div>
           </div>
         </div>
+
+        {/* Reset to author defaults (published mode only) */}
+        {hasDefaults && (
+          <div className="px-4 py-3 border-t border-border flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-text-dim flex-1">Override author defaults</p>
+              <button
+                onClick={resetToDefaults}
+                className="flex items-center gap-1.5 text-xs px-2 py-1 rounded bg-surface-2 text-text-dim hover:text-text-primary transition-colors"
+              >
+                <RotateCcw size={12} />
+                Reset to defaults
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Import/Export footer */}
         <div className="px-4 py-3 border-t border-border flex-shrink-0 space-y-2">
