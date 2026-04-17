@@ -8,6 +8,7 @@ import { DocsTree } from '@/components/docs/DocsTree';
 import { SidebarTabs } from '@/components/sidebar/SidebarTabs';
 import { WelcomePage } from '@/components/welcome/WelcomePage';
 import { RequestEditor } from '@/components/editor/RequestEditor';
+import { DocRenderer } from '@/components/docs/DocRenderer';
 import { EnvSettings } from '@/components/env/EnvSettings';
 import { useEditorStore } from '@/stores/editor-store';
 import { useCollectionStore } from '@/stores/collection-store';
@@ -36,9 +37,7 @@ export function App() {
 
         <div className="flex-1 overflow-hidden">
           {sidebarView === 'docs' && activeDocPath ? (
-            <div className="h-full flex items-center justify-center text-text-muted text-sm">
-              Doc renderer for {activeDocPath} — coming next
-            </div>
+            <DocRenderer docPath={activeDocPath} />
           ) : sidebarView === 'collection' && activeFilePath ? (
             <RequestEditor filePath={activeFilePath} />
           ) : (

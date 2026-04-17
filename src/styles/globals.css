@@ -67,3 +67,23 @@ body {
   color: #5c6070;
   font-style: italic;
 }
+
+/* Markdown prose styling */
+.invoker-prose {
+  line-height: 1.75;
+  color: #e2e4e9;
+}
+.invoker-prose h1 { font-size: 1.75rem; font-weight: 700; margin: 2rem 0 0.75rem; color: #fff; }
+.invoker-prose h2 { font-size: 1.4rem; font-weight: 600; margin: 1.75rem 0 0.5rem; color: #fff; padding-bottom: 0.3rem; border-bottom: 1px solid #2a2e3a; }
+.invoker-prose h3 { font-size: 1.15rem; font-weight: 600; margin: 1.25rem 0 0.5rem; color: #fff; }
+.invoker-prose p { margin: 0.75rem 0; color: #8b8fa3; }
+.invoker-prose ul, .invoker-prose ol { margin: 0.5rem 0; padding-left: 1.5rem; color: #8b8fa3; }
+.invoker-prose li { margin: 0.25rem 0; }
+.invoker-prose strong { color: #e2e4e9; font-weight: 600; }
+.invoker-prose a { color: #3b82f6; text-decoration: none; }
+.invoker-prose a:hover { text-decoration: underline; }
+.invoker-prose blockquote { border-left: 3px solid #3b82f6; padding-left: 1rem; margin: 1rem 0; color: #5c6070; }
+.invoker-prose table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+.invoker-prose th { background: #14171e; font-weight: 600; text-align: left; padding: 8px 12px; border: 1px solid #2a2e3a; font-size: 0.875rem; color: #e2e4e9; }
+.invoker-prose td { padding: 8px 12px; border: 1px solid #2a2e3a; font-size: 0.875rem; color: #8b8fa3; }
+.invoker-prose hr { border: none; border-top: 1px solid #2a2e3a; margin: 2rem 0; }
