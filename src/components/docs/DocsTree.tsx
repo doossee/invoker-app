@@ -1,5 +1,4 @@
 import { ChevronRight, ChevronDown, FileText, Folder, FolderOpen } from 'lucide-react';
-import { sampleDocs } from '@/data/sample-docs';
 import { useDocsStore } from '@/stores/docs-store';
 
 interface TreeNode {
@@ -112,7 +111,8 @@ function TreeItem({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
 }
 
 export function DocsTree() {
-  const tree = buildTree(sampleDocs);
+  const docs = useDocsStore((s) => s.docs);
+  const tree = buildTree(docs);
 
   return (
     <div className="py-1">

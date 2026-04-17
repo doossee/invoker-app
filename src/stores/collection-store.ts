@@ -5,16 +5,22 @@ interface CollectionState {
   files: CollectionFile[];
   expandedFolders: Set<string>;
   activeFilePath: string | null;
+  collectionPath: string | null;
+  isLoading: boolean;
   setActiveFile: (path: string) => void;
   toggleFolder: (path: string) => void;
   getFileByPath: (path: string) => CollectionFile | undefined;
   getFolders: () => string[];
+  loadCollection: (data: { ivkFiles: CollectionFile[]; basePath: string }) => void;
+  setCollectionPath: (path: string | null) => void;
 }
 
 export const useCollectionStore = create<CollectionState>((set, get) => ({
   files: sampleCollection,
   expandedFolders: new Set<string>(),
   activeFilePath: null,
+  collectionPath: null,
+  isLoading: false,
 
   setActiveFile: (path) => set({ activeFilePath: path }),
 
@@ -38,4 +44,9 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     }
     return Array.from(folders).sort();
   },
+
+  loadCollection: ({ ivkFiles, basePath }) =>
+    set({ files: ivkFiles, collectionPath: basePath, isLoading: false }),
+
+  setCollectionPath: (path) => set({ collectionPath: path }),
 }));
