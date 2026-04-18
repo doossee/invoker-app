@@ -27,14 +27,7 @@
   },
   "plugins": {
     "fs": {
-      "scope": {
-        "allow": ["**"]
-      }
-    },
-    "http": {
-      "scope": {
-        "allow": [{ "url": "**" }]
-      }
+      "requireLiteralLeadingDot": false
     }
   },
   "bundle": {

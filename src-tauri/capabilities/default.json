@@ -9,6 +9,10 @@
     "fs:allow-read-dir",
     "fs:allow-read-file",
     "fs:allow-exists",
+    {
+      "identifier": "fs:scope",
+      "allow": [{ "path": "**" }]
+    },
     "http:default",
     "http:allow-fetch",
     "dialog:default",
