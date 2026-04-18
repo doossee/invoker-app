@@ -1,11 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { TopBar } from '@/components/layout/TopBar';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { StatusBar } from '@/components/layout/StatusBar';
 import { ResizablePanel } from '@/components/layout/ResizablePanel';
-import { FileTree } from '@/components/collection/FileTree';
-import { DocsTree } from '@/components/docs/DocsTree';
-import { SidebarTabs } from '@/components/sidebar/SidebarTabs';
+import { UnifiedTree } from '@/components/collection/UnifiedTree';
 import { WelcomePage } from '@/components/welcome/WelcomePage';
 import { RequestEditor } from '@/components/editor/RequestEditor';
 import { DocRenderer } from '@/components/docs/DocRenderer';
@@ -14,20 +12,38 @@ import { useEditorStore } from '@/stores/editor-store';
 import { useCollectionStore } from '@/stores/collection-store';
 import { useDocsStore } from '@/stores/docs-store';
 import { useEnvStore } from '@/stores/env-store';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { watchCollection, loadCollection, loadFromManifest } from '@/lib/file-system';
 import { isPublished } from '@/lib/platform';
 
 export function App() {
   const [envSettingsOpen, setEnvSettingsOpen] = useState(false);
 
-  const sidebarView = useEditorStore((s) => s.sidebarView);
-  const setSidebarView = useEditorStore((s) => s.setSidebarView);
   const sidebarWidth = useEditorStore((s) => s.sidebarWidth);
   const setSidebarWidth = useEditorStore((s) => s.setSidebarWidth);
   const setSiteConfig = useEditorStore((s) => s.setSiteConfig);
   const activeFilePath = useCollectionStore((s) => s.activeFilePath);
   const activeDocPath = useDocsStore((s) => s.activeDocPath);
   const collectionPath = useCollectionStore((s) => s.collectionPath);
+
+  // Global keyboard shortcuts
+  const shortcutHandlers = useMemo(() => ({
+    onSend: () => {
+      window.dispatchEvent(new CustomEvent('invoker:send'));
+    },
+    onSwitchEnv: () => {
+      const state = useEnvStore.getState();
+      const envs = state.settings.environments;
+      if (envs.length === 0) return;
+      const next = (state.settings.activeEnvironmentIndex + 1) % envs.length;
+      state.setActiveEnv(next);
+    },
+    onFormatJson: () => {
+      window.dispatchEvent(new CustomEvent('invoker:format-json'));
+    },
+  }), []);
+
+  useKeyboardShortcuts(shortcutHandlers);
 
   // Published mode: load manifest at startup
   useEffect(() => {
@@ -39,9 +55,6 @@ export function App() {
         basePath: data.basePath,
       });
       useDocsStore.getState().loadDocs(data.mdFiles);
-
-      // Docs-first for published sites
-      useEditorStore.getState().setSidebarView('docs');
 
       // Apply author default env vars
       if (data.config?.defaults) {
@@ -70,15 +83,14 @@ export function App() {
       <div className="flex-1 flex overflow-hidden">
         <ResizablePanel width={sidebarWidth} onWidthChange={setSidebarWidth}>
           <Sidebar>
-            <SidebarTabs view={sidebarView} onChange={setSidebarView} />
-            {sidebarView === 'collection' ? <FileTree /> : <DocsTree />}
+            <UnifiedTree />
           </Sidebar>
         </ResizablePanel>
 
         <div className="flex-1 overflow-hidden">
-          {sidebarView === 'docs' && activeDocPath ? (
+          {activeDocPath ? (
             <DocRenderer docPath={activeDocPath} />
-          ) : sidebarView === 'collection' && activeFilePath ? (
+          ) : activeFilePath ? (
             <RequestEditor filePath={activeFilePath} />
           ) : (
             <WelcomePage />

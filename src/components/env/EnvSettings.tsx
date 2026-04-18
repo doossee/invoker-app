@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Plus, Trash2, ChevronDown, ChevronRight, Copy, RotateCcw } from 'lucide-react';
+import { X, Plus, Trash2, ChevronDown, ChevronRight, Copy, RotateCcw, Palette, Check } from 'lucide-react';
 import { useEnvStore } from '@/stores/env-store';
 import { KeyValueTable } from '@/components/shared/KeyValueTable';
 import { isPublished } from '@/lib/platform';
+import { useTheme } from '@/themes/theme-provider';
 import type { IvkEnvironment } from 'ivkjs';
 
 interface Props {
@@ -26,6 +27,8 @@ export function EnvSettings({ onClose }: Props) {
   const resetToDefaults = useEnvStore((s) => s.resetToDefaults);
   const authorDefaults = useEnvStore((s) => s.authorDefaults);
   const hasDefaults = isPublished() && Object.keys(authorDefaults).length > 0;
+
+  const { theme: activeTheme, setTheme: setActiveTheme, themes: availableThemes } = useTheme();
 
   const envs: IvkEnvironment[] = settings.environments;
 
@@ -134,13 +137,48 @@ export function EnvSettings({ onClose }: Props) {
       <div className="bg-surface border border-border rounded-lg shadow-2xl w-[600px] max-h-[80vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
-          <h2 className="text-sm font-semibold text-text-primary">Environments</h2>
+          <h2 className="text-sm font-semibold text-text-primary">Settings</h2>
           <button
             onClick={onClose}
             className="p-1 rounded hover:bg-surface-2 text-text-muted hover:text-text-primary transition-colors"
           >
             <X size={16} />
           </button>
+        </div>
+
+        {/* Theme picker */}
+        <div className="px-4 py-3 border-b border-border flex-shrink-0">
+          <div className="flex items-center gap-1.5 mb-2">
+            <Palette size={14} className="text-text-muted" />
+            <span className="text-xs font-semibold text-text-primary">Theme</span>
+          </div>
+          <div className="grid grid-cols-2 gap-1.5">
+            {availableThemes.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setActiveTheme(t.id)}
+                className={`flex items-center gap-2 px-2.5 py-2 rounded text-xs transition-colors text-left ${
+                  activeTheme.id === t.id
+                    ? 'bg-accent/10 text-accent ring-1 ring-accent/30'
+                    : 'bg-surface-2 text-text-dim hover:text-text-primary hover:bg-surface-2/80'
+                }`}
+              >
+                {/* Color preview dots */}
+                <div className="flex gap-0.5 flex-shrink-0">
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: t.colors.bg }} />
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: t.colors.accent }} />
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: t.colors.success }} />
+                </div>
+                <span className="flex-1 truncate">{t.name}</span>
+                {activeTheme.id === t.id && <Check size={12} className="flex-shrink-0" />}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Environments section header */}
+        <div className="px-4 pt-3 pb-1 flex-shrink-0">
+          <span className="text-xs font-semibold text-text-primary">Environments</span>
         </div>
 
         {/* Env list */}
