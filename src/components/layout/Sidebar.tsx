@@ -7,8 +7,8 @@ interface Props {
 export function Sidebar({ children }: Props) {
   return (
     <div className="h-full bg-surface overflow-y-auto flex flex-col">
-      <div className="px-3 py-2 ghost-border-b">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-outline">
+      <div className="px-3 py-1.5">
+        <span className="text-[9px] font-medium uppercase tracking-widest text-outline/50">
           Explorer
         </span>
       </div>
