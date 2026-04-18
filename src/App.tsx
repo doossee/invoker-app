@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
-import { StatusBar } from '@/components/layout/StatusBar';
 import { ResizablePanel } from '@/components/layout/ResizablePanel';
 import { UnifiedTree } from '@/components/collection/UnifiedTree';
 import { WelcomePage } from '@/components/welcome/WelcomePage';
@@ -96,8 +95,6 @@ export function App() {
           )}
         </div>
       </div>
-
-      <StatusBar />
 
       {envSettingsOpen && (
         <EnvSettings onClose={() => setEnvSettingsOpen(false)} />
