@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Plus, Zap } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -7,12 +8,42 @@ interface Props {
 export function Sidebar({ children }: Props) {
   return (
     <div className="h-full bg-surface overflow-y-auto flex flex-col">
-      <div className="px-3 py-1.5">
-        <span className="text-[9px] font-medium uppercase tracking-widest text-outline/50">
-          Explorer
-        </span>
+      {/* Project header */}
+      <div className="px-3 pt-3 pb-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Zap size={14} className="text-primary flex-shrink-0" />
+            <span className="text-sm font-semibold text-primary truncate">
+              My Collection
+            </span>
+          </div>
+          <button
+            className="flex-shrink-0 p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors"
+            title="Add item"
+          >
+            <Plus size={14} />
+          </button>
+        </div>
+        <p className="text-[0.6875rem] leading-tight text-outline mt-0.5 ml-[22px]">
+          API Documentation
+        </p>
       </div>
-      {children}
+
+      {/* Divider */}
+      <div className="mx-3 ghost-border-b" style={{ height: 1 }} />
+
+      {/* New Request button */}
+      <div className="px-3 py-2">
+        <button className="w-full flex items-center justify-center gap-1.5 ghost-border bg-surface-container text-on-surface rounded-md py-1.5 px-3 text-sm hover:bg-surface-high transition-colors">
+          <Plus size={14} />
+          <span>New Request</span>
+        </button>
+      </div>
+
+      {/* File tree */}
+      <div className="flex-1 overflow-y-auto">
+        {children}
+      </div>
     </div>
   );
 }

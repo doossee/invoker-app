@@ -118,22 +118,28 @@ function countFiles(node: TreeNode): number {
   return count;
 }
 
-const methodBadgeColors: Record<HttpMethod, string> = {
-  GET: 'bg-green-500/20 text-green-400',
-  POST: 'bg-amber-500/20 text-amber-400',
-  PUT: 'bg-blue-500/20 text-blue-400',
-  PATCH: 'bg-purple-500/20 text-purple-400',
-  DELETE: 'bg-red-500/20 text-red-400',
+const methodBadgeStyles: Record<HttpMethod, { bg: string; color: string }> = {
+  GET: { bg: 'var(--ivk-method-get)', color: 'var(--ivk-method-get)' },
+  POST: { bg: 'var(--ivk-method-post)', color: 'var(--ivk-method-post)' },
+  PUT: { bg: 'var(--ivk-method-put)', color: 'var(--ivk-method-put)' },
+  PATCH: { bg: 'var(--ivk-method-patch)', color: 'var(--ivk-method-patch)' },
+  DELETE: { bg: 'var(--ivk-method-delete)', color: 'var(--ivk-method-delete)' },
 };
 
 function MethodBadge({ method }: { method: HttpMethod }) {
-  const color = methodBadgeColors[method] ?? 'bg-gray-500/20 text-gray-400';
+  const style = methodBadgeStyles[method] ?? { bg: 'var(--ivk-outline)', color: 'var(--ivk-outline)' };
+  const label = method === 'DELETE' ? 'DEL' : method;
   return (
     <span
-      className={`inline-flex items-center justify-center rounded-sm text-[8px] font-mono font-bold leading-none flex-shrink-0 ${color}`}
-      style={{ width: 28, height: 14 }}
+      className="inline-flex items-center justify-center rounded-sm text-[0.625rem] font-bold tracking-wider leading-none flex-shrink-0 px-1"
+      style={{
+        color: style.color,
+        backgroundColor: `color-mix(in srgb, ${style.bg} 15%, transparent)`,
+        minWidth: 28,
+        height: 16,
+      }}
     >
-      {method.length > 3 ? method.slice(0, 3) : method}
+      {label}
     </span>
   );
 }
@@ -146,8 +152,8 @@ function IndentGuides({ depth }: { depth: number }) {
       {Array.from({ length: depth }, (_, i) => (
         <span
           key={i}
-          className="absolute top-0 bottom-0 border-l border-outline-variant/20"
-          style={{ left: 12 + i * 16 + 7 }}
+          className="absolute top-0 bottom-0 border-l border-outline-variant/15"
+          style={{ left: 12 + i * 24 + 11 }}
         />
       ))}
     </>
@@ -167,7 +173,7 @@ function TreeItem({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
 
   const getFileByPath = useCollectionStore((s) => s.getFileByPath);
 
-  const pl = 12 + depth * 16;
+  const pl = 12 + depth * 24;
 
   if (node.type === 'folder') {
     // Folder expanded state: check both stores
@@ -200,10 +206,10 @@ function TreeItem({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
     return (
       <div>
         <button
-          className={`relative w-full flex items-center gap-1.5 py-2 px-2 text-xs transition-colors duration-150 ${
+          className={`relative w-full flex items-center gap-2 py-2 px-3 text-sm transition-colors duration-150 ${
             isReadmeActive
-              ? 'bg-primary/10 text-primary'
-              : 'text-on-surface-variant hover:bg-surface-container/70 hover:text-on-surface'
+              ? 'bg-surface-highest text-primary'
+              : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
           }`}
           style={{ paddingLeft: pl }}
           onClick={handleToggle}
@@ -211,24 +217,26 @@ function TreeItem({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
           <IndentGuides depth={depth} />
           {/* Active README left accent bar */}
           {isReadmeActive && (
-            <span className="absolute left-0 top-1 bottom-1 w-0.5 rounded-full bg-primary" />
+            <span className="absolute left-0 top-0.5 bottom-0.5 w-[2px] rounded-full bg-primary" />
           )}
-          {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+          <span className="flex-shrink-0 text-outline">
+            {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          </span>
           {isExpanded ? (
-            <FolderOpen size={14} className="text-amber-400 flex-shrink-0" />
+            <FolderOpen size={15} className="text-amber-400 flex-shrink-0" />
           ) : (
-            <Folder size={14} className="text-amber-400 flex-shrink-0" />
+            <Folder size={15} className="text-amber-400 flex-shrink-0" />
           )}
-          <span className="truncate">{node.name}</span>
+          <span className="truncate font-medium">{node.name}</span>
           {hasReadme && (
             <span title="Has README" className="flex-shrink-0">
               <BookOpen
-                size={10}
-                className={isReadmeActive ? 'text-primary' : 'text-outline/50'}
+                size={11}
+                className={isReadmeActive ? 'text-primary' : 'text-outline/40'}
               />
             </span>
           )}
-          <span className="ml-auto text-[9px] text-outline/60 tabular-nums">
+          <span className="ml-auto text-[0.625rem] text-outline/50 tabular-nums font-medium">
             {fileCount}
           </span>
         </button>
@@ -273,27 +281,32 @@ function TreeItem({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
 
   return (
     <button
-      className={`relative w-full flex items-center gap-1.5 py-2 px-2 text-xs transition-colors duration-150 ${
+      className={`relative w-full flex items-center gap-2 py-2 px-3 text-sm transition-colors duration-150 ${
         isActive
-          ? 'bg-primary/10 text-primary'
-          : 'text-on-surface-variant hover:bg-surface-container/70 hover:text-on-surface'
+          ? 'bg-surface-highest text-primary'
+          : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
       }`}
-      style={{ paddingLeft: pl + 16 }}
+      style={{ paddingLeft: pl + 24 }}
       onClick={handleClick}
     >
       <IndentGuides depth={depth} />
       {/* Active file left accent bar */}
       {isActive && (
-        <span className="absolute left-0 top-1 bottom-1 w-0.5 rounded-full bg-primary" />
+        <span className="absolute left-0 top-0.5 bottom-0.5 w-[2px] rounded-full bg-primary" />
       )}
       {isIvk && method ? (
         <MethodBadge method={method} />
       ) : isIvk ? (
         <Zap size={14} className="text-amber-400 flex-shrink-0" />
       ) : (
-        <FileText size={14} className="text-blue-400 flex-shrink-0" />
+        <FileText size={14} className="text-blue-400/80 flex-shrink-0" />
       )}
       <span className="truncate">{node.name}</span>
+      {!isIvk && (
+        <span className="ml-auto text-[0.5625rem] font-bold tracking-wider text-outline/40 flex-shrink-0">
+          MD
+        </span>
+      )}
     </button>
   );
 }
@@ -305,14 +318,14 @@ export function UnifiedTree() {
 
   if (tree.length === 0) {
     return (
-      <div className="px-3 py-4 text-xs text-outline text-center">
+      <div className="px-3 py-6 text-xs text-outline text-center">
         No files loaded
       </div>
     );
   }
 
   return (
-    <div className="py-1">
+    <div className="py-1.5">
       {tree.map((node) => (
         <TreeItem key={node.path} node={node} />
       ))}
