@@ -1,0 +1,143 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@500;600;700&display=swap">
+<style>
+  .row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    margin-bottom: 16px;
+  }
+  .row.three { grid-template-columns: repeat(3, 1fr); }
+  .tile {
+    background: #0a0a0a; border-radius: 12px; padding: 20px 16px 12px;
+    box-shadow: inset 0 0 0 1px rgba(66,71,84,0.22);
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    min-height: 0;
+  }
+  .tile.light { background: #f4f1ec; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06); }
+  .tile.amber { background: #e6c188; }
+  .tile.ink   { background: #0a0a0a; }
+
+  .lock { display: flex; align-items: center; gap: 10px; height: 40px; }
+  .lock.stack { flex-direction: column; gap: 8px; height: auto; }
+  .word {
+    font-family: 'Geist', sans-serif; font-weight: 600; font-size: 22px;
+    letter-spacing: -0.025em; line-height: 1;
+  }
+  .word.lg { font-size: 30px; }
+  .word.ink   { color: #0a0a0a; }
+  .word.paper { color: #1a1a1a; }
+  .word.cream { color: #e7e5e4; }
+  .word.amber { color: #e6c188; }
+
+  .name {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #767575;
+    letter-spacing: 0.12em; text-transform: uppercase;
+  }
+</style></head><body><div class="card">
+
+<div class="label-caps" style="margin-bottom: 14px">Logo · the Call — lockup system</div>
+
+<!-- ============ HERO: primary mark, large ============ -->
+<div class="row">
+  <div class="tile" style="padding: 32px 20px 16px">
+    <svg width="120" height="120" viewBox="0 0 72 72" aria-label="Invoker mark">
+      <path d="M 56 36 A 20 20 0 1 0 36 56"
+            stroke="#e6c188" stroke-width="9" stroke-linecap="round" fill="none"/>
+      <circle cx="56" cy="56" r="5" fill="#e6c188"/>
+    </svg>
+    <div class="name" style="margin-top: 4px">Primary · Amber on ink</div>
+  </div>
+
+  <div class="tile" style="padding: 32px 20px 16px">
+    <div class="lock" style="height: auto">
+      <svg width="44" height="44" viewBox="0 0 72 72">
+        <path d="M 56 36 A 20 20 0 1 0 36 56"
+              stroke="#e6c188" stroke-width="9" stroke-linecap="round" fill="none"/>
+        <circle cx="56" cy="56" r="5" fill="#e6c188"/>
+      </svg>
+      <span class="word lg cream">Invoker</span>
+    </div>
+    <div class="name" style="margin-top: 20px">Horizontal lockup</div>
+  </div>
+</div>
+
+<!-- ============ ROW 2: variants on surfaces ============ -->
+<div class="row three">
+  <!-- Stacked lockup -->
+  <div class="tile">
+    <div class="lock stack">
+      <svg width="40" height="40" viewBox="0 0 72 72">
+        <path d="M 56 36 A 20 20 0 1 0 36 56"
+              stroke="#e6c188" stroke-width="9" stroke-linecap="round" fill="none"/>
+        <circle cx="56" cy="56" r="5" fill="#e6c188"/>
+      </svg>
+      <span class="word cream">Invoker</span>
+    </div>
+    <div class="name">Stacked</div>
+  </div>
+
+  <!-- Amber tile inverse -->
+  <div class="tile amber">
+    <div class="lock" style="height: 40px">
+      <svg width="34" height="34" viewBox="0 0 72 72">
+        <path d="M 56 36 A 20 20 0 1 0 36 56"
+              stroke="#0a0a0a" stroke-width="9" stroke-linecap="round" fill="none"/>
+        <circle cx="56" cy="56" r="5" fill="#0a0a0a"/>
+      </svg>
+      <span class="word ink">Invoker</span>
+    </div>
+    <div class="name" style="color:#4a3a1d">On amber · ink mark</div>
+  </div>
+
+  <!-- Paper / light -->
+  <div class="tile light">
+    <div class="lock" style="height: 40px">
+      <svg width="34" height="34" viewBox="0 0 72 72">
+        <path d="M 56 36 A 20 20 0 1 0 36 56"
+              stroke="#1a1a1a" stroke-width="9" stroke-linecap="round" fill="none"/>
+        <circle cx="56" cy="56" r="5" fill="#1a1a1a"/>
+      </svg>
+      <span class="word paper">Invoker</span>
+    </div>
+    <div class="name" style="color:#6b6b6b">On paper · monochrome</div>
+  </div>
+</div>
+
+<!-- ============ ROW 3: scale test ============ -->
+<div class="row" style="grid-template-columns: 1fr;">
+  <div class="tile" style="flex-direction: row; justify-content: space-around; align-items: center; padding: 20px">
+    <div style="display:flex; flex-direction:column; align-items:center; gap:6px">
+      <svg width="64" height="64" viewBox="0 0 72 72">
+        <path d="M 56 36 A 20 20 0 1 0 36 56"
+              stroke="#e6c188" stroke-width="9" stroke-linecap="round" fill="none"/>
+        <circle cx="56" cy="56" r="5" fill="#e6c188"/>
+      </svg>
+      <div class="name">64px</div>
+    </div>
+    <div style="display:flex; flex-direction:column; align-items:center; gap:6px">
+      <svg width="32" height="32" viewBox="0 0 72 72">
+        <path d="M 56 36 A 20 20 0 1 0 36 56"
+              stroke="#e6c188" stroke-width="10" stroke-linecap="round" fill="none"/>
+        <circle cx="56" cy="56" r="6" fill="#e6c188"/>
+      </svg>
+      <div class="name">32px</div>
+    </div>
+    <div style="display:flex; flex-direction:column; align-items:center; gap:6px">
+      <svg width="20" height="20" viewBox="0 0 72 72">
+        <path d="M 56 36 A 20 20 0 1 0 36 56"
+              stroke="#e6c188" stroke-width="12" stroke-linecap="round" fill="none"/>
+        <circle cx="56" cy="56" r="7" fill="#e6c188"/>
+      </svg>
+      <div class="name">20px</div>
+    </div>
+    <div style="display:flex; flex-direction:column; align-items:center; gap:6px">
+      <svg width="16" height="16" viewBox="0 0 72 72">
+        <path d="M 56 36 A 20 20 0 1 0 36 56"
+              stroke="#e6c188" stroke-width="14" stroke-linecap="round" fill="none"/>
+        <circle cx="56" cy="56" r="8" fill="#e6c188"/>
+      </svg>
+      <div class="name">16px (favicon)</div>
+    </div>
+  </div>
+</div>
+
+</div></body></html>

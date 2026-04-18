@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css"><style>
+.rows { display:flex; flex-direction:column; gap: 2px; }
+.row { padding: 8px 12px; font-size: 13px; color:#acabaa; display:flex; align-items:center; gap: 8px; border-radius: 0; position: relative; }
+.row.hover { background:#191a1a; color:#e7e5e4; }
+.row.active { background:#252626; color:#e6c188; }
+.row.active::before { content:''; position:absolute; left:0; top:2px; bottom:2px; width:2px; border-radius:9999px; background:#e6c188; }
+.mb { font-family:'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 3px; min-width:30px; text-align:center; }
+.lbl { font-size: 10px; color:#767575; font-family:'JetBrains Mono', monospace; margin-top: 10px; }
+</style></head><body><div class="card">
+<div class="label-caps" style="margin-bottom:10px">Sidebar row · default / hover / active</div>
+<div class="rows">
+  <div class="row"><span class="mb" style="background:rgba(74,225,118,0.15);color:#4ae176">GET</span>health</div>
+  <div class="row hover"><span class="mb" style="background:rgba(230,193,136,0.15);color:#e6c188">POST</span>login</div>
+  <div class="row active"><span class="mb" style="background:rgba(230,193,136,0.15);color:#e6c188">POST</span>get-me</div>
+</div>
+<div class="lbl">active: bg surface-highest + 2px left accent bar</div>
+</div></body></html>

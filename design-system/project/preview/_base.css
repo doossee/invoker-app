@@ -1,0 +1,25 @@
+<!-- Shared card styles + fonts. Use like: <link rel="stylesheet" href="_base.css"> -->
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  background: #000;
+  color: #e7e5e4;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+.card {
+  padding: 20px 24px;
+  min-height: 100%;
+  background: #000;
+}
+.mono { font-family: 'JetBrains Mono', Consolas, monospace; }
+.display { font-family: 'Manrope', sans-serif; letter-spacing: -0.01em; }
+.label-caps {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: #767575;
+}
+.ghost { box-shadow: inset 0 0 0 1px rgba(66,71,84,0.25); }
+.muted { color: #acabaa; }
+.dim   { color: #767575; }

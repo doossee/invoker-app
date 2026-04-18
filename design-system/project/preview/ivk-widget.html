@@ -1,0 +1,24 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css"><style>
+.widget { background:#131313; border-radius: 10px; box-shadow: inset 0 0 0 1px rgba(66,71,84,0.25); overflow:hidden; }
+.row { display:flex; align-items:center; gap:10px; padding: 12px 16px; }
+.mb { font-family:'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 3px; background:rgba(230,193,136,0.15); color:#e6c188; letter-spacing: 0.04em; }
+.url { font-family:'JetBrains Mono', monospace; font-size:12px; color:#acabaa; flex:1; }
+.name { font-family:'JetBrains Mono', monospace; font-size: 10px; color:#acabaa; font-weight:500; padding: 3px 7px; border-radius: 4px; background: rgba(66,71,84,0.25); letter-spacing: 0.02em; }
+.btn { font-size:11px; font-weight:500; padding: 4px 10px; border-radius:6px; border: none; cursor:pointer; display:inline-flex; align-items:center; gap:4px; height: 24px; }
+.run { background:#e6c188; color:#543c0e; }
+.open { background: transparent; color:#acabaa; }
+.set { color:#dbc3a1; }
+svg { width:11px; height:11px; stroke: currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.run svg { fill: currentColor; }
+</style></head><body><div class="card">
+<div class="label-caps" style="margin-bottom:10px">Inline ivk widget · renders inside Markdown</div>
+<div class="widget">
+  <div class="row">
+    <span class="mb">POST</span>
+    <span class="url"><span style="color:#767575">{{</span><span class="set">baseUrl</span><span style="color:#767575">}}</span>/auth/login</span>
+    <span class="name">Login</span>
+    <button class="btn run" style="margin-left:6px"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>Run</button>
+    <button class="btn open"><svg viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>Open</button>
+  </div>
+</div>
+</div></body></html>

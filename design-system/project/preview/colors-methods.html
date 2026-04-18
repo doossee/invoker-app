@@ -1,0 +1,15 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css"><style>
+.row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.chip { padding: 12px 14px; border-radius: 10px; background: #0e0e0e; box-shadow: inset 0 0 0 1px rgba(66,71,84,0.25); display:flex; flex-direction:column; gap:8px; }
+.badge { display: inline-flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; padding: 3px 7px; border-radius: 4px; }
+.hex { font-family: 'JetBrains Mono', monospace; font-size: 10px; color:#767575; }
+</style></head><body><div class="card">
+<div class="label-caps" style="margin-bottom:10px">HTTP method palette</div>
+<div class="row">
+  <div class="chip"><span class="badge" style="background:rgba(74,225,118,0.15);color:#4ae176;align-self:flex-start">GET</span><div class="hex">#4ae176</div></div>
+  <div class="chip"><span class="badge" style="background:rgba(230,193,136,0.15);color:#e6c188;align-self:flex-start">POST</span><div class="hex">#e6c188</div></div>
+  <div class="chip"><span class="badge" style="background:rgba(219,195,161,0.15);color:#dbc3a1;align-self:flex-start">PUT</span><div class="hex">#dbc3a1</div></div>
+  <div class="chip"><span class="badge" style="background:rgba(255,205,179,0.15);color:#ffcdb3;align-self:flex-start">PATCH</span><div class="hex">#ffcdb3</div></div>
+  <div class="chip"><span class="badge" style="background:rgba(249,119,88,0.15);color:#f97758;align-self:flex-start">DEL</span><div class="hex">#f97758</div></div>
+</div>
+</div></body></html>

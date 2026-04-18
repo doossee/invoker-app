@@ -1,0 +1,637 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Invoker — UI Kit</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"/>
+  <style>
+    html, body { margin: 0; padding: 0; background: #000; overflow: hidden; font-family: 'Inter', system-ui, sans-serif; }
+    #root { height: 100vh; }
+    * { box-sizing: border-box; }
+  </style>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+// ============= ICONS =============
+const Icon = ({ d, children, size = 14, ...p }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+       fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}>
+    {d ? <path d={d}/> : children}
+  </svg>
+);
+const Zap       = (p) => <Icon {...p}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></Icon>;
+const InvokerMark = ({ size = 14, color = '#e6c188' }) => (
+  <svg width={size} height={size} viewBox="0 0 72 72" fill="none" style={{ flexShrink: 0, display: 'block' }}>
+    <path d="M 56 36 A 20 20 0 1 0 36 56" stroke={color} strokeWidth="10" strokeLinecap="round"/>
+    <circle cx="56" cy="56" r="6" fill={color}/>
+  </svg>
+);
+const Plus      = (p) => <Icon {...p}><path d="M5 12h14"/><path d="M12 5v14"/></Icon>;
+const Send      = (p) => <Icon {...p}><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4Z"/></Icon>;
+const Play      = (p) => <Icon {...p}><polygon points="5 3 19 12 5 21 5 3"/></Icon>;
+const Settings  = (p) => <Icon {...p}><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v10M4.22 4.22l4.24 4.24m7.08 7.08l4.24 4.24M1 12h6m6 0h10M4.22 19.78l4.24-4.24m7.08-7.08l4.24-4.24"/></Icon>;
+const ChevronDown  = (p) => <Icon {...p}><path d="m6 9 6 6 6-6"/></Icon>;
+const ChevronRight = (p) => <Icon {...p}><path d="m9 18 6-6-6-6"/></Icon>;
+const Folder      = (p) => <Icon {...p}><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2"/></Icon>;
+const FolderOpen  = (p) => <Icon {...p}><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6A2 2 0 0 1 18.46 20H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></Icon>;
+const FileText    = (p) => <Icon {...p}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></Icon>;
+const BookOpen    = (p) => <Icon {...p}><path d="M4 4h6a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4z"/><path d="M22 4h-6a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h6z"/></Icon>;
+const Globe       = (p) => <Icon {...p}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></Icon>;
+const Code2       = (p) => <Icon {...p}><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></Icon>;
+const ExternalLink = (p) => <Icon {...p}><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></Icon>;
+const Check        = (p) => <Icon {...p}><polyline points="20 6 9 17 4 12"/></Icon>;
+const FolderPlus   = (p) => <Icon {...p}><path d="M12 10v6"/><path d="M9 13h6"/><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2"/></Icon>;
+const FilePlus     = (p) => <Icon {...p}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15h6"/></Icon>;
+const ChevronsUpDown = (p) => <Icon {...p}><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></Icon>;
+
+// ============= METHOD BADGE =============
+const METHOD_COLORS = {
+  GET:    { c: '#4ae176', bg: 'rgba(74,225,118,0.15)' },
+  POST:   { c: '#e6c188', bg: 'rgba(230,193,136,0.15)' },
+  PUT:    { c: '#dbc3a1', bg: 'rgba(219,195,161,0.15)' },
+  PATCH:  { c: '#ffcdb3', bg: 'rgba(255,205,179,0.15)' },
+  DELETE: { c: '#f97758', bg: 'rgba(249,119,88,0.15)' },
+};
+function MethodBadge({ method }) {
+  const s = METHOD_COLORS[method] || { c: '#767575', bg: 'rgba(118,117,117,0.15)' };
+  const label = method === 'DELETE' ? 'DEL' : method;
+  return (
+    <span style={{
+      fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700,
+      letterSpacing: '0.08em', padding: '2px 6px', borderRadius: 3,
+      color: s.c, background: s.bg, minWidth: 30, textAlign: 'center', flexShrink: 0,
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    }}>{label}</span>
+  );
+}
+
+// ============= UNIFIED TREE =============
+const SAMPLE = [
+  { type: 'doc', path: 'getting-started.md', name: 'Getting Started' },
+  { type: 'folder', name: 'auth', hasReadme: true, readme: 'auth/README.md', children: [
+    { type: 'ivk', path: 'auth/login.ivk',  name: 'login',  method: 'POST' },
+    { type: 'ivk', path: 'auth/get-me.ivk', name: 'get-me', method: 'POST' },
+  ]},
+  { type: 'folder', name: 'users', children: [
+    { type: 'ivk', path: 'users/list.ivk',   name: 'list',   method: 'GET' },
+    { type: 'ivk', path: 'users/create.ivk', name: 'create', method: 'POST' },
+    { type: 'ivk', path: 'users/update.ivk', name: 'update', method: 'PUT' },
+    { type: 'ivk', path: 'users/delete.ivk', name: 'delete', method: 'DELETE' },
+    { type: 'doc', path: 'users/api.md',     name: 'Users API' },
+  ]},
+  { type: 'ivk', path: 'health.ivk', name: 'health', method: 'GET' },
+];
+
+function countFiles(node) {
+  if (node.type !== 'folder') return 1;
+  return (node.children || []).reduce((a, c) => a + countFiles(c), 0);
+}
+
+const rowStyle = {
+  position: 'relative', width: '100%', display: 'flex', alignItems: 'center', gap: 7,
+  padding: '5px 12px', fontSize: 13, border: 'none', cursor: 'pointer',
+  fontFamily: 'inherit', transition: 'color .15s, background .15s',
+};
+const activeBarStyle = {
+  position: 'absolute', left: 0, top: 2, bottom: 2, width: 2, borderRadius: 9999, background: '#e6c188',
+};
+
+function TreeRow({ node, depth, activeFile, activeDoc, setActive, expanded, toggle }) {
+  const pad = 12 + depth * 20;
+  if (node.type === 'folder') {
+    const isOpen = expanded[node.name] ?? true;
+    const isActive = node.hasReadme && activeDoc === node.readme;
+    return (
+      <React.Fragment>
+        <button
+          style={{ ...rowStyle, paddingLeft: pad,
+            background: isActive ? '#252626' : 'transparent',
+            color: isActive ? '#e6c188' : '#acabaa' }}
+          onClick={() => { toggle(node.name); if (node.hasReadme) setActive({ doc: node.readme }); }}>
+          {isActive && <span style={activeBarStyle}/>}
+          <span style={{ color: '#767575', display: 'flex' }}>
+            {isOpen ? <ChevronDown size={11}/> : <ChevronRight size={11}/>}
+          </span>
+          <span style={{ color: '#facc15', display: 'flex' }}>
+            {isOpen ? <FolderOpen size={12}/> : <Folder size={12}/>}
+          </span>
+          <span style={{ fontWeight: 500, flex: 1, textAlign: 'left' }}>{node.name}</span>
+          {node.hasReadme && (
+            <span style={{ color: isActive ? '#e6c188' : 'rgba(118,117,117,0.5)', display: 'flex' }}>
+              <BookOpen size={10}/>
+            </span>
+          )}
+          <span style={{ fontSize: 10, color: 'rgba(118,117,117,0.6)', fontWeight: 500 }}>
+            {countFiles(node)}
+          </span>
+        </button>
+        {isOpen && node.children.map(c => (
+          <TreeRow key={c.path || c.name} node={c} depth={depth + 1}
+                   activeFile={activeFile} activeDoc={activeDoc} setActive={setActive}
+                   expanded={expanded} toggle={toggle}/>
+        ))}
+      </React.Fragment>
+    );
+  }
+  const isIvk = node.type === 'ivk';
+  const isActive = isIvk ? activeFile === node.path : activeDoc === node.path;
+  return (
+    <button
+      style={{ ...rowStyle, paddingLeft: pad + 18,
+        background: isActive ? '#252626' : 'transparent',
+        color: isActive ? '#e6c188' : '#acabaa' }}
+      onClick={() => setActive(isIvk ? { file: node.path } : { doc: node.path })}>
+      {isActive && <span style={activeBarStyle}/>}
+      {isIvk
+        ? <MethodBadge method={node.method}/>
+        : <FileText size={12} style={{ color: 'rgba(96,165,250,0.8)', flexShrink: 0 }}/>}
+      <span style={{ flex: 1, textAlign: 'left' }}>{node.name}</span>
+      {!isIvk && (
+        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: 'rgba(118,117,117,0.5)' }}>MD</span>
+      )}
+    </button>
+  );
+}
+
+function UnifiedTree({ activeFile, activeDoc, setActive }) {
+  const [expanded, setExpanded] = React.useState({ auth: true, users: true });
+  const toggle = (n) => setExpanded(e => ({ ...e, [n]: !(e[n] ?? true) }));
+  return (
+    <div style={{ padding: '6px 0' }}>
+      {SAMPLE.map(n => (
+        <TreeRow key={n.path || n.name} node={n} depth={0}
+                 activeFile={activeFile} activeDoc={activeDoc} setActive={setActive}
+                 expanded={expanded} toggle={toggle}/>
+      ))}
+    </div>
+  );
+}
+
+// ============= SIDEBAR =============
+const sbStyles = {
+  root: { background: '#131313', borderRadius: 16,
+    boxShadow: 'inset 0 0 0 1px rgba(66,71,84,0.3)',
+    height: 'calc(100vh - 24px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+  header: { padding: '12px 12px 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
+  iconBtn: { background: 'transparent', border: 'none', color: '#767575', padding: 4, borderRadius: 4, cursor: 'pointer', display: 'flex' },
+  newReq: { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+    background: '#191a1a', color: '#e7e5e4', border: 'none',
+    boxShadow: 'inset 0 0 0 1px rgba(66,71,84,0.25)', borderRadius: 8,
+    padding: '6px 12px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' },
+  footer: { marginTop: 'auto', padding: '8px 12px',
+    boxShadow: 'inset 0 1px 0 rgba(66,71,84,0.25)',
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
+  envBtn: { display: 'flex', alignItems: 'center', gap: 6, padding: '4px 8px',
+    background: 'transparent', border: 'none', borderRadius: 6, cursor: 'pointer',
+    fontSize: 12, fontFamily: 'inherit' },
+  envMenu: { position: 'absolute', bottom: '100%', left: 0, marginBottom: 4,
+    width: 180, background: '#0e0e0e', border: '1px solid #484848',
+    borderRadius: 8, padding: 4, boxShadow: '0 10px 25px rgba(0,0,0,0.5)', zIndex: 50 },
+  envMenuItem: { display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+    padding: '6px 10px', fontSize: 12, background: 'transparent', border: 'none', cursor: 'pointer',
+    borderRadius: 4, fontFamily: 'inherit' },
+};
+
+function EnvPill() {
+  const [env, setEnv] = React.useState({ name: 'development', color: '#22c55e' });
+  const [open, setOpen] = React.useState(false);
+  const envs = [
+    { name: 'development', color: '#22c55e' },
+    { name: 'staging',     color: '#e0af68' },
+    { name: 'production',  color: '#f97758' },
+  ];
+  return (
+    <div style={{ position: 'relative' }}>
+      <button style={sbStyles.envBtn} onClick={() => setOpen(v => !v)}>
+        <span style={{ width: 8, height: 8, borderRadius: 9999, background: env.color }}/>
+        <span style={{ color: '#acabaa' }}>{env.name}</span>
+        <ChevronDown size={12} style={{ color: '#767575', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}/>
+      </button>
+      {open && (
+        <div style={sbStyles.envMenu}>
+          {envs.map(e => (
+            <button key={e.name} style={sbStyles.envMenuItem}
+                    onClick={() => { setEnv(e); setOpen(false); }}>
+              <span style={{ width: 8, height: 8, borderRadius: 9999, background: e.color }}/>
+              <span style={{ flex: 1, color: '#e7e5e4', textAlign: 'left' }}>{e.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const COLLECTIONS = [
+  { name: 'My Collection',  subtitle: 'API Documentation', count: 9 },
+  { name: 'OVI Internal',   subtitle: '460 requests · 83 docs', count: 543 },
+  { name: 'Stripe Playbook', subtitle: 'Reference collection', count: 127 },
+  { name: 'Acme Webhooks',  subtitle: 'Webhook endpoints',   count: 14 },
+];
+
+function CollectionSwitcher() {
+  const [open, setOpen] = React.useState(false);
+  const [active, setActive] = React.useState(COLLECTIONS[0]);
+  return (
+    <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+      <button onClick={() => setOpen(v => !v)}
+        style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%',
+          background: open ? '#191a1a' : 'transparent', border: 'none',
+          padding: '4px 6px', borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit',
+          minWidth: 0 }}>
+        <InvokerMark size={14}/>
+        <span style={{ fontSize: 13, fontWeight: 600, color: '#e6c188',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, textAlign: 'left' }}>
+          {active.name}
+        </span>
+        <ChevronsUpDown size={11} style={{ color: '#767575', flexShrink: 0 }}/>
+      </button>
+      {open && (
+        <>
+          <div onClick={() => setOpen(false)}
+            style={{ position: 'fixed', inset: 0, zIndex: 40 }}/>
+          <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 4,
+            width: 240, background: '#0e0e0e',
+            boxShadow: '0 0 0 1px rgba(66,71,84,0.4), 0 12px 28px rgba(0,0,0,0.6)',
+            borderRadius: 10, padding: 4, zIndex: 50 }}>
+            <div style={{ padding: '6px 10px 4px', fontSize: 10, fontWeight: 600,
+              letterSpacing: '0.08em', color: '#767575', textTransform: 'uppercase' }}>
+              Collections
+            </div>
+            {COLLECTIONS.map(c => (
+              <button key={c.name}
+                onClick={() => { setActive(c); setOpen(false); }}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+                  padding: '7px 8px', background: 'transparent', border: 'none',
+                  borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
+                <div style={{ width: 22, height: 22, borderRadius: 5,
+                  background: c.name === active.name ? 'rgba(230,193,136,0.15)' : '#191a1a',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <InvokerMark size={12} color={c.name === active.name ? '#e6c188' : '#767575'}/>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 500, color: '#e7e5e4',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {c.name}
+                  </div>
+                  <div style={{ fontSize: 10, color: '#767575',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {c.subtitle}
+                  </div>
+                </div>
+                {c.name === active.name && <Check size={12} style={{ color: '#e6c188', flexShrink: 0 }}/>}
+              </button>
+            ))}
+            <div style={{ margin: '4px 0', height: 1, background: 'rgba(66,71,84,0.25)' }}/>
+            <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+              padding: '7px 8px', background: 'transparent', border: 'none',
+              borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit',
+              color: '#acabaa', fontSize: 12 }}>
+              <FolderPlus size={12}/><span>Open collection folder…</span>
+            </button>
+            <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+              padding: '7px 8px', background: 'transparent', border: 'none',
+              borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit',
+              color: '#acabaa', fontSize: 12 }}>
+              <Plus size={12}/><span>New collection</span>
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function NewItemMenu() {
+  const [open, setOpen] = React.useState(false);
+  const items = [
+    { icon: <Send size={12}/>,       label: 'New Request', hint: '.ivk', color: '#e6c188' },
+    { icon: <FilePlus size={12}/>,   label: 'New Doc',     hint: '.md',  color: '#60a5fa' },
+    { icon: <FolderPlus size={12}/>, label: 'New Folder',  hint: '',     color: '#facc15' },
+  ];
+  return (
+    <div style={{ position: 'relative', display: 'flex', width: '100%',
+      boxShadow: 'inset 0 0 0 1px rgba(66,71,84,0.25)', borderRadius: 8, overflow: 'hidden',
+      background: '#191a1a' }}>
+      <button
+        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          background: 'transparent', color: '#e7e5e4', border: 'none',
+          padding: '6px 12px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+        <Plus size={12}/><span>New Request</span>
+      </button>
+      <div style={{ width: 1, background: 'rgba(66,71,84,0.3)' }}/>
+      <button onClick={() => setOpen(v => !v)}
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: open ? '#252626' : 'transparent', color: '#acabaa', border: 'none',
+          padding: '0 8px', cursor: 'pointer' }}>
+        <ChevronDown size={12}/>
+      </button>
+      {open && (
+        <>
+          <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }}/>
+          <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 4,
+            width: 200, background: '#0e0e0e',
+            boxShadow: '0 0 0 1px rgba(66,71,84,0.4), 0 12px 28px rgba(0,0,0,0.6)',
+            borderRadius: 10, padding: 4, zIndex: 50 }}>
+            {items.map(it => (
+              <button key={it.label} onClick={() => setOpen(false)}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+                  padding: '7px 8px', background: 'transparent', border: 'none',
+                  borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
+                <span style={{ color: it.color, display: 'flex' }}>{it.icon}</span>
+                <span style={{ flex: 1, fontSize: 12, color: '#e7e5e4' }}>{it.label}</span>
+                {it.hint && (
+                  <span style={{ fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 10, color: '#767575' }}>{it.hint}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function Sidebar({ activeFile, activeDoc, setActive }) {
+  return (
+    <div style={sbStyles.root}>
+      <div style={sbStyles.header}>
+        <CollectionSwitcher/>
+      </div>
+      <div style={{ margin: '6px 12px 0', height: 1, boxShadow: 'inset 0 -1px 0 rgba(66,71,84,0.25)' }}/>
+      <div style={{ padding: '8px 12px' }}>
+        <NewItemMenu/>
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        <UnifiedTree activeFile={activeFile} activeDoc={activeDoc} setActive={setActive}/>
+      </div>
+      <div style={sbStyles.footer}>
+        <EnvPill/>
+        <button style={sbStyles.iconBtn} title="Settings"><Settings size={14}/></button>
+      </div>
+    </div>
+  );
+}
+
+// ============= REQUEST EDITOR =============
+const TABS = ['Headers', 'Body', 'Auth', 'Scripts', 'Vars', 'Params'];
+const METHOD_TEXT = { GET: '#4ae176', POST: '#e6c188', PUT: '#dbc3a1', PATCH: '#ffcdb3', DELETE: '#f97758' };
+
+const SAMPLE_REQUESTS = {
+  'health.ivk': { method: 'GET', url: 'https://httpbin.org/get', body: '# Health Check\n# Simple GET to verify the API is running' },
+  'auth/login.ivk': { method: 'POST', url: '{{baseUrl}}/auth/login', body: '{\n  "jsonrpc": "2.0",\n  "method": "Auth.login",\n  "params": {\n    "phone": "{{phone}}"\n  }\n}' },
+  'auth/get-me.ivk': { method: 'POST', url: '{{baseUrl}}/auth/me', body: '{\n  "jsonrpc": "2.0",\n  "method": "Auth.getMe",\n  "params": {}\n}' },
+  'users/list.ivk': { method: 'GET', url: '{{baseUrl}}/users?page=1&size=20', body: '# Paginated user list' },
+  'users/create.ivk': { method: 'POST', url: '{{baseUrl}}/users', body: '{\n  "name": "{{userName}}",\n  "email": "{{userEmail}}",\n  "role": "user"\n}' },
+  'users/update.ivk': { method: 'PUT', url: '{{baseUrl}}/users/{{userId}}', body: '{\n  "name": "{{userName}}"\n}' },
+  'users/delete.ivk': { method: 'DELETE', url: '{{baseUrl}}/users/{{userId}}', body: '' },
+};
+
+function RequestEditor({ filePath }) {
+  const [method, setMethod] = React.useState('POST');
+  const [url, setUrl] = React.useState('{{baseUrl}}/auth/login');
+  const [tab, setTab] = React.useState('Body');
+  const [loading, setLoading] = React.useState(false);
+  const [result, setResult] = React.useState(null);
+
+  React.useEffect(() => {
+    const file = SAMPLE_REQUESTS[filePath];
+    if (file) { setMethod(file.method); setUrl(file.url); setResult(null); }
+  }, [filePath]);
+
+  const send = () => {
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      setResult({ time: 287, size: '1.4 KB',
+        body: JSON.stringify({ id: 'u_9f3a21', phone: '+1 415 555 0133', role: 'user', createdAt: '2026-04-18T10:32:14Z' }, null, 2) });
+    }, 600);
+  };
+
+  const file = SAMPLE_REQUESTS[filePath] || SAMPLE_REQUESTS['auth/login.ivk'];
+
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 12, boxShadow: 'inset 0 -1px 0 rgba(66,71,84,0.25)' }}>
+        <select value={method} onChange={e => setMethod(e.target.value)}
+          style={{ background: '#191a1a', color: METHOD_TEXT[method] || '#e7e5e4',
+            fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 500,
+            padding: '8px 10px', borderRadius: 8, border: '1px solid #484848',
+            minWidth: 88, textAlign: 'center', cursor: 'pointer' }}>
+          {['GET','POST','PUT','PATCH','DELETE'].map(m => <option key={m} value={m}>{m}</option>)}
+        </select>
+        <input value={url} onChange={e => setUrl(e.target.value)}
+          placeholder="Enter URL..."
+          onKeyDown={e => e.key === 'Enter' && !loading && send()}
+          style={{ flex: 1, background: '#191a1a', color: '#e7e5e4',
+            fontFamily: "'JetBrains Mono', monospace", fontSize: 13,
+            padding: '8px 12px', borderRadius: 8, border: '1px solid #484848', outline: 'none' }}/>
+        <button onClick={send} disabled={loading}
+          style={{ display: 'flex', alignItems: 'center', gap: 6,
+            background: loading ? 'rgba(230,193,136,0.5)' : '#e6c188', color: '#543c0e',
+            fontSize: 12, fontWeight: 500, padding: '8px 16px', borderRadius: 8,
+            border: 'none', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+          <Send size={14}/>{loading ? '...' : 'Send'}
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', padding: '0 12px', boxShadow: 'inset 0 -1px 0 rgba(66,71,84,0.25)' }}>
+        {TABS.map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            style={{ padding: '8px 12px', fontSize: 12, fontWeight: 500,
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              position: 'relative', color: tab === t ? '#e6c188' : '#acabaa', fontFamily: 'inherit' }}>
+            {t}
+            {tab === t && <div style={{ position: 'absolute', bottom: 0, left: 12, right: 12, height: 2, borderRadius: 9999, background: '#e6c188' }}/>}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        {tab === 'Body' && (
+          <pre style={{ padding: 16, fontFamily: "'JetBrains Mono', monospace", fontSize: 12,
+            color: '#acabaa', lineHeight: 1.7, margin: 0 }}>{file.body}</pre>
+        )}
+        {tab !== 'Body' && (
+          <div style={{ padding: 16, color: '#767575', fontSize: 12 }}>
+            {tab} tab — edit {tab.toLowerCase()} here.
+          </div>
+        )}
+      </div>
+
+      {!result && !loading && (
+        <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: '#767575', fontSize: 12, boxShadow: 'inset 0 1px 0 rgba(66,71,84,0.25)' }}>
+          Click Send to execute the request
+        </div>
+      )}
+      {loading && (
+        <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: '#acabaa', fontSize: 12, boxShadow: 'inset 0 1px 0 rgba(66,71,84,0.25)' }}>
+          Sending...
+        </div>
+      )}
+      {result && !loading && (
+        <div style={{ height: 220, display: 'flex', flexDirection: 'column', boxShadow: 'inset 0 1px 0 rgba(66,71,84,0.25)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px',
+            background: '#0e0e0e', boxShadow: 'inset 0 -1px 0 rgba(66,71,84,0.25)' }}>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 500,
+              padding: '2px 7px', borderRadius: 4,
+              background: 'rgba(74,225,118,0.15)', color: '#4ae176' }}>200</span>
+            <span style={{ fontSize: 12, color: '#acabaa' }}>{result.time}ms</span>
+            <span style={{ fontSize: 12, color: '#acabaa' }}>{result.size}</span>
+            <span style={{ fontSize: 12, fontWeight: 500, color: '#4ae176' }}>2/2 passed</span>
+          </div>
+          <pre style={{ flex: 1, padding: 12, fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 12, color: '#e7e5e4', margin: 0, overflow: 'auto', lineHeight: 1.7 }}>{result.body}</pre>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============= IVK WIDGET + DOC VIEW =============
+function IvkWidget({ method = 'POST', url = '{{baseUrl}}/auth/login', name = 'Login', onOpen }) {
+  const [ran, setRan] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+  const run = () => { setLoading(true); setTimeout(() => { setLoading(false); setRan(true); }, 500); };
+  return (
+    <div style={{ margin: '16px 0', background: '#131313', borderRadius: 10,
+      boxShadow: 'inset 0 0 0 1px rgba(66,71,84,0.25)', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px' }}>
+        <MethodBadge method={method}/>
+        <span style={{ flex: 1, fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: '#acabaa' }}>
+          <span style={{ color: '#767575' }}>{'{{'}</span>
+          <span style={{ color: '#dbc3a1' }}>baseUrl</span>
+          <span style={{ color: '#767575' }}>{'}}'}</span>
+          {url.replace('{{baseUrl}}', '')}
+        </span>
+        <span style={{ fontSize: 11, color: '#767575', fontWeight: 500 }}>{name}</span>
+        <button onClick={run} disabled={loading}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6,
+            background: '#e6c188', color: '#543c0e', fontSize: 11, fontWeight: 500,
+            padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+          <Play size={12}/>{loading ? '...' : 'Run'}
+        </button>
+        <button onClick={onOpen}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6,
+            background: 'transparent', color: '#acabaa', fontSize: 11, fontWeight: 500,
+            padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+          <ExternalLink size={12}/>Open
+        </button>
+      </div>
+      {ran && (
+        <div style={{ boxShadow: 'inset 0 1px 0 rgba(66,71,84,0.25)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px' }}>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 500, padding: '2px 7px', borderRadius: 4, background: 'rgba(74,225,118,0.15)', color: '#4ae176' }}>200</span>
+            <span style={{ fontSize: 11, color: '#acabaa' }}>287ms</span>
+            <span style={{ fontSize: 11, color: '#acabaa' }}>1.4 KB</span>
+            <span style={{ fontSize: 11, fontWeight: 500, color: '#4ae176' }}>2/2 ✓</span>
+          </div>
+          <pre style={{ margin: '0 16px 16px', padding: 12, background: '#000',
+            fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: '#acabaa',
+            borderRadius: 6, overflow: 'auto' }}>{`{\n  "id": "u_9f3a21",\n  "token": "eyJhbGci..."\n}`}</pre>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DocView({ setActive }) {
+  return (
+    <div style={{ height: '100%', overflow: 'auto' }}>
+      <div style={{ maxWidth: 768, margin: '0 auto', padding: '32px 24px', color: '#e7e5e4', lineHeight: 1.75 }}>
+        <h1 style={{ fontFamily: "'Manrope'", fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', margin: '0 0 12px' }}>Getting Started</h1>
+        <p style={{ color: '#acabaa', fontSize: 14, margin: '12px 0' }}>
+          Welcome to the Invoker App — a Bruno-like API client for the web.
+        </p>
+        <h2 style={{ fontFamily: "'Manrope'", fontSize: 22, fontWeight: 600, margin: '28px 0 8px', paddingBottom: 6, borderBottom: '1px solid #484848' }}>Health check</h2>
+        <p style={{ color: '#acabaa', fontSize: 14 }}>The simplest request — just a GET to verify connectivity:</p>
+        <IvkWidget method="GET" url="https://httpbin.org/get" name="Health Check"
+                   onOpen={() => setActive({ file: 'health.ivk' })}/>
+        <h2 style={{ fontFamily: "'Manrope'", fontSize: 22, fontWeight: 600, margin: '28px 0 8px', paddingBottom: 6, borderBottom: '1px solid #484848' }}>Authentication</h2>
+        <h3 style={{ fontFamily: "'Manrope'", fontSize: 18, fontWeight: 600, margin: '20px 0 8px' }}>Step 1: Login</h3>
+        <p style={{ color: '#acabaa', fontSize: 14 }}>
+          Send credentials to get a token. The post-script saves the token to your environment:
+        </p>
+        <IvkWidget method="POST" name="Login" onOpen={() => setActive({ file: 'auth/login.ivk' })}/>
+        <h3 style={{ fontFamily: "'Manrope'", fontSize: 18, fontWeight: 600, margin: '20px 0 8px' }}>Step 2: Use the token</h3>
+        <p style={{ color: '#acabaa', fontSize: 14 }}>
+          Now use the saved token — notice the <code style={{ background: '#191a1a', padding: '1px 6px', borderRadius: 4, fontFamily: "'JetBrains Mono'", fontSize: 12, color: '#dbc3a1' }}>@auth bearer {'{{token}}'}</code> directive:
+        </p>
+        <IvkWidget method="POST" name="Get Me" onOpen={() => setActive({ file: 'auth/get-me.ivk' })}/>
+      </div>
+    </div>
+  );
+}
+
+// ============= WELCOME =============
+function Welcome() {
+  const cards = [
+    { I: Send,  label: 'Send Request',       kbd: 'Cmd + Enter',     color: '#e6c188' },
+    { I: Globe, label: 'Switch Environment', kbd: 'Cmd + E',         color: '#ffcdb3' },
+    { I: Code2, label: 'Format JSON',        kbd: 'Cmd + Shift + F', color: '#dbc3a1' },
+  ];
+  return (
+    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ textAlign: 'center', maxWidth: 400 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+          <div style={{ width: 64, height: 64, borderRadius: 12, background: 'rgba(230,193,136,0.1)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Zap size={32} style={{ color: '#e6c188' }}/>
+          </div>
+        </div>
+        <h2 style={{ fontFamily: "'Manrope'", fontSize: 20, fontWeight: 600, color: '#e7e5e4', margin: '0 0 8px' }}>
+          Welcome to Invoker
+        </h2>
+        <p style={{ fontSize: 13, color: '#acabaa', margin: '0 0 4px' }}>
+          Select a request from the sidebar to get started.
+        </p>
+        <p style={{ fontSize: 11, color: '#767575', margin: '0 0 24px' }}>(sample data)</p>
+        <div style={{ display: 'grid', gap: 10, textAlign: 'left' }}>
+          {cards.map(({ I, label, kbd, color }) => (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, borderRadius: 8,
+              background: '#0e0e0e', boxShadow: 'inset 0 0 0 1px rgba(66,71,84,0.25)' }}>
+              <I size={16} style={{ color, flexShrink: 0 }}/>
+              <div>
+                <div style={{ fontWeight: 500, color: '#e7e5e4', fontSize: 12 }}>{label}</div>
+                <div style={{ color: '#767575', fontSize: 11, fontFamily: "'JetBrains Mono'" }}>{kbd}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============= APP =============
+function App() {
+  const [active, setActive] = React.useState({ file: null, doc: null });
+  const set = (v) => setActive({ file: v.file || null, doc: v.doc || null });
+  return (
+    <div data-screen-label="01 Invoker App" style={{
+      height: '100vh', display: 'flex', background: '#000', color: '#e7e5e4',
+      overflow: 'hidden', fontFamily: "'Inter', system-ui, sans-serif" }}>
+      <div style={{ padding: 12, flexShrink: 0, width: 260 }}>
+        <Sidebar activeFile={active.file} activeDoc={active.doc} setActive={set}/>
+      </div>
+      <div style={{ flex: 1, overflow: 'hidden' }}>
+        {active.doc ? <DocView setActive={set}/>
+         : active.file ? <RequestEditor filePath={active.file}/>
+         : <Welcome/>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

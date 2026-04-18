@@ -1,0 +1,19 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css"><style>
+.row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.sw { padding: 14px 16px; border-radius: 10px; background: #0e0e0e; box-shadow: inset 0 0 0 1px rgba(66,71,84,0.25); }
+.bar { height: 24px; border-radius: 6px; margin-bottom: 8px; }
+.name { font-size: 11px; font-weight: 600; color: #e7e5e4; }
+.hex { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #767575; margin-top: 2px; }
+</style></head><body><div class="card">
+<div class="label-caps" style="margin-bottom:10px">Semantic · success / warning / info / error</div>
+<div class="row">
+  <div class="sw"><div class="bar" style="background:#4ae176"></div><div class="name">success</div><div class="hex">#4ae176</div></div>
+  <div class="sw"><div class="bar" style="background:#e6c188"></div><div class="name">warning</div><div class="hex">#e6c188</div></div>
+  <div class="sw"><div class="bar" style="background:#dbc3a1"></div><div class="name">info</div><div class="hex">#dbc3a1</div></div>
+</div>
+<div class="row" style="margin-top:10px">
+  <div class="sw"><div class="bar" style="background:#f97758"></div><div class="name">error</div><div class="hex">#f97758</div></div>
+  <div class="sw"><div class="bar" style="background:#dbc3a1"></div><div class="name">var-set</div><div class="hex">#dbc3a1</div></div>
+  <div class="sw"><div class="bar" style="background:#f97758"></div><div class="name">var-unset</div><div class="hex">#f97758</div></div>
+</div>
+</div></body></html>

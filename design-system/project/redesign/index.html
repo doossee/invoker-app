@@ -1,0 +1,2641 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Invoker — Redesign</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"/>
+  <style>
+    html, body { margin: 0; padding: 0; background: #000; font-family: 'Inter', system-ui, sans-serif; color: #e7e5e4; overflow: hidden; }
+    #root { height: 100vh; display: flex; }
+    * { box-sizing: border-box; }
+    button { font-family: inherit; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(66,71,84,0.25); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(66,71,84,0.45); }
+  </style>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" data-presets="react">
+// ================ INLINED ================
+var T;
+// Shared primitives for the Invoker redesign — tokens, icons, logo, chrome.
+
+const TOKENS = {
+  // Surfaces (Invoker Dark)
+  s0: '#000000',
+  s1: '#0a0a0a',   // app bg
+  s2: '#131313',   // sidebar
+  s3: '#191a1a',   // container
+  s4: '#1f2020',   // container-high
+  s5: '#252626',   // highest
+  // Text
+  fg1: '#e7e5e4',
+  fg2: '#acabaa',
+  fg3: '#767575',
+  fg4: '#484848',
+  // Accent
+  amber: '#e6c188',
+  amberDim: '#dbc3a1',
+  amberHot: '#ffcdb3',
+  red: '#f97758',
+  green: '#4ae176',
+  blue: '#60a5fa',
+  yellow: '#facc15',
+  // Ghost border token
+  stroke: 'rgba(66,71,84,0.28)',
+  strokeSoft: 'rgba(66,71,84,0.18)',
+  strokeHot: 'rgba(230,193,136,0.35)',
+};
+
+// -------- ICONS (lucide-style, hand-drawn minimal set) --------
+const Icon = ({ d, children, size = 14, stroke = 2, ...p }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+       fill="none" stroke="currentColor" strokeWidth={stroke}
+       strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, display: 'block' }} {...p}>
+    {d ? <path d={d}/> : children}
+  </svg>
+);
+const I = {
+  Plus:      (p) => <Icon {...p}><path d="M5 12h14"/><path d="M12 5v14"/></Icon>,
+  Minus:     (p) => <Icon {...p}><path d="M5 12h14"/></Icon>,
+  Send:      (p) => <Icon {...p}><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4Z"/></Icon>,
+  Play:      (p) => <Icon {...p}><polygon points="5 3 19 12 5 21 5 3"/></Icon>,
+  Settings:  (p) => <Icon {...p}><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v10M4.22 4.22l4.24 4.24m7.08 7.08l4.24 4.24M1 12h6m6 0h10M4.22 19.78l4.24-4.24m7.08-7.08l4.24-4.24"/></Icon>,
+  ChevDown:  (p) => <Icon {...p}><path d="m6 9 6 6 6-6"/></Icon>,
+  ChevRight: (p) => <Icon {...p}><path d="m9 18 6-6-6-6"/></Icon>,
+  ChevLeft:  (p) => <Icon {...p}><path d="m15 18-6-6 6-6"/></Icon>,
+  ChevsUpDown: (p) => <Icon {...p}><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></Icon>,
+  Folder:    (p) => <Icon {...p}><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2"/></Icon>,
+  FolderOpen:(p) => <Icon {...p}><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6A2 2 0 0 1 18.46 20H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></Icon>,
+  FolderPlus:(p) => <Icon {...p}><path d="M12 10v6"/><path d="M9 13h6"/><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2"/></Icon>,
+  File:      (p) => <Icon {...p}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></Icon>,
+  FilePlus:  (p) => <Icon {...p}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15h6"/></Icon>,
+  Book:      (p) => <Icon {...p}><path d="M4 4h6a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4z"/><path d="M22 4h-6a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h6z"/></Icon>,
+  Globe:     (p) => <Icon {...p}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></Icon>,
+  Check:     (p) => <Icon {...p}><polyline points="20 6 9 17 4 12"/></Icon>,
+  X:         (p) => <Icon {...p}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></Icon>,
+  Search:    (p) => <Icon {...p}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></Icon>,
+  Sliders:   (p) => <Icon {...p}><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></Icon>,
+  Keyboard:  (p) => <Icon {...p}><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01"/><path d="M10 8h.01"/><path d="M14 8h.01"/><path d="M18 8h.01"/><path d="M6 12h.01"/><path d="M18 12h.01"/><path d="M7 16h10"/></Icon>,
+  Database:  (p) => <Icon {...p}><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></Icon>,
+  Sparkle:   (p) => <Icon {...p}><path d="M12 3v18"/><path d="M3 12h18"/><path d="m5 5 14 14"/><path d="m19 5-14 14"/></Icon>,
+  Palette:   (p) => <Icon {...p}><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 22a10 10 0 1 1 10-10c0 4-4 4-5 2-1-1-3-1-3 2 0 2-1 4-2 6"/></Icon>,
+  User:      (p) => <Icon {...p}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></Icon>,
+  Clock:     (p) => <Icon {...p}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></Icon>,
+  ArrowRight:(p) => <Icon {...p}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></Icon>,
+  Copy:      (p) => <Icon {...p}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></Icon>,
+  Download:  (p) => <Icon {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></Icon>,
+  Upload:    (p) => <Icon {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></Icon>,
+  External:  (p) => <Icon {...p}><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></Icon>,
+  Terminal:  (p) => <Icon {...p}><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></Icon>,
+  Zap:       (p) => <Icon {...p}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></Icon>,
+  Star:      (p) => <Icon {...p}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></Icon>,
+  Circle:    (p) => <Icon {...p}><circle cx="12" cy="12" r="10"/></Icon>,
+  Dot:       (p) => <Icon {...p}><circle cx="12" cy="12" r="3" fill="currentColor"/></Icon>,
+  MoreH:     (p) => <Icon {...p}><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="19" cy="12" r="1" fill="currentColor"/><circle cx="5" cy="12" r="1" fill="currentColor"/></Icon>,
+  Cmd:       (p) => <Icon {...p}><path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/></Icon>,
+  Layers:    (p) => <Icon {...p}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></Icon>,
+  Link:      (p) => <Icon {...p}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></Icon>,
+  ExternalLink: (p) => <Icon {...p}><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></Icon>,
+  Edit:      (p) => <Icon {...p}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></Icon>,
+  Cookie:    (p) => <Icon {...p}><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/><path d="M8.5 8.5v.01"/><path d="M16 15.5v.01"/><path d="M12 12v.01"/><path d="M11 17v.01"/><path d="M7 14v.01"/></Icon>,
+  Table:     (p) => <Icon {...p}><path d="M3 3h18v18H3z"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></Icon>,
+  SplitH:    (p) => <Icon {...p}><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></Icon>,
+  SplitV:    (p) => <Icon {...p}><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="12" x2="21" y2="12"/></Icon>,
+};
+
+// -------- INVOKER MARK (the Call) --------
+function InvokerMark({ size = 16, color = TOKENS.amber }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 72 72" fill="none" style={{ flexShrink: 0, display: 'block' }}>
+      <path d="M 56 36 A 20 20 0 1 0 36 56" stroke={color} strokeWidth="10" strokeLinecap="round"/>
+      <circle cx="56" cy="56" r="6" fill={color}/>
+    </svg>
+  );
+}
+
+// -------- METHOD BADGE --------
+const METHOD_PALETTE = {
+  GET:    { c: '#4ae176', bg: 'rgba(74,225,118,0.14)' },
+  POST:   { c: '#e6c188', bg: 'rgba(230,193,136,0.15)' },
+  PUT:    { c: '#dbc3a1', bg: 'rgba(219,195,161,0.14)' },
+  PATCH:  { c: '#ffcdb3', bg: 'rgba(255,205,179,0.14)' },
+  DELETE: { c: '#f97758', bg: 'rgba(249,119,88,0.14)' },
+};
+function MethodBadge({ method, compact = false }) {
+  const s = METHOD_PALETTE[method] || { c: TOKENS.fg3, bg: 'rgba(118,117,117,0.14)' };
+  const label = method === 'DELETE' ? 'DEL' : method;
+  return (
+    <span style={{
+      fontFamily: "'JetBrains Mono', monospace",
+      fontSize: compact ? 9 : 10, fontWeight: 700,
+      letterSpacing: '0.08em', padding: compact ? '1px 4px' : '2px 6px',
+      borderRadius: 3, color: s.c, background: s.bg,
+      minWidth: compact ? 26 : 30, textAlign: 'center', flexShrink: 0,
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    }}>{label}</span>
+  );
+}
+
+// -------- KBD --------
+function Kbd({ children }) {
+  return (
+    <span style={{
+      fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 500,
+      padding: '2px 5px', borderRadius: 4, color: TOKENS.fg2,
+      background: TOKENS.s3, boxShadow: `inset 0 0 0 1px ${TOKENS.stroke}`,
+      minWidth: 18, textAlign: 'center', display: 'inline-flex',
+      alignItems: 'center', justifyContent: 'center', lineHeight: 1,
+    }}>{children}</span>
+  );
+}
+
+// Shared button styles referenced across screens.
+const primaryBtn = {
+  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+  gap: 6, padding: '6px 12px', borderRadius: 8,
+  background: TOKENS.amber, color: '#0a0a0a',
+  border: 'none', fontFamily: 'inherit', fontSize: 12, fontWeight: 600,
+  cursor: 'pointer',
+};
+
+const secondaryBtn = {
+  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+  gap: 6, padding: '6px 12px', borderRadius: 8,
+  background: TOKENS.s3, color: TOKENS.fg1,
+  border: 'none', boxShadow: `inset 0 0 0 1px ${TOKENS.stroke}`,
+  fontFamily: 'inherit', fontSize: 12, fontWeight: 500,
+  cursor: 'pointer',
+};
+
+// Expose
+
+// Expose
+
+T = TOKENS;
+
+
+// Main app shell — primary redesign.
+//
+// This is THE product UI. Everything (request editing, response viewing,
+// folder README rendering, running inline .ivk blocks in a README) lives
+// in this shell. The folder README is a TAB TYPE — same shell, same sidebar.
+//
+// Changes this revision:
+// - Tab kind: .ivk (request editor) vs folder (renders README inline)
+// - Response tabs are now DIFFERENT from request tabs (Body/Headers/Cookies/Tests/Timeline/Console)
+// - Response Body has view-mode toggle: Pretty | Raw | Table (JSON array → table)
+// - Split orientation toggle is more prominent (icon changes to reflect state)
+// - Inline .ivk blocks inside a rendered README have [Run] + [Open] buttons
+
+
+function MainShellPrimary() {
+  const [activeTab, setActiveTab] = React.useState(0);
+  const [split, setSplit] = React.useState('horizontal'); // 'horizontal' | 'vertical'
+  const [editorTab, setEditorTab] = React.useState('Body');
+  const [bodyType, setBodyType] = React.useState('json');
+  const [respTab, setRespTab] = React.useState('Body');
+  const [respView, setRespView] = React.useState('pretty'); // pretty | raw | table
+
+  // Tab kinds: 'ivk' (request), 'folder' (README rendering)
+  const tabs = [
+    { kind: 'ivk',    path: 'auth/login.ivk', name: 'login',  method: 'POST', dirty: true },
+    { kind: 'folder', path: 'auth',           name: 'auth',   hasReadme: true },
+    { kind: 'ivk',    path: 'users/list.ivk', name: 'list',   method: 'GET',  dirty: false },
+  ];
+  const active = tabs[activeTab];
+
+  return (
+    <div style={{ height: '100%', display: 'flex', gap: 12, padding: 12,
+      background: T.s1, color: T.fg1, fontFamily: 'Inter, system-ui, sans-serif' }}>
+
+      {/* ============ SIDEBAR ============ */}
+      <ShellSidebar activePath={active?.path}/>
+
+      {/* ============ MAIN ============ */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, gap: 10 }}>
+
+        {/* Editor tabs row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, height: 34 }}>
+          <div style={{ display: 'flex', gap: 2, flex: 1, minWidth: 0, overflow: 'hidden' }}>
+            {tabs.map((t, i) => (
+              <EditorTab key={t.path} tab={t} active={i === activeTab}
+                         onSelect={() => setActiveTab(i)}/>
+            ))}
+            <button style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 28, height: 28, background: 'transparent', border: 'none',
+              borderRadius: 6, color: T.fg3, cursor: 'pointer', marginLeft: 2,
+            }} title="New tab">
+              <I.Plus size={14}/>
+            </button>
+          </div>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {active?.kind === 'ivk' && (
+              <SplitToggle value={split} onChange={setSplit}/>
+            )}
+            <IconBtn tip="Command palette (⌘K)"><I.Search size={14}/></IconBtn>
+            <IconBtn tip="History"><I.Clock size={14}/></IconBtn>
+          </div>
+        </div>
+
+        {active?.kind === 'ivk'    && <IvkTabBody active={active} split={split}
+          editorTab={editorTab} setEditorTab={setEditorTab}
+          bodyType={bodyType} setBodyType={setBodyType}
+          respTab={respTab} setRespTab={setRespTab}
+          respView={respView} setRespView={setRespView}/>}
+        {active?.kind === 'folder' && <FolderTabBody active={active} onOpenRequest={(p) => {
+          // In the real app this would add the .ivk as a new tab.
+          const i = tabs.findIndex(t => t.path === p);
+          if (i >= 0) setActiveTab(i);
+        }}/>}
+      </div>
+    </div>
+  );
+}
+
+// =========================================================================
+// SPLIT TOGGLE
+// =========================================================================
+function SplitToggle({ value, onChange }) {
+  return (
+    <div style={{
+      display: 'flex', gap: 0, background: T.s3, borderRadius: 6,
+      boxShadow: `inset 0 0 0 1px ${T.strokeSoft}`, overflow: 'hidden',
+    }}>
+      <button onClick={() => onChange('horizontal')} title="Side by side"
+        style={splitBtn(value === 'horizontal')}>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <rect x="1" y="2" width="5" height="10" rx="1" stroke="currentColor" strokeWidth="1.2"/>
+          <rect x="8" y="2" width="5" height="10" rx="1" stroke="currentColor" strokeWidth="1.2"/>
+        </svg>
+      </button>
+      <button onClick={() => onChange('vertical')} title="Stacked"
+        style={splitBtn(value === 'vertical')}>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <rect x="2" y="1" width="10" height="5" rx="1" stroke="currentColor" strokeWidth="1.2"/>
+          <rect x="2" y="8" width="10" height="5" rx="1" stroke="currentColor" strokeWidth="1.2"/>
+        </svg>
+      </button>
+    </div>
+  );
+}
+function splitBtn(active) {
+  return {
+    width: 28, height: 28, border: 'none', background: active ? T.s5 : 'transparent',
+    color: active ? T.amber : T.fg3, cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+  };
+}
+
+// =========================================================================
+// .ivk TAB BODY — request editor + response
+// =========================================================================
+function IvkTabBody({ active, split, editorTab, setEditorTab, bodyType, setBodyType,
+                     respTab, setRespTab, respView, setRespView }) {
+  return (
+    <>
+      {/* Breadcrumb + URL bar */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <Breadcrumb parts={['my-collection', ...active.path.split('/')]}/>
+        <UrlCapsule method={active.method} url={`{{baseUrl}}/${active.path.replace('.ivk','')}`}/>
+      </div>
+
+      {/* Editor + Response split */}
+      <div style={{
+        flex: 1, display: 'flex', minHeight: 0,
+        flexDirection: split === 'horizontal' ? 'row' : 'column', gap: 10,
+      }}>
+        <Panel style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0 }}>
+          <TabBar tabs={['Body','Params','Headers','Auth','Scripts','Vars']}
+                  active={editorTab} onChange={setEditorTab} right={
+                    <div style={{ display: 'flex', gap: 6, paddingRight: 8 }}>
+                      <BodyTypePill value={bodyType} onChange={setBodyType}/>
+                    </div>
+                  }/>
+          <BodyEditor/>
+        </Panel>
+
+        <Panel style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0 }}>
+          <TabBar tabs={['Body','Headers','Cookies','Tests','Timeline','Console']}
+                  active={respTab} onChange={setRespTab}
+                  right={<ResponseMeta/>}/>
+          {/* Body view toggle (Pretty / Raw / Table) — only on Body tab */}
+          {respTab === 'Body' && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px',
+              borderBottom: `1px solid ${T.strokeSoft}`, background: 'transparent',
+            }}>
+              <ViewModePill value={respView} onChange={setRespView}/>
+              <span style={{ flex: 1 }}/>
+              <span style={{ fontSize: 10, color: T.fg3, fontFamily: "'JetBrains Mono', monospace" }}>
+                application/json
+              </span>
+              <IconBtn tip="Copy"><I.Copy size={12}/></IconBtn>
+              <IconBtn tip="Search"><I.Search size={12}/></IconBtn>
+            </div>
+          )}
+          {respTab === 'Body' && respView === 'table' && <ResponseTable/>}
+          {respTab === 'Body' && respView !== 'table' && <ResponseBody raw={respView === 'raw'}/>}
+          {respTab === 'Headers'  && <ResponseHeaders/>}
+          {respTab === 'Cookies'  && <ResponseCookies/>}
+          {respTab === 'Tests'    && <ResponseTests/>}
+          {respTab === 'Timeline' && <ResponseTimeline/>}
+          {respTab === 'Console'  && <ResponseConsole/>}
+        </Panel>
+      </div>
+    </>
+  );
+}
+
+function ViewModePill({ value, onChange }) {
+  const modes = [
+    { id: 'pretty', label: 'Pretty' },
+    { id: 'raw',    label: 'Raw' },
+    { id: 'table',  label: 'Table' },
+  ];
+  return (
+    <div style={{ display: 'flex', gap: 2, background: T.s3, borderRadius: 6,
+      boxShadow: `inset 0 0 0 1px ${T.strokeSoft}`, padding: 2 }}>
+      {modes.map(m => (
+        <button key={m.id} onClick={() => onChange(m.id)} style={{
+          padding: '3px 10px', border: 'none', borderRadius: 4,
+          background: value === m.id ? T.s5 : 'transparent',
+          color: value === m.id ? T.amber : T.fg3, cursor: 'pointer',
+          fontFamily: 'inherit', fontSize: 11, fontWeight: 500,
+        }}>{m.label}</button>
+      ))}
+    </div>
+  );
+}
+
+// =========================================================================
+// folder TAB BODY — README rendering inside the shell
+// =========================================================================
+function FolderTabBody({ active, onOpenRequest }) {
+  return (
+    <Panel style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0 }}>
+      {/* Tab-inside-tab: README is default; user can browse "Files" as a fallback list view */}
+      <TabBar tabs={['README.md','Files']} active="README.md" onChange={() => {}}
+              right={
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingRight: 10 }}>
+                  <span style={{
+                    fontSize: 9, color: T.fg3, fontFamily: "'JetBrains Mono', monospace",
+                    letterSpacing: '0.1em', textTransform: 'uppercase',
+                  }}>Folder docs</span>
+                  <IconBtn tip="Edit README"><I.Edit size={12}/></IconBtn>
+                  <IconBtn tip="Reveal in finder"><I.FolderOpen size={12}/></IconBtn>
+                </div>
+              }/>
+      <div style={{ flex: 1, overflow: 'auto', padding: '28px 40px 60px' }}>
+        <div style={{ maxWidth: 680, margin: '0 auto' }}>
+          <div style={{
+            fontFamily: "'JetBrains Mono', monospace", fontSize: 11,
+            color: T.fg3, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6,
+          }}>
+            <I.Folder size={11} style={{ color: T.yellow }}/>
+            <span>my-collection</span>
+            <span style={{ color: T.fg4 }}>/</span>
+            <span>{active.path}</span>
+            <span style={{ color: T.fg4 }}>/</span>
+            <span style={{ color: T.fg2, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <I.Book size={10}/>README.md
+            </span>
+          </div>
+          <h1 style={{
+            fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: 32,
+            letterSpacing: '-0.02em', color: T.fg1, margin: '0 0 8px', lineHeight: 1.1,
+          }}>Authentication</h1>
+          <p style={{ fontSize: 14, color: T.fg2, lineHeight: 1.55, margin: '0 0 24px' }}>
+            Login, logout, and identity endpoints. Every <MdInline>.ivk</MdInline> block below
+            is runnable inline, and <MdInline>Open</MdInline> pops it into the editor as a full tab.
+          </p>
+
+          <MdH2>Log in</MdH2>
+          <MdP>Exchanges a phone + code for a bearer token. Test script saves <MdInline>authToken</MdInline> to the env.</MdP>
+          <InlineIvk method="POST" url="{{baseUrl}}/auth/login"
+                     body={`{\n  "phone": "{{phone}}",\n  "code":  "{{code}}"\n}`}
+                     onOpen={() => onOpenRequest('auth/login.ivk')}/>
+
+          <MdH2>Who am I</MdH2>
+          <MdP>Verifies the current token. Returns 401 if missing or expired.</MdP>
+          <InlineIvk method="GET" url="{{baseUrl}}/auth/me"
+                     body={null}
+                     onOpen={() => onOpenRequest('auth/get-me.ivk')}/>
+
+          <MdH2>Log out</MdH2>
+          <MdP>Revokes the bearer token server-side and clears <MdInline>authToken</MdInline> locally.</MdP>
+          <InlineIvk method="POST" url="{{baseUrl}}/auth/logout"
+                     body={null}
+                     onOpen={() => onOpenRequest('auth/logout.ivk')}/>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+function MdH2({ children }) {
+  return (
+    <h2 style={{
+      fontFamily: 'Manrope, sans-serif', fontWeight: 600, fontSize: 19,
+      color: T.fg1, margin: '32px 0 8px', letterSpacing: '-0.01em',
+    }}>{children}</h2>
+  );
+}
+function MdP({ children }) {
+  return (
+    <p style={{ fontSize: 14, color: T.fg2, lineHeight: 1.55, margin: '0 0 14px' }}>{children}</p>
+  );
+}
+function MdInline({ children }) {
+  return (
+    <code style={{
+      fontFamily: "'JetBrains Mono', monospace", fontSize: 12.5,
+      background: T.s3, padding: '1px 6px', borderRadius: 4, color: T.amber,
+      boxShadow: `inset 0 0 0 1px ${T.strokeSoft}`,
+    }}>{children}</code>
+  );
+}
+
+function InlineIvk({ method, url, body, onOpen }) {
+  const [tab, setTab] = React.useState('Request');
+  const hasResponse = tab === 'Response';
+  return (
+    <div style={{
+      marginBottom: 18, borderRadius: 10, overflow: 'hidden',
+      background: T.s2, boxShadow: `inset 0 0 0 1px ${T.strokeSoft}`,
+    }}>
+      {/* Head: method + url + Run + Open */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
+        borderBottom: `1px solid ${T.strokeSoft}`,
+      }}>
+        <span style={{
+          fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700,
+          color: method === 'GET' ? T.green : T.amber, letterSpacing: '0.05em',
+          minWidth: 34,
+        }}>{method}</span>
+        <div style={{ flex: 1, fontFamily: "'JetBrains Mono', monospace", fontSize: 12,
+          color: T.fg1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <UrlWithVars text={url}/>
+        </div>
+        <button onClick={onOpen} title="Open as full tab" style={{
+          display: 'inline-flex', alignItems: 'center', gap: 5,
+          padding: '4px 9px', background: 'transparent', color: T.fg2,
+          border: 'none', borderRadius: 5, cursor: 'pointer',
+          fontFamily: 'inherit', fontSize: 11, fontWeight: 500,
+          boxShadow: `inset 0 0 0 1px ${T.strokeSoft}`,
+        }}>
+          <I.ExternalLink size={10}/> Open
+        </button>
+        <button style={{
+          display: 'inline-flex', alignItems: 'center', gap: 4,
+          padding: '4px 10px', background: T.amber, color: '#3a2807',
+          border: 'none', borderRadius: 5, cursor: 'pointer',
+          fontFamily: 'inherit', fontSize: 11, fontWeight: 600,
+        }}>
+          <I.Play size={9}/> Run
+        </button>
+      </div>
+
+      {/* Request/Response tabs */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 2,
+        padding: '4px 8px', borderBottom: `1px solid ${T.strokeSoft}`, background: T.s2 }}>
+        {['Request','Response'].map(t => (
+          <button key={t} onClick={() => setTab(t)} style={{
+            padding: '4px 10px', borderRadius: 4, border: 'none',
+            background: tab === t ? T.s4 : 'transparent',
+            color: tab === t ? T.fg1 : T.fg3, cursor: 'pointer',
+            fontFamily: 'inherit', fontSize: 11,
+          }}>{t}</button>
+        ))}
+      </div>
+
+      {/* Body */}
+      {!hasResponse && body && (
+        <pre style={{
+          margin: 0, padding: '12px 14px', fontSize: 12.5,
+          fontFamily: "'JetBrains Mono', monospace", color: T.fg1, lineHeight: 1.6,
+          background: 'transparent',
+        }}>{body.split(/(\{\{[^}]+\}\})/g).map((p, i) =>
+          p.startsWith('{{') ? (
+            <span key={i} style={{ color: T.amber, background: 'rgba(230,193,136,0.08)',
+              padding: '0 2px', borderRadius: 2 }}>{p}</span>
+          ) : <span key={i}>{p}</span>
+        )}</pre>
+      )}
+      {!hasResponse && !body && (
+        <div style={{ padding: '12px 14px', fontSize: 12, color: T.fg3, fontStyle: 'italic' }}>
+          No body
+        </div>
+      )}
+      {hasResponse && (
+        <div style={{ padding: '12px 14px', fontSize: 12, color: T.fg3, fontStyle: 'italic' }}>
+          Press Run to see the response.
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============ SIDEBAR ============
+function ShellSidebar({ activePath }) {
+  return (
+    <div style={{
+      width: 260, background: T.s2, borderRadius: 14,
+      boxShadow: `inset 0 0 0 1px ${T.stroke}`,
+      display: 'flex', flexDirection: 'column', overflow: 'hidden',
+    }}>
+      <div style={{ padding: '10px 10px 6px' }}>
+        <CollectionSwitcher/>
+      </div>
+      <div style={{ padding: '0 10px 8px' }}>
+        <SidebarSearch/>
+      </div>
+      <div style={{ margin: '0 10px', height: 1, background: T.strokeSoft }}/>
+      <div style={{ padding: '8px 10px' }}>
+        <NewItemSplit/>
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 4px' }}>
+        <Tree activePath={activePath}/>
+      </div>
+      <div style={{
+        padding: '8px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        boxShadow: `inset 0 1px 0 ${T.strokeSoft}`,
+      }}>
+        <EnvPill/>
+        <IconBtn tip="Settings"><I.Settings size={14}/></IconBtn>
+      </div>
+    </div>
+  );
+}
+
+function CollectionSwitcher() {
+  return (
+    <button style={{
+      display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+      padding: '6px 8px', background: 'transparent', border: 'none',
+      borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
+    }}>
+      <InvokerMark size={14}/>
+      <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: T.amber, lineHeight: 1.2 }}>my-collection</div>
+        <div style={{ fontSize: 10, color: T.fg3, marginTop: 1 }}>9 requests · 3 folders</div>
+      </div>
+      <I.ChevsUpDown size={11} style={{ color: T.fg3 }}/>
+    </button>
+  );
+}
+
+function SidebarSearch() {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px',
+      background: T.s3, borderRadius: 7,
+      boxShadow: `inset 0 0 0 1px ${T.strokeSoft}`,
+    }}>
+      <I.Search size={11} style={{ color: T.fg3 }}/>
+      <input placeholder="Search requests…" style={{
+        flex: 1, background: 'transparent', border: 'none', outline: 'none',
+        color: T.fg1, fontFamily: 'inherit', fontSize: 12,
+      }}/>
+      <Kbd>⌘K</Kbd>
+    </div>
+  );
+}
+
+function NewItemSplit() {
+  return (
+    <div style={{
+      display: 'flex', width: '100%', borderRadius: 8, overflow: 'hidden',
+      boxShadow: `inset 0 0 0 1px ${T.strokeSoft}`, background: T.s3,
+    }}>
+      <button style={{
+        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+        background: 'transparent', color: T.fg1, border: 'none',
+        padding: '6px 12px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+      }}>
+        <I.Plus size={12}/><span>New Request</span>
+      </button>
+      <div style={{ width: 1, background: T.strokeSoft }}/>
+      <button style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'transparent', color: T.fg2, border: 'none',
+        padding: '0 8px', cursor: 'pointer',
+      }}>
+        <I.ChevDown size={11}/>
+      </button>
+    </div>
+  );
+}
+
+const TREE_DATA = [
+  { type: 'doc',    name: 'Getting Started', path: 'getting-started.md' },
+  { type: 'folder', path: 'auth', name: 'auth', hasReadme: true, children: [
+    { type: 'ivk', name: 'login',  path: 'auth/login.ivk',  method: 'POST' },
+    { type: 'ivk', name: 'get-me', path: 'auth/get-me.ivk', method: 'GET' },
+    { type: 'ivk', name: 'logout', path: 'auth/logout.ivk', method: 'POST' },
+  ]},
+  { type: 'folder', path: 'users', name: 'users', hasReadme: true, children: [
+    { type: 'ivk', name: 'list',   path: 'users/list.ivk',   method: 'GET' },
+    { type: 'ivk', name: 'create', path: 'users/create.ivk', method: 'POST' },
+    { type: 'ivk', name: 'update', path: 'users/update.ivk', method: 'PUT' },
+    { type: 'ivk', name: 'delete', path: 'users/delete.ivk', method: 'DELETE' },
+  ]},
+  { type: 'ivk', name: 'health', path: 'health.ivk', method: 'GET' },
+];
+
+function Tree({ activePath }) {
+  return (
+    <div style={{ padding: '4px 0' }}>
+      {TREE_DATA.map((n, i) => <TreeNode key={i} node={n} depth={0} activePath={activePath}/>)}
+    </div>
+  );
+}
+function TreeNode({ node, depth, activePath }) {
+  const [open, setOpen] = React.useState(true);
+  const pad = 10 + depth * 14;
+  if (node.type === 'folder') {
+    const active = activePath === node.path;
+    return (
+      <>
+        <button style={{ ...rowStyle(pad, active), position: 'relative' }} onClick={() => setOpen(v => !v)}>
+          {active && <span style={{
+            position: 'absolute', left: 0, top: 4, bottom: 4, width: 2, borderRadius: 2, background: T.amber,
+          }}/>}
+          {open ? <I.ChevDown size={10} style={{ color: T.fg3 }}/> : <I.ChevRight size={10} style={{ color: T.fg3 }}/>}
+          {open ? <I.FolderOpen size={12} style={{ color: T.yellow }}/> : <I.Folder size={12} style={{ color: T.yellow }}/>}
+          <span style={{ flex: 1, textAlign: 'left', fontWeight: 500 }}>{node.name}</span>
+          {node.hasReadme && <I.Book size={10} style={{ color: active ? T.amber : 'rgba(118,117,117,0.55)' }}/>}
+          <span style={{ fontSize: 10, color: 'rgba(118,117,117,0.5)' }}>{node.children.length}</span>
+        </button>
+        {open && node.children.map((c, i) => <TreeNode key={i} node={c} depth={depth + 1} activePath={activePath}/>)}
+      </>
+    );
+  }
+  const active = activePath === node.path;
+  return (
+    <button style={{ ...rowStyle(pad + 16, active), position: 'relative' }}>
+      {active && <span style={{
+        position: 'absolute', left: 0, top: 4, bottom: 4, width: 2, borderRadius: 2, background: T.amber,
+      }}/>}
+      {node.type === 'ivk'
+        ? <MethodBadge method={node.method} compact/>
+        : <I.File size={11} style={{ color: 'rgba(96,165,250,0.75)' }}/>}
+      <span style={{ flex: 1, textAlign: 'left' }}>{node.name}</span>
+    </button>
+  );
+}
+function rowStyle(pad, active) {
+  return {
+    width: '100%', display: 'flex', alignItems: 'center', gap: 6,
+    padding: `5px ${pad}px 5px ${pad}px`,
+    paddingLeft: pad, paddingRight: 10,
+    background: active ? T.s5 : 'transparent',
+    color: active ? T.amber : T.fg2,
+    fontSize: 12, border: 'none', cursor: 'pointer',
+    fontFamily: 'inherit', borderRadius: 0, transition: 'background .12s, color .12s',
+  };
+}
+
+function EnvPill() {
+  return (
+    <button style={{
+      display: 'flex', alignItems: 'center', gap: 6, padding: '4px 8px',
+      background: 'transparent', border: 'none', borderRadius: 6, cursor: 'pointer',
+      fontFamily: 'inherit',
+    }}>
+      <span style={{ width: 7, height: 7, borderRadius: 9999, background: T.green }}/>
+      <span style={{ fontSize: 11, color: T.fg2 }}>development</span>
+      <I.ChevDown size={10} style={{ color: T.fg3 }}/>
+    </button>
+  );
+}
+
+// ============ EDITOR TABS ============
+function EditorTab({ tab, active, onSelect }) {
+  return (
+    <div onClick={onSelect} style={{
+      display: 'flex', alignItems: 'center', gap: 7,
+      padding: '0 10px 0 10px', height: 28,
+      background: active ? T.s3 : 'transparent',
+      color: active ? T.fg1 : T.fg2,
+      borderRadius: 6, cursor: 'pointer', maxWidth: 180,
+      boxShadow: active ? `inset 0 0 0 1px ${T.stroke}` : 'none',
+    }}>
+      {tab.kind === 'folder'
+        ? <I.Book size={11} style={{ color: active ? T.amber : T.fg3, flexShrink: 0 }}/>
+        : <MethodBadge method={tab.method} compact/>}
+      <span style={{ fontSize: 12, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {tab.name}
+      </span>
+      {tab.dirty && <span style={{ width: 5, height: 5, borderRadius: 9999, background: T.amber, flexShrink: 0 }}/>}
+      <button onClick={(e) => e.stopPropagation()} style={{
+        width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'transparent', border: 'none', borderRadius: 3, color: T.fg3, cursor: 'pointer',
+        opacity: active ? 1 : 0.5,
+      }}><I.X size={10}/></button>
+    </div>
+  );
+}
+
+// ============ BREADCRUMB ============
+function Breadcrumb({ parts }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11,
+      color: T.fg3, fontFamily: "'JetBrains Mono', monospace" }}>
+      {parts.map((p, i) => (
+        <React.Fragment key={i}>
+          <span style={{ color: i === parts.length - 1 ? T.fg1 : T.fg3 }}>{p}</span>
+          {i < parts.length - 1 && <I.ChevRight size={10} style={{ color: T.fg4 }}/>}
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+// ============ URL CAPSULE ============
+function UrlCapsule({ method, url }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'stretch', height: 38,
+      background: T.s3, borderRadius: 10,
+      boxShadow: `inset 0 0 0 1px ${T.stroke}`,
+      overflow: 'hidden',
+    }}>
+      <button style={{
+        display: 'flex', alignItems: 'center', gap: 6, padding: '0 12px',
+        background: 'transparent', border: 'none', cursor: 'pointer',
+        fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 600,
+        color: method === 'GET' ? T.green : '#e6c188',
+        borderRight: `1px solid ${T.strokeSoft}`, minWidth: 84,
+      }}>
+        <span>{method}</span>
+        <I.ChevDown size={10} style={{ color: T.fg3 }}/>
+      </button>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 12px',
+        fontFamily: "'JetBrains Mono', monospace", fontSize: 13, minWidth: 0 }}>
+        <UrlWithVars text={url}/>
+      </div>
+      <button style={{
+        display: 'flex', alignItems: 'center', gap: 6, padding: '0 18px',
+        background: T.amber, color: '#3a2807', border: 'none', cursor: 'pointer',
+        fontFamily: 'inherit', fontSize: 13, fontWeight: 600,
+      }}>
+        <I.Send size={13}/><span>Send</span>
+      </button>
+    </div>
+  );
+}
+
+function UrlWithVars({ text }) {
+  const parts = text.split(/(\{\{[^}]+\}\})/g);
+  return (
+    <span style={{ color: T.fg1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      {parts.map((p, i) => {
+        if (p.startsWith('{{')) {
+          return <span key={i} style={{ color: T.amber, background: 'rgba(230,193,136,0.08)',
+            padding: '1px 3px', borderRadius: 3 }}>{p}</span>;
+        }
+        return <span key={i}>{p}</span>;
+      })}
+    </span>
+  );
+}
+
+// ============ TAB BAR ============
+function TabBar({ tabs, active, onChange, right }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center',
+      boxShadow: `inset 0 -1px 0 ${T.strokeSoft}`,
+      height: 34, flexShrink: 0,
+    }}>
+      <div style={{ display: 'flex', flex: 1, paddingLeft: 8 }}>
+        {tabs.map(t => (
+          <button key={t} onClick={() => onChange(t)} style={{
+            padding: '0 12px', height: 34, background: 'transparent', border: 'none',
+            cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 500,
+            color: active === t ? T.amber : T.fg2, position: 'relative',
+          }}>
+            {t}
+            {active === t && <span style={{
+              position: 'absolute', left: 10, right: 10, bottom: -1, height: 2,
+              background: T.amber, borderRadius: 2,
+            }}/>}
+          </button>
+        ))}
+      </div>
+      {right}
+    </div>
+  );
+}
+
+function BodyTypePill({ value, onChange }) {
+  const types = ['json','raw','form-data','binary','graphql'];
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10,
+      fontFamily: "'JetBrains Mono', monospace" }}>
+      {types.map(t => (
+        <button key={t} onClick={() => onChange(t)} style={{
+          padding: '3px 7px', borderRadius: 4,
+          background: value === t ? T.s5 : 'transparent',
+          color: value === t ? T.amber : T.fg3,
+          border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+          fontSize: 10, fontWeight: 500,
+        }}>{t}</button>
+      ))}
+    </div>
+  );
+}
+
+// ============ BODY EDITOR ============
+function BodyEditor() {
+  const lines = [
+    '{',
+    '  "jsonrpc": "2.0",',
+    '  "method": "Auth.login",',
+    '  "params": {',
+    '    "phone": "{{phone}}",',
+    '    "code":  "{{code}}"',
+    '  },',
+    '  "id": 1',
+    '}',
+  ];
+  return (
+    <div style={{ flex: 1, display: 'flex', fontFamily: "'JetBrains Mono', monospace",
+      fontSize: 13, overflow: 'auto', padding: '12px 0' }}>
+      <div style={{ padding: '0 12px', color: T.fg4, textAlign: 'right', userSelect: 'none', minWidth: 36 }}>
+        {lines.map((_, i) => <div key={i} style={{ lineHeight: 1.6 }}>{i + 1}</div>)}
+      </div>
+      <div style={{ flex: 1 }}>
+        {lines.map((l, i) => <BodyLine key={i} line={l}/>)}
+      </div>
+    </div>
+  );
+}
+
+function BodyLine({ line }) {
+  const processed = [];
+  const varRe = /(\{\{[^}]+\}\})/g;
+  let last = 0, m;
+  while ((m = varRe.exec(line)) !== null) {
+    if (m.index > last) processed.push({ t: 'code', v: line.slice(last, m.index) });
+    processed.push({ t: 'var', v: m[0] });
+    last = m.index + m[0].length;
+  }
+  if (last < line.length) processed.push({ t: 'code', v: line.slice(last) });
+
+  return (
+    <div style={{ lineHeight: 1.6, paddingRight: 16 }}>
+      {processed.map((p, k) => {
+        if (p.t === 'var') {
+          return <span key={k} style={{ color: T.amber, background: 'rgba(230,193,136,0.08)',
+            padding: '0 2px', borderRadius: 2 }}>{p.v}</span>;
+        }
+        return <CodeSpan key={k} text={p.v}/>;
+      })}
+    </div>
+  );
+}
+function CodeSpan({ text }) {
+  const out = [];
+  const re = /"[^"]*"|\b(true|false|null)\b|\b\d+\b|[{}[\],:]/g;
+  let last = 0, m, i = 0;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) out.push(<span key={i++}>{text.slice(last, m.index)}</span>);
+    const v = m[0];
+    let color = T.fg1;
+    if (v.startsWith('"')) color = '#a3d6a7';
+    else if (/^\d+$/.test(v)) color = '#60a5fa';
+    else if (v === 'true' || v === 'false' || v === 'null') color = T.amberDim;
+    else if ('{}[]'.includes(v)) color = T.fg2;
+    else if (v === ':') color = T.fg2;
+    else if (v === ',') color = T.fg3;
+    out.push(<span key={i++} style={{ color }}>{v}</span>);
+    last = m.index + v.length;
+  }
+  if (last < text.length) out.push(<span key={i++}>{text.slice(last)}</span>);
+  return <>{out}</>;
+}
+
+// ============ RESPONSE ============
+function ResponseMeta() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingRight: 12,
+      fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>
+      <span style={{
+        color: T.green, background: 'rgba(74,225,118,0.12)',
+        padding: '2px 7px', borderRadius: 4, fontWeight: 600,
+      }}>200 OK</span>
+      <span style={{ color: T.fg3 }}>287 ms</span>
+      <span style={{ color: T.fg3 }}>1.4 KB</span>
+    </div>
+  );
+}
+
+function ResponseBody({ raw }) {
+  const pretty = [
+    '{',
+    '  "result": {',
+    '    "id":        "u_9f3a21",',
+    '    "phone":     "+1 415 555 0133",',
+    '    "role":      "user",',
+    '    "createdAt": "2026-04-18T10:32:14Z"',
+    '  },',
+    '  "jsonrpc": "2.0",',
+    '  "id": 1',
+    '}',
+  ];
+  const rawStr = '{"result":{"id":"u_9f3a21","phone":"+1 415 555 0133","role":"user","createdAt":"2026-04-18T10:32:14Z"},"jsonrpc":"2.0","id":1}';
+  const lines = raw ? [rawStr] : pretty;
+  return (
+    <div style={{ flex: 1, display: 'flex', fontFamily: "'JetBrains Mono', monospace",
+      fontSize: 13, overflow: 'auto', padding: '12px 0' }}>
+      {!raw && <div style={{ padding: '0 12px', color: T.fg4, textAlign: 'right', userSelect: 'none', minWidth: 36 }}>
+        {lines.map((_, i) => <div key={i} style={{ lineHeight: 1.6 }}>{i + 1}</div>)}
+      </div>}
+      <div style={{ flex: 1, paddingLeft: raw ? 14 : 0, paddingRight: 14, wordBreak: raw ? 'break-all' : 'normal',
+        whiteSpace: raw ? 'pre-wrap' : 'normal' }}>
+        {raw ? <span style={{ color: T.fg1, lineHeight: 1.6 }}>{rawStr}</span>
+             : lines.map((l, i) => <BodyLine key={i} line={l}/>)}
+      </div>
+    </div>
+  );
+}
+
+function ResponseTable() {
+  // Pretend the response was an array of user rows.
+  const rows = [
+    { id: 'u_9f3a21', phone: '+1 415 555 0133', role: 'user',  createdAt: '2026-04-18T10:32:14Z' },
+    { id: 'u_7b2c11', phone: '+1 212 555 0147', role: 'admin', createdAt: '2026-04-16T09:04:00Z' },
+    { id: 'u_aa91f0', phone: '+44 20 7946 012', role: 'user',  createdAt: '2026-04-12T15:22:48Z' },
+    { id: 'u_3e8f22', phone: '+33 1 70 36 48 0', role: 'user', createdAt: '2026-04-02T08:11:07Z' },
+  ];
+  const cols = ['id','phone','role','createdAt'];
+  return (
+    <div style={{ flex: 1, overflow: 'auto' }}>
+      <table style={{
+        width: '100%', borderCollapse: 'collapse',
+        fontFamily: "'JetBrains Mono', monospace", fontSize: 12,
+      }}>
+        <thead>
+          <tr style={{ background: T.s3, color: T.fg3, letterSpacing: '0.04em' }}>
+            <th style={thStyle}>#</th>
+            {cols.map(c => <th key={c} style={thStyle}>{c}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={r.id} style={{ borderBottom: `1px solid ${T.strokeSoft}` }}>
+              <td style={{ ...tdStyle, color: T.fg4, width: 28 }}>{i}</td>
+              {cols.map(c => (
+                <td key={c} style={{ ...tdStyle,
+                  color: c === 'role' ? (r[c] === 'admin' ? T.amber : T.fg1) : T.fg1,
+                }}>
+                  {c === 'role' ? (
+                    <span style={{
+                      padding: '1px 7px', borderRadius: 3, fontSize: 10, fontWeight: 600,
+                      background: r[c] === 'admin' ? 'rgba(230,193,136,0.15)' : T.s3,
+                      color: r[c] === 'admin' ? T.amber : T.fg2,
+                    }}>{r[c]}</span>
+                  ) : r[c]}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div style={{ padding: '8px 14px', fontSize: 10, color: T.fg4,
+        fontFamily: "'JetBrains Mono', monospace",
+        borderTop: `1px solid ${T.strokeSoft}` }}>
+        {rows.length} rows · showing nested shape result[]
+      </div>
+    </div>
+  );
+}
+const thStyle = {
+  textAlign: 'left', padding: '8px 10px', fontSize: 10, fontWeight: 600,
+  textTransform: 'uppercase', borderBottom: `1px solid ${T.strokeSoft}`,
+};
+const tdStyle = {
+  padding: '7px 10px', verticalAlign: 'top',
+};
+
+function ResponseHeaders() {
+  const headers = [
+    ['content-type',     'application/json; charset=utf-8'],
+    ['content-length',   '1431'],
+    ['x-request-id',     'req_9f3a2181b7c0'],
+    ['cache-control',    'no-store'],
+    ['date',             'Wed, 18 Apr 2026 10:32:14 GMT'],
+    ['server',           'cloudflare'],
+    ['cf-ray',           '88b2f47a1c09-SJC'],
+  ];
+  return (
+    <div style={{ flex: 1, overflow: 'auto', padding: '4px 0',
+      fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>
+      {headers.map(([k, v], i) => (
+        <div key={i} style={{
+          display: 'grid', gridTemplateColumns: '220px 1fr', gap: 16,
+          padding: '6px 14px',
+          borderBottom: i < headers.length - 1 ? `1px solid ${T.strokeSoft}` : 'none',
+        }}>
+          <span style={{ color: T.fg3 }}>{k}</span>
+          <span style={{ color: T.fg1, wordBreak: 'break-all' }}>{v}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ResponseCookies() {
+  return (
+    <div style={{ flex: 1, padding: 24, color: T.fg3, fontSize: 12, textAlign: 'center',
+      display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div>
+        <I.Cookie size={24} style={{ color: T.fg4, marginBottom: 10 }}/>
+        <div style={{ fontSize: 13, color: T.fg2, marginBottom: 4 }}>No cookies set</div>
+        <div style={{ fontSize: 11 }}>This response did not set any cookies.</div>
+      </div>
+    </div>
+  );
+}
+
+function ResponseTests() {
+  const tests = [
+    { ok: true,  name: 'status === 200' },
+    { ok: true,  name: 'response.result.id exists' },
+    { ok: true,  name: 'authToken saved to env' },
+    { ok: false, name: 'response.result.role === "admin"', msg: 'expected "admin", got "user"' },
+  ];
+  const passed = tests.filter(t => t.ok).length;
+  return (
+    <div style={{ flex: 1, overflow: 'auto' }}>
+      <div style={{
+        padding: '8px 14px', fontSize: 11, color: T.fg3,
+        fontFamily: "'JetBrains Mono', monospace",
+        borderBottom: `1px solid ${T.strokeSoft}`,
+        display: 'flex', gap: 12,
+      }}>
+        <span style={{ color: T.green }}>✓ {passed} passed</span>
+        <span style={{ color: T.red }}>✗ {tests.length - passed} failed</span>
+      </div>
+      {tests.map((t, i) => (
+        <div key={i} style={{
+          display: 'flex', alignItems: 'flex-start', gap: 10,
+          padding: '8px 14px',
+          borderBottom: i < tests.length - 1 ? `1px solid ${T.strokeSoft}` : 'none',
+          fontFamily: "'JetBrains Mono', monospace", fontSize: 12,
+        }}>
+          <span style={{
+            width: 14, height: 14, borderRadius: 9999, marginTop: 1,
+            background: t.ok ? 'rgba(74,225,118,0.15)' : 'rgba(249,119,88,0.15)',
+            color: t.ok ? T.green : T.red,
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>
+            {t.ok ? <I.Check size={8}/> : <I.X size={8}/>}
+          </span>
+          <div style={{ flex: 1 }}>
+            <div style={{ color: t.ok ? T.fg1 : T.red }}>{t.name}</div>
+            {t.msg && <div style={{ color: T.fg3, fontSize: 11, marginTop: 2 }}>{t.msg}</div>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ResponseTimeline() {
+  const phases = [
+    { label: 'DNS lookup',     ms: 12, color: '#60a5fa' },
+    { label: 'TCP connect',    ms: 34, color: '#7dd3fc' },
+    { label: 'TLS handshake',  ms: 89, color: '#a78bfa' },
+    { label: 'Request sent',   ms: 2,  color: T.amber },
+    { label: 'Server waiting', ms: 118,color: T.amberDim },
+    { label: 'Content download', ms: 32, color: T.green },
+  ];
+  const total = phases.reduce((a, p) => a + p.ms, 0);
+  return (
+    <div style={{ flex: 1, padding: '16px 18px', overflow: 'auto',
+      fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>
+      <div style={{ color: T.fg3, marginBottom: 14 }}>Total {total} ms</div>
+      {phases.map((p, i) => (
+        <div key={i} style={{ marginBottom: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', color: T.fg2, marginBottom: 4 }}>
+            <span>{p.label}</span>
+            <span style={{ color: T.fg3 }}>{p.ms} ms</span>
+          </div>
+          <div style={{ height: 6, background: T.s3, borderRadius: 3, overflow: 'hidden' }}>
+            <div style={{
+              width: `${(p.ms / total) * 100}%`, height: '100%',
+              background: p.color, borderRadius: 3,
+            }}/>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ResponseConsole() {
+  const lines = [
+    { l: 'log',   t: '[pre] set vars.phone = "{{phone}}"' },
+    { l: 'log',   t: '[request] POST {{baseUrl}}/auth/login' },
+    { l: 'log',   t: '[response] 200 OK (287 ms, 1.4 KB)' },
+    { l: 'ok',    t: '[test] status === 200 ✓' },
+    { l: 'ok',    t: '[test] response.result.id exists ✓' },
+    { l: 'warn',  t: '[post] env.authToken is new — saved' },
+    { l: 'fail',  t: '[test] response.result.role === "admin" ✗' },
+  ];
+  const tagColor = (l) => l === 'ok' ? T.green : l === 'warn' ? T.amber : l === 'fail' ? T.red : T.fg3;
+  return (
+    <div style={{ flex: 1, overflow: 'auto', padding: '10px 14px',
+      fontFamily: "'JetBrains Mono', monospace", fontSize: 12, lineHeight: 1.7 }}>
+      {lines.map((ln, i) => (
+        <div key={i} style={{ color: ln.l === 'fail' ? T.red : T.fg1, display: 'flex', gap: 8 }}>
+          <span style={{ color: tagColor(ln.l), width: 42, flexShrink: 0 }}>{ln.l}</span>
+          <span>{ln.t}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ============ GENERIC ============
+function Panel({ style, children }) {
+  return (
+    <div style={{
+      background: T.s2, borderRadius: 12,
+      boxShadow: `inset 0 0 0 1px ${T.stroke}`, overflow: 'hidden',
+      ...style,
+    }}>{children}</div>
+  );
+}
+function IconBtn({ children, tip, onClick }) {
+  return (
+    <button onClick={onClick} title={tip} style={{
+      width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'transparent', border: 'none', borderRadius: 6,
+      color: T.fg2, cursor: 'pointer',
+    }}>{children}</button>
+  );
+}
+
+
+// Welcome / empty state — bento grid.
+// Shown when no collection is open, or from File → New Window.
+// Layout: hero + 4-tile bento + recent collections list.
+
+
+function WelcomePrimary() {
+  return (
+    <div style={{
+      height: '100%', overflow: 'auto', background: T.s1, color: T.fg1,
+      fontFamily: 'Inter, system-ui, sans-serif',
+    }}>
+      <div style={{ maxWidth: 1040, margin: '0 auto', padding: '48px 40px 64px' }}>
+
+        {/* ============ HERO ============ */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20, marginBottom: 44 }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: 14,
+            background: 'rgba(230,193,136,0.08)',
+            boxShadow: `inset 0 0 0 1px ${T.strokeHot}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <InvokerMark size={30}/>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{
+              fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: 34,
+              letterSpacing: '-0.02em', color: T.fg1, lineHeight: 1.1,
+            }}>
+              A git-native API workspace.
+            </div>
+            <div style={{ marginTop: 10, color: T.fg2, fontSize: 15, maxWidth: 520, lineHeight: 1.5 }}>
+              Requests live as plain <code style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: T.amber }}>.ivk</code> files
+              next to their code. Docs are <code style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: T.amber }}>README.md</code> in
+              folders. Publish as a static site — no server, no account.
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <GhostBtn><I.Book size={13}/>Docs</GhostBtn>
+            <PrimaryBtn><I.Plus size={13}/>New collection</PrimaryBtn>
+          </div>
+        </div>
+
+        {/* ============ BENTO ============ */}
+        <div style={{
+          display: 'grid', gap: 12,
+          gridTemplateColumns: 'repeat(6, 1fr)',
+          gridTemplateRows: 'repeat(2, minmax(140px, auto))',
+          marginBottom: 40,
+        }}>
+          {/* TILE 1 — Open collection — tall */}
+          <Tile style={{ gridColumn: 'span 3', gridRow: 'span 2', padding: 22,
+            background: 'linear-gradient(135deg, rgba(230,193,136,0.06), rgba(230,193,136,0) 60%)' }}>
+            <TileHeader icon={<I.FolderOpen size={14}/>} label="Open folder"/>
+            <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 600, fontSize: 22,
+              letterSpacing: '-0.01em', marginTop: 14, color: T.fg1, lineHeight: 1.2 }}>
+              Point Invoker at a folder of .ivk and .md files.
+            </div>
+            <div style={{ marginTop: 8, color: T.fg2, fontSize: 13, lineHeight: 1.5 }}>
+              Everything stays on your disk. No sign-in, no sync, no cloud.
+            </div>
+            <div style={{ marginTop: 22, display: 'flex', gap: 8 }}>
+              <PrimaryBtn><I.FolderOpen size={13}/>Choose folder…</PrimaryBtn>
+              <GhostBtn><I.Copy size={13}/>Clone from Git</GhostBtn>
+            </div>
+            <div style={{ flex: 1 }}/>
+            <div style={{ display: 'flex', gap: 8, marginTop: 24, flexWrap: 'wrap' }}>
+              <Chip icon={<I.File size={10}/>}>.ivk format</Chip>
+              <Chip icon={<I.Book size={10}/>}>README.md</Chip>
+              <Chip icon={<I.Link size={10}/>}>Git-native</Chip>
+            </div>
+          </Tile>
+
+          {/* TILE 2 — New request */}
+          <Tile style={{ gridColumn: 'span 3', gridRow: 'span 1', padding: 18 }}>
+            <TileHeader icon={<I.Send size={13}/>} label="New request"/>
+            <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 600, fontSize: 17,
+              marginTop: 8, color: T.fg1 }}>
+              Fire a request without a collection.
+            </div>
+            <div style={{ flex: 1 }}/>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 12 }}>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 0, height: 30, borderRadius: 8,
+                boxShadow: `inset 0 0 0 1px ${T.stroke}`, background: T.s3,
+                fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: T.fg2,
+                overflow: 'hidden', flex: 1, minWidth: 0,
+              }}>
+                <span style={{ padding: '0 10px', color: T.green, fontWeight: 700,
+                  borderRight: `1px solid ${T.strokeSoft}` }}>GET</span>
+                <span style={{ padding: '0 10px', opacity: 0.7 }}>https://…</span>
+              </div>
+              <PrimaryBtn><I.ArrowRight size={13}/></PrimaryBtn>
+            </div>
+          </Tile>
+
+          {/* TILE 3 — Recent */}
+          <Tile style={{ gridColumn: 'span 2', padding: 18 }}>
+            <TileHeader icon={<I.Clock size={13}/>} label="Recent"/>
+            <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {[
+                { n: 'OVI Internal', s: '460 reqs' },
+                { n: 'Stripe Playbook', s: '127 reqs' },
+                { n: 'Acme Webhooks',  s: '14 reqs' },
+              ].map(r => (
+                <button key={r.n} style={recentRowStyle}>
+                  <InvokerMark size={11} color={T.fg3}/>
+                  <span style={{ flex: 1, textAlign: 'left', fontSize: 12 }}>{r.n}</span>
+                  <span style={{ fontSize: 10, color: T.fg3 }}>{r.s}</span>
+                </button>
+              ))}
+            </div>
+          </Tile>
+
+          {/* TILE 4 — Command palette teaser */}
+          <Tile style={{ gridColumn: 'span 1', padding: 18, display: 'flex', flexDirection: 'column',
+            alignItems: 'flex-start' }}>
+            <TileHeader icon={<I.Terminal size={13}/>} label="Palette"/>
+            <div style={{ flex: 1 }}/>
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              <Kbd>⌘</Kbd><Kbd>K</Kbd>
+            </div>
+            <div style={{ marginTop: 8, fontSize: 11, color: T.fg2 }}>Do anything.</div>
+          </Tile>
+        </div>
+
+        {/* ============ SIGNAL LINE ============ */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20,
+        }}>
+          <div style={{ flex: 1, height: 1, background: T.strokeSoft }}/>
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10,
+            color: T.fg3, letterSpacing: '0.12em' }}>LEARN · 3 MIN</div>
+          <div style={{ flex: 1, height: 1, background: T.strokeSoft }}/>
+        </div>
+
+        {/* ============ LEARN GRID ============ */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+          <LearnCard n="01" title="The .ivk format"
+            body="Plain text. Git-friendly. Variables with double braces — {{baseUrl}}."/>
+          <LearnCard n="02" title="Folder = Docs"
+            body="Add README.md to any folder. Invoker shows it as documentation."/>
+          <LearnCard n="03" title="Publish to web"
+            body={<><code style={codeInline}>npm run invoker:build</code> ships a static site.</>}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =========================================================
+const recentRowStyle = {
+  display: 'flex', alignItems: 'center', gap: 8,
+  padding: '6px 8px', borderRadius: 6, border: 'none',
+  background: 'transparent', cursor: 'pointer', fontFamily: 'inherit',
+  color: T.fg1,
+};
+
+const codeInline = {
+  fontFamily: "'JetBrains Mono', monospace", fontSize: 12,
+  background: T.s3, padding: '1px 6px', borderRadius: 4, color: T.amber,
+  boxShadow: `inset 0 0 0 1px ${T.strokeSoft}`,
+};
+
+function Tile({ children, style }) {
+  return (
+    <div style={{
+      background: T.s2, borderRadius: 14, padding: 18,
+      boxShadow: `inset 0 0 0 1px ${T.stroke}`,
+      display: 'flex', flexDirection: 'column',
+      ...style,
+    }}>{children}</div>
+  );
+}
+
+function TileHeader({ icon, label }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 6,
+      fontFamily: "'JetBrains Mono', monospace", fontSize: 10,
+      color: T.fg3, letterSpacing: '0.1em', textTransform: 'uppercase',
+    }}>
+      <span style={{ color: T.amber, display: 'flex' }}>{icon}</span>
+      <span>{label}</span>
+    </div>
+  );
+}
+
+function PrimaryBtn({ children }) {
+  return (
+    <button style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+      padding: '6px 14px', background: T.amber, color: '#3a2807',
+      border: 'none', borderRadius: 8, cursor: 'pointer',
+      fontFamily: 'inherit', fontSize: 13, fontWeight: 600,
+    }}>{children}</button>
+  );
+}
+function GhostBtn({ children }) {
+  return (
+    <button style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+      padding: '6px 12px', background: T.s3, color: T.fg1,
+      border: 'none', borderRadius: 8, cursor: 'pointer',
+      fontFamily: 'inherit', fontSize: 13, fontWeight: 500,
+      boxShadow: `inset 0 0 0 1px ${T.stroke}`,
+    }}>{children}</button>
+  );
+}
+
+function Chip({ children, icon }) {
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      padding: '3px 9px', borderRadius: 9999, fontSize: 11,
+      color: T.fg2, background: T.s3,
+      boxShadow: `inset 0 0 0 1px ${T.strokeSoft}`,
+    }}>
+      <span style={{ color: T.fg3, display: 'flex' }}>{icon}</span>
+      {children}
+    </span>
+  );
+}
+
+function LearnCard({ n, title, body }) {
+  return (
+    <div style={{
+      background: T.s2, borderRadius: 12, padding: 16,
+      boxShadow: `inset 0 0 0 1px ${T.stroke}`,
+    }}>
+      <div style={{ fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 11, color: T.fg3, marginBottom: 8 }}>{n}</div>
+      <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 600,
+        fontSize: 15, color: T.fg1, marginBottom: 6 }}>{title}</div>
+      <div style={{ fontSize: 12, color: T.fg2, lineHeight: 1.5 }}>{body}</div>
+    </div>
+  );
+}
+
+
+// Modal-style screens: Settings, Env settings, Command Palette, First Run.
+// Each renders as a full-viewport scrim with the modal centered on top,
+// so the viewer understands these are overlays over the main shell.
+
+// =========================================================================
+// Shared modal chrome
+// =========================================================================
+
+function ModalFrame({ children, width = 860, height = 560, padded = true }) {
+  return (
+    <div style={{
+      position: 'relative', width: '100%', height: '100%',
+      background: 'radial-gradient(circle at 50% 40%, #0a0a0a 0%, #000 100%)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontFamily: 'Inter, system-ui, sans-serif', overflow: 'hidden',
+    }}>
+      {/* soft mock-shell behind */}
+      <div style={{
+        position: 'absolute', inset: 24, borderRadius: 14,
+        background: T.s1, opacity: 0.45,
+        boxShadow: `inset 0 0 0 1px ${T.strokeSoft}`,
+      }}/>
+      <div style={{
+        position: 'absolute', top: 40, left: 40, display: 'flex', gap: 6, opacity: 0.35,
+      }}>
+        <span style={{ width: 10, height: 10, borderRadius: 9999, background: '#333' }}/>
+        <span style={{ width: 10, height: 10, borderRadius: 9999, background: '#333' }}/>
+        <span style={{ width: 10, height: 10, borderRadius: 9999, background: '#333' }}/>
+      </div>
+      <div style={{
+        position: 'relative', width, height, maxWidth: '94%', maxHeight: '90%',
+        background: T.s2, borderRadius: 12,
+        boxShadow: `0 30px 80px rgba(0,0,0,0.6), inset 0 0 0 1px ${T.stroke}`,
+        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        padding: padded ? 0 : 0,
+      }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// =========================================================================
+// Settings modal — left rail with pages, content on the right.
+// =========================================================================
+
+function SettingsModal() {
+  const pages = [
+    { id: 'general',   label: 'General',     icon: <I.Sliders size={13}/> },
+    { id: 'appearance',label: 'Appearance',  icon: <I.Palette size={13}/> },
+    { id: 'keyboard',  label: 'Keyboard',    icon: <I.Keyboard size={13}/> },
+    { id: 'ai',        label: 'AI',          icon: <I.Sparkle size={13}/> },
+    { id: 'data',      label: 'Data & sync', icon: <I.Database size={13}/> },
+    { id: 'account',   label: 'Account',     icon: <I.User size={13}/> },
+  ];
+  const [active, setActive] = React.useState('appearance');
+
+  return (
+    <ModalFrame width={820} height={540}>
+      {/* Header */}
+      <div style={{
+        height: 44, display: 'flex', alignItems: 'center', padding: '0 14px',
+        borderBottom: `1px solid ${T.strokeSoft}`,
+      }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: T.fg1 }}>Settings</div>
+        <div style={{ flex: 1 }}/>
+        <Kbd>Esc</Kbd>
+        <button style={{
+          width: 22, height: 22, background: 'transparent', border: 'none',
+          color: T.fg3, cursor: 'pointer', marginLeft: 6,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}><I.X size={13}/></button>
+      </div>
+
+      <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+        {/* Page rail */}
+        <div style={{
+          width: 176, borderRight: `1px solid ${T.strokeSoft}`,
+          padding: '10px 8px', display: 'flex', flexDirection: 'column', gap: 1,
+        }}>
+          {pages.map(p => (
+            <button key={p.id} onClick={() => setActive(p.id)} style={{
+              display: 'flex', alignItems: 'center', gap: 9,
+              padding: '6px 9px', borderRadius: 6, border: 'none',
+              background: active === p.id ? T.s4 : 'transparent',
+              color: active === p.id ? T.fg1 : T.fg2,
+              fontFamily: 'inherit', fontSize: 12, cursor: 'pointer', textAlign: 'left',
+            }}>
+              <span style={{ color: active === p.id ? T.amber : T.fg3, display: 'flex' }}>{p.icon}</span>
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Page body */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 28px' }}>
+          {active === 'appearance' && <AppearancePage/>}
+          {active === 'general' && <GeneralPage/>}
+          {active === 'keyboard' && <KeyboardPage/>}
+          {active === 'ai' && <AIPage/>}
+          {active === 'data' && <DataPage/>}
+          {active === 'account' && <AccountPage/>}
+        </div>
+      </div>
+    </ModalFrame>
+  );
+}
+
+function PageTitle({ children, note }) {
+  return (
+    <div style={{ marginBottom: 22 }}>
+      <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700,
+        fontSize: 18, color: T.fg1, letterSpacing: '-0.01em' }}>{children}</div>
+      {note && <div style={{ marginTop: 4, fontSize: 12, color: T.fg3 }}>{note}</div>}
+    </div>
+  );
+}
+
+function Row({ label, hint, children }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 14,
+      padding: '12px 0', borderBottom: `1px solid ${T.strokeSoft}`,
+    }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, color: T.fg1, fontWeight: 500 }}>{label}</div>
+        {hint && <div style={{ fontSize: 11, color: T.fg3, marginTop: 2 }}>{hint}</div>}
+      </div>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+function Toggle({ on = false }) {
+  const [v, setV] = React.useState(on);
+  return (
+    <button onClick={() => setV(!v)} style={{
+      width: 30, height: 17, borderRadius: 9999, border: 'none',
+      background: v ? T.amber : T.s4, position: 'relative',
+      cursor: 'pointer', transition: 'background 0.15s',
+    }}>
+      <span style={{
+        position: 'absolute', top: 2, left: v ? 15 : 2,
+        width: 13, height: 13, borderRadius: 9999,
+        background: v ? '#0a0a0a' : T.fg2, transition: 'left 0.15s',
+      }}/>
+    </button>
+  );
+}
+
+function Select({ value, options }) {
+  return (
+    <button style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+      padding: '5px 8px 5px 10px', background: T.s3,
+      border: 'none', borderRadius: 6,
+      boxShadow: `inset 0 0 0 1px ${T.stroke}`,
+      color: T.fg1, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer',
+    }}>
+      {value}
+      <I.ChevDown size={10} style={{ color: T.fg3 }}/>
+    </button>
+  );
+}
+
+function AppearancePage() {
+  const [theme, setTheme] = React.useState('dark');
+  return (
+    <div>
+      <PageTitle note="Fine-tune how Invoker looks.">Appearance</PageTitle>
+
+      {/* Theme swatches */}
+      <div style={{ fontSize: 11, color: T.fg3, marginBottom: 10,
+        fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.1em', textTransform: 'uppercase' }}>Theme</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 24 }}>
+        {[
+          { id: 'dark',  label: 'Invoker Dark',  bg: '#0a0a0a', fg: '#e7e5e4', accent: T.amber },
+          { id: 'light', label: 'Paper',         bg: '#f6f4ef', fg: '#23201c', accent: '#b87333' },
+          { id: 'dim',   label: 'Dim',           bg: '#1c1c1c', fg: '#cfcbc5', accent: '#d9b382' },
+        ].map(t => (
+          <button key={t.id} onClick={() => setTheme(t.id)} style={{
+            position: 'relative', padding: 0, background: 'transparent',
+            border: 'none', cursor: 'pointer', textAlign: 'left',
+          }}>
+            <div style={{
+              height: 72, borderRadius: 8, background: t.bg, overflow: 'hidden',
+              boxShadow: theme === t.id
+                ? `inset 0 0 0 1px ${T.amber}, 0 0 0 2px rgba(230,193,136,0.2)`
+                : `inset 0 0 0 1px ${T.strokeSoft}`,
+              padding: 8, display: 'flex', flexDirection: 'column', gap: 5,
+            }}>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <div style={{ width: 18, height: 6, background: t.accent, borderRadius: 1 }}/>
+                <div style={{ width: 28, height: 6, background: t.fg, opacity: 0.4, borderRadius: 1 }}/>
+              </div>
+              <div style={{ width: '80%', height: 5, background: t.fg, opacity: 0.8, borderRadius: 1 }}/>
+              <div style={{ width: '60%', height: 5, background: t.fg, opacity: 0.5, borderRadius: 1 }}/>
+              <div style={{ flex: 1 }}/>
+              <div style={{ width: '40%', height: 4, background: t.accent, opacity: 0.8, borderRadius: 1 }}/>
+            </div>
+            <div style={{ marginTop: 6, fontSize: 11, color: theme === t.id ? T.amber : T.fg2,
+              fontWeight: 500 }}>{t.label}</div>
+          </button>
+        ))}
+      </div>
+
+      <Row label="Font family" hint="Controls UI typography across the app.">
+        <Select value="Inter" options={['Inter','SF Pro','System']}/>
+      </Row>
+      <Row label="Editor font" hint="Used for code and response bodies.">
+        <Select value="JetBrains Mono"/>
+      </Row>
+      <Row label="UI density" hint="Comfortable, cozy, or compact.">
+        <Select value="Comfortable"/>
+      </Row>
+      <Row label="Accent color" hint="Amber by default.">
+        <div style={{ display: 'flex', gap: 6 }}>
+          {['#e6c188','#f97758','#4ae176','#60a5fa','#c084fc','#f472b6'].map((c,i) => (
+            <span key={i} style={{
+              width: 18, height: 18, borderRadius: 9999, background: c,
+              boxShadow: i === 0 ? `0 0 0 2px rgba(230,193,136,0.25), inset 0 0 0 1px rgba(0,0,0,0.2)`
+                                 : `inset 0 0 0 1px rgba(0,0,0,0.2)`,
+            }}/>
+          ))}
+        </div>
+      </Row>
+      <Row label="Reduce motion">
+        <Toggle/>
+      </Row>
+    </div>
+  );
+}
+
+function GeneralPage() {
+  return (
+    <div>
+      <PageTitle note="Defaults for new collections and the app at large.">General</PageTitle>
+      <Row label="Default request method"><Select value="GET"/></Row>
+      <Row label="Request timeout" hint="Abort if no response after N seconds."><Select value="30s"/></Row>
+      <Row label="Follow redirects"><Toggle on={true}/></Row>
+      <Row label="Verify SSL certs"><Toggle on={true}/></Row>
+      <Row label="Save history" hint="Keep a local record of every response."><Toggle on={true}/></Row>
+      <Row label="Open last collection on launch"><Toggle on={true}/></Row>
+      <Row label="Check for updates"><Select value="Weekly"/></Row>
+    </div>
+  );
+}
+
+function KeyboardPage() {
+  const shortcuts = [
+    ['Command palette',    ['⌘','K']],
+    ['Send request',       ['⌘','Return']],
+    ['New request',        ['⌘','N']],
+    ['Close tab',          ['⌘','W']],
+    ['Next tab',           ['⌃','Tab']],
+    ['Jump to request',    ['⌘','P']],
+    ['Jump to env',        ['⌘','E']],
+    ['Toggle sidebar',     ['⌘','\\']],
+    ['Find in response',   ['⌘','F']],
+    ['Run test suite',     ['⌘','⇧','T']],
+  ];
+  return (
+    <div>
+      <PageTitle note="Click any shortcut to rebind.">Keyboard</PageTitle>
+      {shortcuts.map(([label, keys]) => (
+        <Row key={label} label={label}>
+          <div style={{ display: 'flex', gap: 3 }}>
+            {keys.map((k,i) => <Kbd key={i}>{k}</Kbd>)}
+          </div>
+        </Row>
+      ))}
+    </div>
+  );
+}
+
+function AIPage() {
+  return (
+    <div>
+      <PageTitle note="Invoker can draft requests, generate assertions, and explain responses.">AI assistance</PageTitle>
+      <Row label="Enable AI features"><Toggle on={true}/></Row>
+      <Row label="Provider" hint="Your own key, stored in the system keychain.">
+        <Select value="Anthropic"/>
+      </Row>
+      <Row label="Model"><Select value="claude-haiku-4-5"/></Row>
+      <div style={{
+        marginTop: 18, padding: 12, borderRadius: 8,
+        background: T.s3, boxShadow: `inset 0 0 0 1px ${T.strokeSoft}`,
+        display: 'flex', gap: 10,
+      }}>
+        <I.Sparkle size={16} style={{ color: T.amber, marginTop: 1, flexShrink: 0 }}/>
+        <div style={{ fontSize: 12, color: T.fg2, lineHeight: 1.5 }}>
+          AI never sees your env values unless you explicitly include them.
+          Request bodies and responses stay on your machine by default.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DataPage() {
+  return (
+    <div>
+      <PageTitle note="Everything lives on disk as .ivk files. Sync is opt-in.">Data & sync</PageTitle>
+      <Row label="Collections path" hint="~/Code/invoker-collections">
+        <button style={{ ...secondaryBtn, padding: '4px 10px', fontSize: 11 }}>Reveal…</button>
+      </Row>
+      <Row label="Keep history for"><Select value="90 days"/></Row>
+      <Row label="Redact secrets from history"><Toggle on={true}/></Row>
+      <Row label="Export all data as JSON">
+        <button style={{ ...secondaryBtn, padding: '4px 10px', fontSize: 11 }}>Export…</button>
+      </Row>
+      <Row label="Sync via Git" hint="Commit the folder to your own repo.">
+        <Toggle on={true}/>
+      </Row>
+    </div>
+  );
+}
+
+function AccountPage() {
+  return (
+    <div>
+      <PageTitle note="Invoker is local-first. An account only unlocks team features.">Account</PageTitle>
+      <div style={{
+        padding: 14, borderRadius: 10,
+        background: T.s3, boxShadow: `inset 0 0 0 1px ${T.strokeSoft}`,
+        display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18,
+      }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: 9999,
+          background: `linear-gradient(135deg, ${T.amber} 0%, ${T.red} 100%)`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: '#0a0a0a', fontWeight: 700, fontSize: 14,
+        }}>d</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: T.fg1 }}>doossee</div>
+          <div style={{ fontSize: 11, color: T.fg3 }}>doossee@outlook.com · Personal plan</div>
+        </div>
+        <button style={{ ...secondaryBtn, padding: '4px 10px', fontSize: 11 }}>Manage…</button>
+      </div>
+      <Row label="Team workspace" hint="Share collections, envs, history.">
+        <button style={{ ...secondaryBtn, padding: '4px 10px', fontSize: 11 }}>Create…</button>
+      </Row>
+      <Row label="Sign out">
+        <button style={{ ...secondaryBtn, padding: '4px 10px', fontSize: 11, color: T.red }}>Sign out</button>
+      </Row>
+    </div>
+  );
+}
+
+// =========================================================================
+// Env settings — full-bleed variables table.
+// =========================================================================
+
+function EnvSettings() {
+  const envs = [
+    { id: 'dev', label: 'development', active: true },
+    { id: 'stg', label: 'staging', active: false },
+    { id: 'prd', label: 'production', active: false },
+  ];
+  const [active, setActive] = React.useState('dev');
+
+  const vars = {
+    dev: [
+      { k: 'baseUrl',   v: 'https://api.dev.acme.io',          secret: false },
+      { k: 'apiKey',    v: 'sk_dev_9f83a21c4b8e0d7f',          secret: true  },
+      { k: 'userId',    v: 'u_9f3a21',                         secret: false },
+      { k: 'phone',     v: '+1 415 555 0133',                  secret: false },
+      { k: 'code',      v: '000000',                           secret: false },
+      { k: 'authToken', v: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXV…', secret: true },
+    ],
+    stg: [
+      { k: 'baseUrl',   v: 'https://api.stg.acme.io',     secret: false },
+      { k: 'apiKey',    v: 'sk_stg_••••••••••••••••',      secret: true },
+    ],
+    prd: [
+      { k: 'baseUrl',   v: 'https://api.acme.io',          secret: false },
+      { k: 'apiKey',    v: 'sk_prd_••••••••••••••••',      secret: true },
+    ],
+  };
+
+  const current = vars[active] || [];
+
+  return (
+    <ModalFrame width={900} height={560}>
+      {/* Header */}
+      <div style={{
+        padding: '14px 18px 10px', borderBottom: `1px solid ${T.strokeSoft}`,
+        display: 'flex', alignItems: 'center', gap: 12,
+      }}>
+        <I.Database size={16} style={{ color: T.amber }}/>
+        <div style={{ fontSize: 14, fontWeight: 600, color: T.fg1 }}>Environments</div>
+        <div style={{ fontSize: 11, color: T.fg3 }}>My Collection</div>
+        <div style={{ flex: 1 }}/>
+        <button style={{ ...secondaryBtn, padding: '5px 10px', fontSize: 11 }}>
+          <I.Upload size={11} style={{ marginRight: 5 }}/>Import .env
+        </button>
+        <button style={{ ...secondaryBtn, padding: '5px 10px', fontSize: 11 }}>
+          <I.Download size={11} style={{ marginRight: 5 }}/>Export
+        </button>
+      </div>
+
+      {/* Env tabs */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 2, padding: '8px 12px',
+        borderBottom: `1px solid ${T.strokeSoft}`,
+      }}>
+        {envs.map(e => (
+          <button key={e.id} onClick={() => setActive(e.id)} style={{
+            display: 'flex', alignItems: 'center', gap: 7,
+            padding: '5px 11px', borderRadius: 6, border: 'none',
+            background: active === e.id ? T.s4 : 'transparent',
+            color: active === e.id ? T.fg1 : T.fg2,
+            fontFamily: "'JetBrains Mono', monospace", fontSize: 11, cursor: 'pointer',
+          }}>
+            <span style={{
+              width: 7, height: 7, borderRadius: 9999,
+              background: e.active ? T.green : '#444',
+            }}/>
+            {e.label}
+          </button>
+        ))}
+        <button style={{
+          display: 'flex', alignItems: 'center', gap: 5,
+          padding: '5px 10px', borderRadius: 6, border: 'none',
+          background: 'transparent', color: T.fg3, fontSize: 11, cursor: 'pointer',
+          fontFamily: 'inherit',
+        }}>
+          <I.Plus size={11}/> New env
+        </button>
+      </div>
+
+      {/* Table */}
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse',
+          fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>
+          <thead>
+            <tr style={{ position: 'sticky', top: 0, background: T.s2, zIndex: 1 }}>
+              {['Key','Value','Secret',''].map((h,i) => (
+                <th key={i} style={{
+                  textAlign: 'left', padding: '8px 14px',
+                  fontSize: 10, fontWeight: 600, color: T.fg3,
+                  letterSpacing: '0.1em', textTransform: 'uppercase',
+                  fontFamily: 'Inter, sans-serif',
+                  borderBottom: `1px solid ${T.strokeSoft}`,
+                  width: i === 0 ? 180 : i === 2 ? 80 : i === 3 ? 40 : 'auto',
+                }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {current.map((row, i) => (
+              <tr key={i} style={{ borderBottom: `1px solid ${T.strokeSoft}` }}>
+                <td style={{ padding: '9px 14px', color: T.amber }}>{row.k}</td>
+                <td style={{ padding: '9px 14px', color: T.fg1,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 460 }}>
+                  {row.secret ? '•'.repeat(Math.min(row.v.length, 28)) : row.v}
+                </td>
+                <td style={{ padding: '9px 14px' }}>
+                  <Toggle on={row.secret}/>
+                </td>
+                <td style={{ padding: '9px 14px' }}>
+                  <button style={{
+                    width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'transparent', border: 'none', color: T.fg3, cursor: 'pointer',
+                  }}><I.X size={11}/></button>
+                </td>
+              </tr>
+            ))}
+            <tr>
+              <td colSpan={4} style={{ padding: '9px 14px' }}>
+                <button style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  background: 'transparent', border: 'none', color: T.fg3,
+                  fontFamily: "'JetBrains Mono', monospace", fontSize: 11, cursor: 'pointer',
+                }}>
+                  <I.Plus size={11}/> Add variable
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Footer hint */}
+      <div style={{
+        padding: '10px 18px', borderTop: `1px solid ${T.strokeSoft}`,
+        fontSize: 11, color: T.fg3, display: 'flex', alignItems: 'center', gap: 8,
+      }}>
+        <I.Zap size={11} style={{ color: T.amber }}/>
+        Reference with <span style={codeInline}>{'{{baseUrl}}'}</span> — works in URL, headers, body, params, tests.
+      </div>
+    </ModalFrame>
+  );
+}
+
+// =========================================================================
+// Command palette — ⌘K overlay.
+// =========================================================================
+
+function CommandPalette() {
+  const [query, setQuery] = React.useState('aut');
+
+  const results = [
+    { type: 'req', method: 'POST', name: 'Auth.login', path: 'auth / login.ivk',    match: [4,3] },
+    { type: 'req', method: 'POST', name: 'Auth.logout', path: 'auth / logout.ivk',  match: [0,3] },
+    { type: 'req', method: 'GET',  name: 'Auth.getMe', path: 'auth / get-me.ivk',   match: [0,3] },
+    { type: 'act', name: 'Switch env → staging',  kbd: null },
+    { type: 'act', name: 'Switch env → production', kbd: null },
+    { type: 'doc', name: 'Auth README',           path: 'auth / README.md' },
+  ];
+
+  return (
+    <div style={{
+      position: 'relative', width: '100%', height: '100%',
+      background: 'rgba(0,0,0,0.65)',
+      backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
+      display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+      paddingTop: '12%', fontFamily: 'Inter, system-ui, sans-serif',
+    }}>
+      {/* Fake shell peek behind */}
+      <div style={{
+        position: 'absolute', inset: 0, opacity: 0.15, zIndex: 0,
+        background: `repeating-linear-gradient(0deg, ${T.s2} 0 2px, ${T.s1} 2px 4px)`,
+      }}/>
+
+      <div style={{
+        position: 'relative', zIndex: 1, width: 640, maxWidth: '92%',
+        background: T.s2, borderRadius: 12,
+        boxShadow: `0 30px 80px rgba(0,0,0,0.7), inset 0 0 0 1px ${T.stroke}`,
+        overflow: 'hidden', display: 'flex', flexDirection: 'column',
+      }}>
+        {/* Input */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '14px 16px', borderBottom: `1px solid ${T.strokeSoft}`,
+        }}>
+          <I.Search size={14} style={{ color: T.amber }}/>
+          <input value={query} onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search requests, actions, docs…"
+            style={{
+              flex: 1, background: 'transparent', border: 'none', outline: 'none',
+              color: T.fg1, fontFamily: 'inherit', fontSize: 15,
+            }}/>
+          <Kbd>Esc</Kbd>
+        </div>
+
+        {/* Results */}
+        <div style={{ maxHeight: 380, overflowY: 'auto', padding: '6px 0' }}>
+          <Section label="REQUESTS">
+            {results.filter(r => r.type === 'req').map((r, i) => (
+              <PaletteRow key={i} active={i === 0}>
+                <Pill tone={r.method} mono>{r.method}</Pill>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, color: T.fg1,
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <Highlight text={r.name} query={query}/>
+                  </div>
+                  <div style={{ fontSize: 11, color: T.fg3 }}>{r.path}</div>
+                </div>
+                {i === 0 && <Kbd>↵</Kbd>}
+              </PaletteRow>
+            ))}
+          </Section>
+          <Section label="ACTIONS">
+            {results.filter(r => r.type === 'act').map((r, i) => (
+              <PaletteRow key={i}>
+                <I.Zap size={14} style={{ color: T.amber }}/>
+                <div style={{ flex: 1, fontSize: 13, color: T.fg1 }}>{r.name}</div>
+              </PaletteRow>
+            ))}
+          </Section>
+          <Section label="DOCS">
+            {results.filter(r => r.type === 'doc').map((r, i) => (
+              <PaletteRow key={i}>
+                <I.Book size={14} style={{ color: T.fg2 }}/>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, color: T.fg1 }}>{r.name}</div>
+                  <div style={{ fontSize: 11, color: T.fg3 }}>{r.path}</div>
+                </div>
+              </PaletteRow>
+            ))}
+          </Section>
+        </div>
+
+        {/* Footer */}
+        <div style={{
+          padding: '9px 14px', borderTop: `1px solid ${T.strokeSoft}`,
+          display: 'flex', alignItems: 'center', gap: 16,
+          fontSize: 11, color: T.fg3,
+        }}>
+          <FooterKey keys={['↑','↓']} label="Navigate"/>
+          <FooterKey keys={['↵']} label="Open"/>
+          <FooterKey keys={['⌘','↵']} label="Open in new tab"/>
+          <div style={{ flex: 1 }}/>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>6 results</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Section({ label, children }) {
+  return (
+    <div style={{ padding: '4px 0' }}>
+      <div style={{
+        padding: '6px 16px 4px', fontSize: 10, fontWeight: 600, color: T.fg4,
+        letterSpacing: '0.14em', textTransform: 'uppercase',
+        fontFamily: "'JetBrains Mono', monospace",
+      }}>{label}</div>
+      {children}
+    </div>
+  );
+}
+
+function PaletteRow({ active, children }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 10,
+      padding: '8px 14px', margin: '0 4px', borderRadius: 6,
+      background: active ? 'rgba(230,193,136,0.08)' : 'transparent',
+      position: 'relative',
+    }}>
+      {active && <span style={{
+        position: 'absolute', left: 0, top: 6, bottom: 6, width: 2,
+        background: T.amber, borderRadius: 2,
+      }}/>}
+      {children}
+    </div>
+  );
+}
+
+function Highlight({ text, query }) {
+  if (!query) return text;
+  const lower = text.toLowerCase();
+  const q = query.toLowerCase();
+  const parts = [];
+  let cursor = 0;
+  for (let i = 0; i < q.length; i++) {
+    const ch = q[i];
+    const idx = lower.indexOf(ch, cursor);
+    if (idx === -1) continue;
+    if (idx > cursor) parts.push({ t: 'n', v: text.slice(cursor, idx) });
+    parts.push({ t: 'h', v: text[idx] });
+    cursor = idx + 1;
+  }
+  if (cursor < text.length) parts.push({ t: 'n', v: text.slice(cursor) });
+  return (
+    <>
+      {parts.map((p, i) =>
+        p.t === 'h'
+          ? <span key={i} style={{ color: T.amber, fontWeight: 600 }}>{p.v}</span>
+          : <span key={i}>{p.v}</span>
+      )}
+    </>
+  );
+}
+
+function Pill({ tone, mono, children }) {
+  const map = { GET: T.green, POST: T.amber, PUT: T.blue, DEL: T.red, PATCH: T.yellow };
+  const color = map[tone] || T.fg2;
+  return (
+    <span style={{
+      fontFamily: mono ? "'JetBrains Mono', monospace" : 'inherit',
+      fontSize: 10, fontWeight: 700, letterSpacing: '0.05em',
+      color, background: `${color}14`,
+      padding: '2px 6px', borderRadius: 4,
+      minWidth: 36, textAlign: 'center',
+    }}>{children}</span>
+  );
+}
+
+function FooterKey({ keys, label }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      {keys.map((k,i) => <Kbd key={i}>{k}</Kbd>)}
+      <span style={{ marginLeft: 2 }}>{label}</span>
+    </div>
+  );
+}
+
+// =========================================================================
+// First run — welcome onboarding after install.
+// =========================================================================
+
+function FirstRun() {
+  const [step, setStep] = React.useState(0);
+
+  return (
+    <div style={{
+      width: '100%', height: '100%',
+      background: 'radial-gradient(ellipse at 20% 10%, #1a1612 0%, #050505 60%)',
+      color: T.fg1, fontFamily: 'Inter, system-ui, sans-serif',
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      justifyContent: 'center', padding: 40,
+    }}>
+      <div style={{ width: 720, maxWidth: '100%', textAlign: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 22 }}>
+          <InvokerMark size={44}/>
+        </div>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10,
+          color: T.fg3, letterSpacing: '0.24em', textTransform: 'uppercase', marginBottom: 10 }}>
+          {['Welcome','Pick a source','Set defaults','You\'re set'][step]}
+        </div>
+        <div style={{
+          fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: 40,
+          letterSpacing: '-0.02em', color: T.fg1, lineHeight: 1.05, marginBottom: 14,
+        }}>
+          {[
+            'A request tool that finally feels local.',
+            'Where do your requests live?',
+            'Fast defaults for every new request.',
+            'Send your first one.',
+          ][step]}
+        </div>
+        <div style={{ color: T.fg2, fontSize: 15, lineHeight: 1.5, maxWidth: 520, margin: '0 auto 32px' }}>
+          {[
+            'Invoker keeps everything on your disk as plain text. Git-friendly. Docs-native. No sign-in.',
+            'Open a folder you already have, clone from Git, or start fresh. You can switch later.',
+            'Tune once, never think about it. Every value here is editable in Settings.',
+            'Press ⌘K any time. Everything else is discoverable from the sidebar.',
+          ][step]}
+        </div>
+
+        {step === 1 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 28 }}>
+            <SourceCard icon={<I.FolderOpen size={18}/>} title="Open folder"
+              note=".ivk files on disk"/>
+            <SourceCard icon={<I.Download size={18}/>} title="Clone from Git"
+              note="HTTPS or SSH"/>
+            <SourceCard icon={<I.FolderPlus size={18}/>} title="New collection"
+              note="Start fresh" accent/>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div style={{
+            textAlign: 'left', background: T.s2, borderRadius: 12,
+            boxShadow: `inset 0 0 0 1px ${T.strokeSoft}`,
+            padding: '6px 22px', marginBottom: 28,
+          }}>
+            <Row label="Default method"><Select value="GET"/></Row>
+            <Row label="Timeout"><Select value="30s"/></Row>
+            <Row label="Save history"><Toggle on={true}/></Row>
+            <Row label="Enable AI"><Toggle on={true}/></Row>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div style={{
+            textAlign: 'left', background: T.s2, borderRadius: 12,
+            boxShadow: `inset 0 0 0 1px ${T.strokeSoft}`,
+            padding: 18, marginBottom: 28, display: 'flex', gap: 10, alignItems: 'center',
+          }}>
+            <span style={{
+              width: 28, height: 28, borderRadius: 9999, background: 'rgba(74,225,118,0.15)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.green,
+            }}><I.Check size={15}/></span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: T.fg1 }}>Collection opened</div>
+              <div style={{ fontSize: 11, color: T.fg3, fontFamily: "'JetBrains Mono', monospace" }}>
+                ~/Code/acme-collection · 14 requests, 2 envs
+              </div>
+            </div>
+            <Kbd>⌘</Kbd><Kbd>K</Kbd>
+          </div>
+        )}
+
+        {/* Step indicator + nav */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+          <button onClick={() => setStep(Math.max(0, step - 1))} disabled={step === 0} style={{
+            ...secondaryBtn, padding: '8px 14px', opacity: step === 0 ? 0.3 : 1,
+          }}>
+            <I.ChevLeft size={12} style={{ marginRight: 4 }}/>Back
+          </button>
+
+          <div style={{ display: 'flex', gap: 6, margin: '0 14px' }}>
+            {[0,1,2,3].map(i => (
+              <span key={i} style={{
+                width: i === step ? 22 : 6, height: 6, borderRadius: 9999,
+                background: i <= step ? T.amber : T.s4,
+                transition: 'width 0.2s',
+              }}/>
+            ))}
+          </div>
+
+          <button onClick={() => setStep(Math.min(3, step + 1))} style={{
+            ...primaryBtn, padding: '8px 16px',
+          }}>
+            {step === 3 ? 'Open Invoker' : 'Continue'}
+            <I.ArrowRight size={12} style={{ marginLeft: 6 }}/>
+          </button>
+        </div>
+
+        <div style={{ marginTop: 24, fontSize: 11, color: T.fg4 }}>
+          Local-first · Git-native · No account needed
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SourceCard({ icon, title, note, accent }) {
+  return (
+    <button style={{
+      padding: '18px 16px', borderRadius: 12,
+      background: accent ? 'rgba(230,193,136,0.06)' : T.s2,
+      boxShadow: accent
+        ? `inset 0 0 0 1px rgba(230,193,136,0.45)`
+        : `inset 0 0 0 1px ${T.strokeSoft}`,
+      border: 'none', cursor: 'pointer', textAlign: 'left',
+      color: T.fg1, fontFamily: 'inherit',
+      display: 'flex', flexDirection: 'column', gap: 10,
+    }}>
+      <span style={{ color: accent ? T.amber : T.fg2 }}>{icon}</span>
+      <div style={{ fontSize: 14, fontWeight: 600, color: accent ? T.amber : T.fg1 }}>{title}</div>
+      <div style={{ fontSize: 11, color: T.fg3 }}>{note}</div>
+    </button>
+  );
+}
+
+
+// PublishedSite — static site output.
+
+// =========================================================================
+// PublishedSite — public-facing static site output (light, reader-first).
+// =========================================================================
+
+function PublishedSite() {
+  return (
+    <div style={{
+      height: '100%', overflow: 'auto',
+      background: '#f8f5ef', color: '#2a2520',
+      fontFamily: 'Inter, system-ui, sans-serif',
+    }}>
+      {/* Top nav */}
+      <div style={{
+        position: 'sticky', top: 0, zIndex: 2, background: 'rgba(248,245,239,0.92)',
+        backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+        borderBottom: '1px solid rgba(42,37,32,0.08)',
+        padding: '14px 40px',
+        display: 'flex', alignItems: 'center', gap: 20,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <InvokerMark size={18} color="#2a2520"/>
+          <div>
+            <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700,
+              fontSize: 14, letterSpacing: '-0.01em' }}>Acme API</div>
+            <div style={{ fontSize: 10, color: '#8a7e6f',
+              fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.1em' }}>v2 · public</div>
+          </div>
+        </div>
+        <div style={{ flex: 1 }}/>
+        {['Guides','Reference','Changelog'].map((i,k) => (
+          <a key={k} href="#" style={{
+            fontSize: 13, color: '#5a4f43', textDecoration: 'none',
+            fontWeight: k === 1 ? 600 : 400,
+          }}>{i}</a>
+        ))}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '5px 10px', background: 'rgba(42,37,32,0.06)',
+          borderRadius: 8, fontSize: 12, color: '#8a7e6f', minWidth: 220,
+        }}>
+          <I.Search size={12}/>
+          <span style={{ flex: 1 }}>Search docs…</span>
+          <span style={{
+            fontFamily: "'JetBrains Mono', monospace", fontSize: 10,
+            padding: '1px 5px', background: '#fff', borderRadius: 3,
+            color: '#5a4f43', boxShadow: 'inset 0 0 0 1px rgba(42,37,32,0.1)',
+          }}>⌘K</span>
+        </div>
+      </div>
+
+      {/* Layout */}
+      <div style={{ maxWidth: 1180, margin: '0 auto', display: 'flex', gap: 40,
+        padding: '32px 40px 80px' }}>
+
+        {/* Left nav */}
+        <nav style={{ width: 200, flexShrink: 0, fontSize: 13 }}>
+          {[
+            { h: 'Getting started', items: ['Introduction','Authentication','Rate limits'] },
+            { h: 'Endpoints', items: ['Auth','Users','Webhooks'], active: 'Auth' },
+            { h: 'Guides', items: ['SSO migration','Bulk import'] },
+          ].map((sec, i) => (
+            <div key={i} style={{ marginBottom: 20 }}>
+              <div style={{
+                fontFamily: 'Manrope, sans-serif', fontWeight: 700,
+                fontSize: 11, color: '#2a2520', letterSpacing: '0.04em',
+                textTransform: 'uppercase', marginBottom: 8,
+              }}>{sec.h}</div>
+              {sec.items.map((it,k) => (
+                <a key={k} href="#" style={{
+                  display: 'block', padding: '5px 10px', borderRadius: 5,
+                  fontSize: 13, color: it === sec.active ? '#b87333' : '#5a4f43',
+                  textDecoration: 'none', marginLeft: -10,
+                  background: it === sec.active ? 'rgba(184,115,51,0.08)' : 'transparent',
+                  fontWeight: it === sec.active ? 500 : 400,
+                }}>{it}</a>
+              ))}
+            </div>
+          ))}
+        </nav>
+
+        {/* Article */}
+        <article style={{ flex: 1, maxWidth: 720 }}>
+          <div style={{ fontSize: 12, color: '#8a7e6f',
+            fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.06em',
+            textTransform: 'uppercase', marginBottom: 10 }}>Endpoints · Auth</div>
+
+          <h1 style={{
+            fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: 46,
+            letterSpacing: '-0.02em', margin: '0 0 12px', lineHeight: 1.05,
+          }}>Authentication</h1>
+          <p style={{ fontSize: 17, color: '#5a4f43', lineHeight: 1.55,
+            margin: '0 0 28px', maxWidth: 600 }}>
+            Log in with a phone number and one-time code. All other requests
+            require a bearer token in the <code style={paperCode}>Authorization</code> header.
+          </p>
+
+          {/* Published request block */}
+          <PublishedEndpoint
+            method="POST" path="/auth/login"
+            desc="Exchange a phone + OTP for a bearer token."
+            req={`{
+  "phone": "+1 415 555 0133",
+  "code": "438211"
+}`}
+            res={`{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5...",
+  "user": {
+    "id": "u_9f3a21",
+    "phone": "+1 415 555 0133",
+    "role": "user"
+  },
+  "expiresAt": "2026-04-19T10:32:14Z"
+}`}
+          />
+
+          <h2 style={paperH2}>Bearer header</h2>
+          <p style={paperP}>
+            Every authenticated request includes:
+          </p>
+          <pre style={paperPre}>Authorization: Bearer eyJhbGciOiJIUzI1NiIs...</pre>
+
+          <h2 style={paperH2}>Token lifetime</h2>
+          <p style={paperP}>
+            Tokens are valid for 7 days. Refresh using <a href="#" style={paperLink}>POST /auth/refresh</a>
+            {' '}at any time during the window.
+          </p>
+
+          <PublishedEndpoint
+            method="GET" path="/auth/me"
+            desc="Return the authenticated user."
+            req={null}
+            res={`{
+  "id": "u_9f3a21",
+  "email": "doossee@outlook.com",
+  "role": "user",
+  "plan": "personal"
+}`}
+          />
+
+          {/* Footer */}
+          <div style={{
+            marginTop: 48, paddingTop: 20, borderTop: '1px solid rgba(42,37,32,0.1)',
+            display: 'flex', alignItems: 'center',
+          }}>
+            <div style={{ flex: 1, fontSize: 12, color: '#8a7e6f' }}>
+              Built with <span style={{ color: '#b87333', fontWeight: 500 }}>Invoker</span> ·
+              <span style={{ marginLeft: 6 }}>Last updated 4h ago</span>
+            </div>
+            <a href="#" style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              fontSize: 12, color: '#5a4f43', textDecoration: 'none',
+            }}>
+              Edit this page <I.External size={10}/>
+            </a>
+          </div>
+        </article>
+
+        {/* Right TOC */}
+        <nav style={{ width: 160, flexShrink: 0, fontSize: 12 }}>
+          <div style={{
+            fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: 11,
+            color: '#2a2520', letterSpacing: '0.04em', textTransform: 'uppercase',
+            marginBottom: 8,
+          }}>On this page</div>
+          {[
+            ['POST /auth/login', true],
+            ['Bearer header', false],
+            ['Token lifetime', false],
+            ['GET /auth/me', false],
+          ].map(([t, active], k) => (
+            <a key={k} href="#" style={{
+              display: 'block', padding: '3px 0', fontSize: 12,
+              color: active ? '#b87333' : '#8a7e6f', textDecoration: 'none',
+              borderLeft: active ? '2px solid #b87333' : '2px solid transparent',
+              paddingLeft: 10, marginLeft: -12,
+              fontWeight: active ? 500 : 400,
+            }}>{t}</a>
+          ))}
+        </nav>
+      </div>
+    </div>
+  );
+}
+
+const paperCode = {
+  fontFamily: "'JetBrains Mono', monospace", fontSize: 13,
+  background: '#ede6d7', padding: '1px 6px', borderRadius: 4,
+  color: '#b87333',
+};
+const paperH2 = {
+  fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: 22,
+  margin: '32px 0 10px', color: '#2a2520', letterSpacing: '-0.01em',
+};
+const paperP = { fontSize: 15, color: '#5a4f43', lineHeight: 1.6, margin: '0 0 14px' };
+const paperPre = {
+  fontFamily: "'JetBrains Mono', monospace", fontSize: 13,
+  background: '#ede6d7', padding: '12px 14px', borderRadius: 8,
+  color: '#2a2520', overflow: 'auto', margin: '0 0 22px',
+  boxShadow: 'inset 0 0 0 1px rgba(42,37,32,0.05)',
+};
+const paperLink = { color: '#b87333', textDecoration: 'none', fontWeight: 500 };
+
+function PublishedEndpoint({ method, path, desc, req, res }) {
+  const methodBg = method === 'GET'
+    ? { bg: '#e3ead6', fg: '#4a7a2a' }
+    : { bg: '#f7e5cc', fg: '#b87333' };
+
+  return (
+    <div style={{
+      margin: '24px 0 28px', borderRadius: 12,
+      background: '#fff', boxShadow: '0 1px 0 rgba(42,37,32,0.05), inset 0 0 0 1px rgba(42,37,32,0.08)',
+      overflow: 'hidden',
+    }}>
+      {/* Head */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '12px 16px', background: '#faf8f2',
+        borderBottom: '1px solid rgba(42,37,32,0.06)',
+      }}>
+        <span style={{
+          padding: '3px 8px', borderRadius: 4, fontSize: 11, fontWeight: 700,
+          fontFamily: "'JetBrains Mono', monospace",
+          background: methodBg.bg, color: methodBg.fg, letterSpacing: '0.04em',
+        }}>{method}</span>
+        <code style={{
+          fontFamily: "'JetBrains Mono', monospace", fontSize: 14,
+          color: '#2a2520',
+        }}>{path}</code>
+        <div style={{ flex: 1 }}/>
+        <button style={{
+          display: 'flex', alignItems: 'center', gap: 5,
+          padding: '4px 9px', background: '#fff', color: '#5a4f43',
+          border: 'none', borderRadius: 5,
+          boxShadow: 'inset 0 0 0 1px rgba(42,37,32,0.12)',
+          fontSize: 11, fontFamily: 'inherit', cursor: 'pointer',
+        }}>
+          <I.External size={10}/>Open in Invoker
+        </button>
+      </div>
+
+      {desc && (
+        <div style={{ padding: '12px 16px', fontSize: 13, color: '#5a4f43',
+          borderBottom: '1px solid rgba(42,37,32,0.06)' }}>{desc}</div>
+      )}
+
+      {/* Request / response split */}
+      <div style={{ display: 'grid', gridTemplateColumns: req ? '1fr 1fr' : '1fr' }}>
+        {req && (
+          <div style={{ padding: '12px 16px', borderRight: '1px solid rgba(42,37,32,0.06)' }}>
+            <div style={{ fontSize: 10, color: '#8a7e6f', fontWeight: 600,
+              letterSpacing: '0.1em', textTransform: 'uppercase',
+              fontFamily: "'JetBrains Mono', monospace", marginBottom: 8 }}>Request</div>
+            <pre style={{
+              margin: 0, fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 12, lineHeight: 1.6, color: '#2a2520', whiteSpace: 'pre',
+            }}>{req}</pre>
+          </div>
+        )}
+        <div style={{ padding: '12px 16px' }}>
+          <div style={{ fontSize: 10, color: '#8a7e6f', fontWeight: 600,
+            letterSpacing: '0.1em', textTransform: 'uppercase',
+            fontFamily: "'JetBrains Mono', monospace", marginBottom: 8,
+            display: 'flex', alignItems: 'center', gap: 6 }}>
+            Response
+            <span style={{
+              color: '#4a7a2a', background: '#e3ead6',
+              padding: '1px 5px', borderRadius: 3, fontWeight: 700,
+              textTransform: 'none', letterSpacing: 0,
+            }}>200</span>
+          </div>
+          <pre style={{
+            margin: 0, fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 12, lineHeight: 1.6, color: '#2a2520', whiteSpace: 'pre',
+          }}>{res}</pre>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ================ APP ================
+
+const SCREENS = [
+  { id: "main",        label: "Main shell",           group: "Core",       render: () => <MainShellPrimary/> },
+  { id: "welcome",     label: "Welcome",              group: "Core",       render: () => <WelcomePrimary/> },
+  { id: "published",   label: "Published site",       group: "Reading",    render: () => <PublishedSite/> },
+  { id: "settings",    label: "Settings",             group: "Modals",     render: () => <SettingsModal/> },
+  { id: "env",         label: "Env settings",         group: "Modals",     render: () => <EnvSettings/> },
+  { id: "palette",     label: "Command palette",      group: "Modals",     render: () => <CommandPalette/> },
+];
+
+function App() {
+  const initial = (typeof localStorage !== "undefined" && localStorage.getItem("invoker_redesign_screen")) || "main";
+  const [active, setActive] = React.useState(SCREENS.find(s => s.id === initial) ? initial : "main");
+  React.useEffect(() => { try { localStorage.setItem("invoker_redesign_screen", active); } catch (e) {} }, [active]);
+  const screen = SCREENS.find(s => s.id === active) || SCREENS[0];
+  const groups = [...new Set(SCREENS.map(s => s.group))];
+  return (
+    <>
+      <ScreenRail screens={SCREENS} groups={groups} active={active} onSelect={setActive}/>
+      <div style={{ flex: 1, minWidth: 0, background: T.s0, display: "flex", flexDirection: "column" }}>
+        <TopBar screen={screen}/>
+        <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+          {screen.render()}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function ScreenRail({ screens, groups, active, onSelect }) {
+  return (
+    <aside style={{
+      width: 200, background: "#050505", color: T.fg2,
+      borderRight: "1px solid rgba(66,71,84,0.25)",
+      display: "flex", flexDirection: "column", padding: "14px 0",
+      flexShrink: 0,
+    }}>
+      <div style={{ padding: "0 16px 12px", display: "flex", alignItems: "center", gap: 8 }}>
+        <InvokerMark size={16}/>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: "Manrope, sans-serif", fontWeight: 700, fontSize: 13, color: T.fg1, letterSpacing: "-0.01em" }}>Invoker</div>
+          <div style={{ fontSize: 9, color: T.fg3, letterSpacing: "0.1em", textTransform: "uppercase", marginTop: 1 }}>Redesign · v1</div>
+        </div>
+      </div>
+      <div style={{ padding: "0 12px 10px", fontSize: 10, color: T.fg4, lineHeight: 1.5 }}>
+        Review-only navigator. Each entry is a separate mockup screen — not part of the product.
+      </div>
+      <div style={{ flex: 1, overflowY: "auto" }}>
+        {groups.map(g => (
+          <div key={g} style={{ marginBottom: 10 }}>
+            <div style={{ padding: "8px 16px 4px", fontSize: 9, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: T.fg4 }}>{g}</div>
+            {screens.filter(s => s.group === g).map(s => (
+              <button key={s.id} onClick={() => onSelect(s.id)} style={{
+                width: "100%", display: "flex", alignItems: "center", gap: 8,
+                padding: "6px 16px", background: active === s.id ? "rgba(230,193,136,0.08)" : "transparent",
+                border: "none", cursor: "pointer", fontFamily: "inherit",
+                color: active === s.id ? T.amber : T.fg2, fontSize: 12,
+                textAlign: "left", position: "relative",
+              }}>
+                {active === s.id && <span style={{ position: "absolute", left: 0, top: 4, bottom: 4, width: 2, borderRadius: 2, background: T.amber }}/>}
+                {s.label}
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
+      <div style={{ padding: "10px 16px 0", fontSize: 10, color: T.fg4, borderTop: "1px solid rgba(66,71,84,0.2)" }}>Use ↑↓ to step through</div>
+    </aside>
+  );
+}
+
+function TopBar({ screen }) {
+  return (
+    <div style={{
+      height: 42, display: "flex", alignItems: "center", gap: 12,
+      padding: "0 18px", background: T.s1,
+      borderBottom: "1px solid rgba(66,71,84,0.18)",
+      fontSize: 12, color: T.fg3, flexShrink: 0,
+    }}>
+      <span style={{ fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em", textTransform: "uppercase", fontSize: 10 }}>{screen.group}</span>
+      <span style={{ color: T.fg4 }}>/</span>
+      <span style={{ color: T.fg1, fontWeight: 500 }}>{screen.label}</span>
+      <div style={{ flex: 1 }}/>
+      <span style={{ fontSize: 10, color: T.fg3 }}>Invoker Redesign · v1 · exploration</span>
+    </div>
+  );
+}
+
+window.addEventListener("keydown", (e) => {
+  if (e.target && ["INPUT","TEXTAREA"].includes(e.target.tagName)) return;
+  const cur = localStorage.getItem("invoker_redesign_screen") || "main";
+  const idx = SCREENS.findIndex(s => s.id === cur);
+  if (e.key === "ArrowDown" || e.key === "j") {
+    const n = SCREENS[Math.min(SCREENS.length - 1, idx + 1)];
+    localStorage.setItem("invoker_redesign_screen", n.id); location.reload();
+  } else if (e.key === "ArrowUp" || e.key === "k") {
+    const n = SCREENS[Math.max(0, idx - 1)];
+    localStorage.setItem("invoker_redesign_screen", n.id); location.reload();
+  }
+});
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+
+  </script>
+
+</body>
+</html>

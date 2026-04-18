@@ -4,3 +4,4 @@ dist-site/
 .DS_Store
 *.log
 .vscode/
+design-system/project/src_ref/

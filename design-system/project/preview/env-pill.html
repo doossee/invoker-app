@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css"><style>
+.row { display:flex; gap: 12px; align-items:center; }
+.pill { display:flex; align-items:center; gap: 8px; padding: 5px 10px; border-radius: 6px; background: transparent; font-size: 12px; color:#acabaa; cursor:pointer; }
+.pill:hover { background:#191a1a; }
+.dot { width: 8px; height: 8px; border-radius: 9999px; }
+.chev { color:#767575; }
+svg { width:12px; height:12px; stroke: currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.lbl { font-size: 10px; color:#767575; font-family:'JetBrains Mono', monospace; margin-left: 10px; }
+</style></head><body><div class="card">
+<div class="label-caps" style="margin-bottom:14px">Env switcher · pill in sidebar footer</div>
+<div class="row">
+  <div class="pill"><span class="dot" style="background:#22c55e"></span>development<svg viewBox="0 0 24 24" class="chev"><path d="m6 9 6 6 6-6"/></svg></div>
+  <div class="pill"><span class="dot" style="background:#e0af68"></span>staging<svg viewBox="0 0 24 24" class="chev"><path d="m6 9 6 6 6-6"/></svg></div>
+  <div class="pill"><span class="dot" style="background:#f97758"></span>production<svg viewBox="0 0 24 24" class="chev"><path d="m6 9 6 6 6-6"/></svg></div>
+</div>
+<div class="lbl">● colored dot + lowercase env name + chevron</div>
+</div></body></html>

@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css"><style>
+.row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.demo { padding: 18px 20px; background:#0e0e0e; border-radius: 10px; }
+.ghost { box-shadow: inset 0 0 0 1px rgba(66,71,84,0.25); }
+.hard  { border: 1px solid #484848; }
+.caption { font-size: 10px; font-family:'JetBrains Mono', monospace; color:#767575; margin-top: 8px; }
+.title { font-size: 11px; font-weight: 600; color:#e7e5e4; }
+</style></head><body><div class="card">
+<div class="label-caps" style="margin-bottom:12px">Borders · ghost vs hard</div>
+<div class="row">
+  <div>
+    <div class="demo ghost"><div class="title">Ghost border</div><div style="color:#acabaa;font-size:12px;margin-top:4px">Soft inset shadow, 15% opacity. Used on cards, panels, dividers.</div></div>
+    <div class="caption">box-shadow: inset 0 0 0 1px rgba(66,71,84,0.15)</div>
+  </div>
+  <div>
+    <div class="demo hard"><div class="title">Hard border</div><div style="color:#acabaa;font-size:12px;margin-top:4px">Solid 1px line. Reserved for form inputs and menu popovers.</div></div>
+    <div class="caption">border: 1px solid var(--ivk-outline-variant)</div>
+  </div>
+</div>
+</div></body></html>

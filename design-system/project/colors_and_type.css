@@ -1,0 +1,195 @@
+/* ============================================================
+   Invoker — Colors & Type
+   Base tokens (--ivk-*) + semantic utility classes (h1, p, code…).
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* ---------- Surfaces (MD3, 6 levels, dark by default) ---------- */
+  --ivk-surface-lowest:    #000000; /* deepest app bg */
+  --ivk-surface-low:       #131313; /* sidebar bg */
+  --ivk-surface:           #0e0e0e; /* main content bg */
+  --ivk-surface-container: #191a1a; /* cards, inputs */
+  --ivk-surface-high:      #1f2020; /* hovered rows */
+  --ivk-surface-highest:   #252626; /* active rows */
+
+  /* ---------- On-surface / text ---------- */
+  --ivk-on-surface:         #e7e5e4; /* primary text */
+  --ivk-on-surface-variant: #acabaa; /* secondary text */
+  --ivk-outline:            #767575; /* muted text, icons */
+  --ivk-outline-variant:    #484848; /* dividers, borders */
+
+  /* ---------- Accent (warm amber/gold) ---------- */
+  --ivk-primary:    #e6c188;
+  --ivk-on-primary: #543c0e;
+  --ivk-secondary:  #dbc3a1;
+  --ivk-tertiary:   #ffcdb3;
+  --ivk-error:      #f97758;
+
+  /* ---------- Semantic ---------- */
+  --ivk-success: #4ae176;
+  --ivk-warning: #e6c188;
+  --ivk-info:    #dbc3a1;
+
+  /* ---------- HTTP method palette ---------- */
+  --ivk-method-get:    #4ae176;
+  --ivk-method-post:   #e6c188;
+  --ivk-method-put:    #dbc3a1;
+  --ivk-method-patch:  #ffcdb3;
+  --ivk-method-delete: #f97758;
+
+  /* ---------- {{variable}} states ---------- */
+  --ivk-var-set:   #dbc3a1;
+  --ivk-var-unset: #f97758;
+
+  /* ---------- Editor ---------- */
+  --ivk-editor-bg:        #0e0e0e;
+  --ivk-editor-gutter:    #131313;
+  --ivk-editor-selection: rgba(230, 193, 136, 0.15);
+
+  /* ---------- Typography families ---------- */
+  --ivk-font-display: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --ivk-font-body:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --ivk-font-mono:    'JetBrains Mono', 'Fira Code', Consolas, monospace;
+
+  /* ---------- Type scale (px) ---------- */
+  --ivk-fs-3xs: 10px;   /* micro labels (MD badge, counts) */
+  --ivk-fs-2xs: 11px;   /* tooltips, inline meta */
+  --ivk-fs-xs:  12px;   /* tab labels, badges */
+  --ivk-fs-sm:  13px;   /* most UI copy */
+  --ivk-fs-base: 14px;  /* default body */
+  --ivk-fs-md:  16px;
+  --ivk-fs-lg:  18px;
+  --ivk-fs-xl:  20px;
+  --ivk-fs-2xl: 24px;   /* section header */
+  --ivk-fs-3xl: 28px;   /* welcome h1 */
+  --ivk-fs-4xl: 36px;
+
+  /* ---------- Line heights ---------- */
+  --ivk-lh-tight:   1.2;
+  --ivk-lh-snug:    1.4;
+  --ivk-lh-normal:  1.5;
+  --ivk-lh-relaxed: 1.75;
+
+  /* ---------- Weights ---------- */
+  --ivk-fw-regular:  400;
+  --ivk-fw-medium:   500;
+  --ivk-fw-semibold: 600;
+  --ivk-fw-bold:     700;
+  --ivk-fw-black:    800;
+
+  /* ---------- Radii ---------- */
+  --ivk-r-sm:  6px;    /* badges, small chips */
+  --ivk-r-md:  8px;    /* buttons, inputs */
+  --ivk-r-lg:  12px;   /* panels */
+  --ivk-r-xl:  16px;   /* floating sidebar, cards */
+  --ivk-r-full: 9999px;
+
+  /* ---------- Spacing (4-pt base) ---------- */
+  --ivk-sp-1: 4px;
+  --ivk-sp-2: 8px;
+  --ivk-sp-3: 12px;
+  --ivk-sp-4: 16px;
+  --ivk-sp-5: 20px;
+  --ivk-sp-6: 24px;
+  --ivk-sp-8: 32px;
+
+  /* ---------- Ghost borders (inset shadow system) ---------- */
+  --ivk-ghost:    inset 0 0 0 1px rgba(66, 71, 84, 0.15);
+  --ivk-ghost-b:  inset 0 -1px 0 0 rgba(66, 71, 84, 0.15);
+  --ivk-ghost-t:  inset 0 1px 0 0 rgba(66, 71, 84, 0.15);
+  --ivk-ghost-r:  inset -1px 0 0 0 rgba(66, 71, 84, 0.15);
+
+  /* ---------- Legacy aliases (kept for component code) ---------- */
+  --ivk-bg: var(--ivk-surface-lowest);
+  --ivk-border: var(--ivk-outline-variant);
+  --ivk-accent: var(--ivk-primary);
+  --ivk-text: var(--ivk-on-surface);
+  --ivk-text-secondary: var(--ivk-on-surface-variant);
+  --ivk-text-muted: var(--ivk-outline);
+}
+
+/* ============================================================
+   Semantic element styles
+   ============================================================ */
+
+body {
+  background: var(--ivk-surface-lowest);
+  color: var(--ivk-on-surface);
+  font-family: var(--ivk-font-body);
+  font-size: var(--ivk-fs-base);
+  line-height: var(--ivk-lh-normal);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, .h1 {
+  font-family: var(--ivk-font-display);
+  font-weight: var(--ivk-fw-bold);
+  font-size: var(--ivk-fs-3xl);
+  line-height: var(--ivk-lh-tight);
+  letter-spacing: -0.02em;
+  color: var(--ivk-on-surface);
+}
+h2, .h2 {
+  font-family: var(--ivk-font-display);
+  font-weight: var(--ivk-fw-semibold);
+  font-size: var(--ivk-fs-2xl);
+  line-height: var(--ivk-lh-snug);
+  letter-spacing: -0.01em;
+  color: var(--ivk-on-surface);
+}
+h3, .h3 {
+  font-family: var(--ivk-font-display);
+  font-weight: var(--ivk-fw-semibold);
+  font-size: var(--ivk-fs-lg);
+  line-height: var(--ivk-lh-snug);
+  color: var(--ivk-on-surface);
+}
+h4, .h4 {
+  font-family: var(--ivk-font-body);
+  font-weight: var(--ivk-fw-semibold);
+  font-size: var(--ivk-fs-base);
+  color: var(--ivk-on-surface);
+}
+
+p, .p {
+  font-size: var(--ivk-fs-sm);
+  line-height: var(--ivk-lh-relaxed);
+  color: var(--ivk-on-surface-variant);
+}
+
+small, .small {
+  font-size: var(--ivk-fs-xs);
+  color: var(--ivk-outline);
+}
+
+code, kbd, pre, .code {
+  font-family: var(--ivk-font-mono);
+  font-size: var(--ivk-fs-xs);
+  color: var(--ivk-on-surface);
+}
+
+kbd {
+  background: var(--ivk-surface-container);
+  border-radius: var(--ivk-r-sm);
+  padding: 2px 6px;
+  box-shadow: var(--ivk-ghost);
+  font-weight: var(--ivk-fw-medium);
+}
+
+.label-caps {
+  font-family: var(--ivk-font-body);
+  font-size: var(--ivk-fs-3xs);
+  font-weight: var(--ivk-fw-bold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ivk-outline);
+}
+
+/* Ghost border utilities */
+.ghost-border   { box-shadow: var(--ivk-ghost); }
+.ghost-border-b { box-shadow: var(--ivk-ghost-b); }
+.ghost-border-t { box-shadow: var(--ivk-ghost-t); }
+.ghost-border-r { box-shadow: var(--ivk-ghost-r); }
