@@ -1,8 +1,10 @@
 import { useMemo } from 'react';
-import { ChevronRight, ChevronDown, Zap, FileText, Folder, FolderOpen, BookOpen } from 'lucide-react';
+import { ChevronRight, ChevronDown, FileText, Folder, FolderOpen, BookOpen } from 'lucide-react';
 import { parseIvk, type HttpMethod } from 'ivkjs';
 import { useCollectionStore } from '@/stores/collection-store';
 import { useDocsStore } from '@/stores/docs-store';
+import { useEditorStore, type TabData } from '@/stores/editor-store';
+import { TOKENS, MethodBadge } from '@/components/shared/primitives';
 
 interface TreeNode {
   name: string;
@@ -11,10 +13,9 @@ interface TreeNode {
   children: TreeNode[];
 }
 
-/**
- * Build a unified tree from both .ivk and .md file lists.
- * Folders are sorted first, then files alphabetically.
- */
+/* ------------------------------------------------------------------ */
+/*  Tree builder                                                       */
+/* ------------------------------------------------------------------ */
 function buildUnifiedTree(
   ivkFiles: { path: string; name: string }[],
   mdFiles: { path: string; title: string }[],
@@ -33,25 +34,18 @@ function buildUnifiedTree(
     };
     folderMap.set(folderPath, node);
 
-    // If the folder has a parent, nest it
     if (parts.length > 1) {
       const parentPath = parts.slice(0, -1).join('/');
       const parent = ensureFolder(parentPath);
-      // Avoid duplicates
       if (!parent.children.some((c) => c.path === folderPath)) {
         parent.children.push(node);
       }
     } else {
-      // Top-level folder
-      if (!root.some((c) => c.path === folderPath)) {
-        root.push(node);
-      }
+      if (!root.some((c) => c.path === folderPath)) root.push(node);
     }
-
     return node;
   }
 
-  // Add .ivk files
   for (const file of ivkFiles) {
     const parts = file.path.split('/');
     const node: TreeNode = {
@@ -60,21 +54,16 @@ function buildUnifiedTree(
       type: 'ivk',
       children: [],
     };
-
     if (parts.length > 1) {
-      const folderPath = parts.slice(0, -1).join('/');
-      ensureFolder(folderPath).children.push(node);
+      ensureFolder(parts.slice(0, -1).join('/')).children.push(node);
     } else {
       root.push(node);
     }
   }
 
-  // Add .md files — skip README.md (implicit in its parent folder)
   for (const doc of mdFiles) {
-    const lowerPath = doc.path.toLowerCase();
-    if (lowerPath.endsWith('/readme.md') || lowerPath === 'readme.md') {
-      continue;
-    }
+    const lower = doc.path.toLowerCase();
+    if (lower.endsWith('/readme.md') || lower === 'readme.md') continue;
     const parts = doc.path.split('/');
     const node: TreeNode = {
       name: parts[parts.length - 1]!.replace('.md', ''),
@@ -82,21 +71,18 @@ function buildUnifiedTree(
       type: 'md',
       children: [],
     };
-
     if (parts.length > 1) {
-      const folderPath = parts.slice(0, -1).join('/');
-      ensureFolder(folderPath).children.push(node);
+      ensureFolder(parts.slice(0, -1).join('/')).children.push(node);
     } else {
       root.push(node);
     }
   }
 
-  // Sort recursively: folders first, then alphabetical
   function sortChildren(nodes: TreeNode[]) {
     nodes.sort((a, b) => {
-      const aFolder = a.type === 'folder' ? 0 : 1;
-      const bFolder = b.type === 'folder' ? 0 : 1;
-      if (aFolder !== bFolder) return aFolder - bFolder;
+      const af = a.type === 'folder' ? 0 : 1;
+      const bf = b.type === 'folder' ? 0 : 1;
+      if (af !== bf) return af - bf;
       return a.name.localeCompare(b.name);
     });
     for (const n of nodes) {
@@ -104,145 +90,114 @@ function buildUnifiedTree(
     }
   }
   sortChildren(root);
-
   return root;
 }
 
-/** Count all non-folder children (files) in a tree node, recursively. */
 function countFiles(node: TreeNode): number {
   if (node.type !== 'folder') return 1;
-  let count = 0;
-  for (const child of node.children) {
-    count += countFiles(child);
-  }
-  return count;
+  return node.children.reduce((c, n) => c + countFiles(n), 0);
 }
 
-const methodBadgeStyles: Record<HttpMethod, { bg: string; color: string }> = {
-  GET: { bg: 'var(--ivk-method-get)', color: 'var(--ivk-method-get)' },
-  POST: { bg: 'var(--ivk-method-post)', color: 'var(--ivk-method-post)' },
-  PUT: { bg: 'var(--ivk-method-put)', color: 'var(--ivk-method-put)' },
-  PATCH: { bg: 'var(--ivk-method-patch)', color: 'var(--ivk-method-patch)' },
-  DELETE: { bg: 'var(--ivk-method-delete)', color: 'var(--ivk-method-delete)' },
-};
-
-function MethodBadge({ method }: { method: HttpMethod }) {
-  const style = methodBadgeStyles[method] ?? { bg: 'var(--ivk-outline)', color: 'var(--ivk-outline)' };
-  const label = method === 'DELETE' ? 'DEL' : method;
-  return (
-    <span
-      className="inline-flex items-center justify-center rounded-sm text-[0.625rem] font-bold tracking-wider leading-none flex-shrink-0 px-1"
-      style={{
-        color: style.color,
-        backgroundColor: `color-mix(in srgb, ${style.bg} 15%, transparent)`,
-        minWidth: 28,
-        height: 16,
-      }}
-    >
-      {label}
-    </span>
-  );
-}
-
-/** Indentation guides: render subtle vertical lines for each depth level. */
-function IndentGuides({ depth }: { depth: number }) {
-  if (depth === 0) return null;
-  return (
-    <>
-      {Array.from({ length: depth }, (_, i) => (
-        <span
-          key={i}
-          className="absolute top-0 bottom-0 border-l border-outline-variant/15"
-          style={{ left: 12 + i * 24 + 11 }}
-        />
-      ))}
-    </>
-  );
-}
-
-function TreeItem({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
-  const activeFilePath = useCollectionStore((s) => s.activeFilePath);
-  const setActiveFile = useCollectionStore((s) => s.setActiveFile);
-  const ivkExpandedFolders = useCollectionStore((s) => s.expandedFolders);
-  const toggleIvkFolder = useCollectionStore((s) => s.toggleFolder);
-
-  const activeDocPath = useDocsStore((s) => s.activeDocPath);
-  const setActiveDoc = useDocsStore((s) => s.setActiveDoc);
-  const docExpandedFolders = useDocsStore((s) => s.expandedFolders);
-  const toggleDocFolder = useDocsStore((s) => s.toggleFolder);
-
+/* ------------------------------------------------------------------ */
+/*  Tree item                                                          */
+/* ------------------------------------------------------------------ */
+function TreeItem({ node, depth = 0, searchQuery }: { node: TreeNode; depth?: number; searchQuery?: string }) {
+  const expandedFolders = useCollectionStore((s) => s.expandedFolders);
+  const toggleFolder = useCollectionStore((s) => s.toggleFolder);
+  const activeTabPath = useEditorStore((s) => s.activeTabPath);
+  const openTab = useEditorStore((s) => s.openTab);
   const getFileByPath = useCollectionStore((s) => s.getFileByPath);
 
-  const pl = 12 + depth * 24;
+  const pl = 10 + depth * 14;
 
   if (node.type === 'folder') {
-    // Folder expanded state: check both stores
-    const isExpanded = ivkExpandedFolders.has(node.path) || docExpandedFolders.has(node.path);
+    const isExpanded = expandedFolders.has(node.path);
     const fileCount = countFiles(node);
-
-    // Check if this folder has a README.md in the docs store
     const docs = useDocsStore.getState().docs;
-    const readmePath = `${node.path}/README.md`;
-    const readme = docs.find(
-      (d) =>
-        d.path.toLowerCase() === readmePath.toLowerCase() ||
-        d.path.toLowerCase() === `${node.path}/readme.md`,
-    );
-    const hasReadme = !!readme;
-    const isReadmeActive = activeDocPath === readme?.path;
+    const hasReadme = docs.some((d) => d.path.toLowerCase() === `${node.path}/readme.md`.toLowerCase());
+    const isActive = activeTabPath === node.path;
 
-    const handleToggle = () => {
-      // Toggle in both stores to keep them in sync
-      toggleIvkFolder(node.path);
-      toggleDocFolder(node.path);
-
-      // If this folder has a README, open it in the doc renderer
-      if (readme) {
-        useDocsStore.getState().setActiveDoc(readme.path);
-        useCollectionStore.getState().setActiveFile('');
+    const handleClick = () => {
+      toggleFolder(node.path);
+      // Open folder README as a tab
+      if (hasReadme) {
+        const tab: TabData = {
+          kind: 'folder',
+          path: node.path,
+          name: node.name,
+          hasReadme: true,
+        };
+        openTab(tab);
       }
     };
 
     return (
       <div>
         <button
-          className={`relative w-full flex items-center gap-2 py-2 px-3 text-sm transition-colors duration-150 ${
-            isReadmeActive
-              ? 'bg-surface-highest text-primary'
-              : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
-          }`}
-          style={{ paddingLeft: pl }}
-          onClick={handleToggle}
+          onClick={handleClick}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            paddingLeft: pl,
+            paddingRight: 10,
+            paddingTop: 5,
+            paddingBottom: 5,
+            background: isActive ? TOKENS.s5 : 'transparent',
+            color: isActive ? TOKENS.amber : TOKENS.fg2,
+            fontSize: 12,
+            border: 'none',
+            cursor: 'pointer',
+            borderRadius: 0,
+            transition: 'background 0.12s, color 0.12s',
+            position: 'relative',
+            fontFamily: 'inherit',
+            textAlign: 'left',
+          }}
         >
-          <IndentGuides depth={depth} />
-          {/* Active README left accent bar */}
-          {isReadmeActive && (
-            <span className="absolute left-0 top-0.5 bottom-0.5 w-[2px] rounded-full bg-primary" />
+          {isActive && (
+            <span
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 4,
+                bottom: 4,
+                width: 2,
+                borderRadius: 2,
+                background: TOKENS.amber,
+              }}
+            />
           )}
-          <span className="flex-shrink-0 text-outline">
-            {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-          </span>
           {isExpanded ? (
-            <FolderOpen size={15} className="text-amber-400 flex-shrink-0" />
+            <ChevronDown size={10} style={{ color: TOKENS.fg3, flexShrink: 0 }} />
           ) : (
-            <Folder size={15} className="text-amber-400 flex-shrink-0" />
+            <ChevronRight size={10} style={{ color: TOKENS.fg3, flexShrink: 0 }} />
           )}
-          <span className="truncate font-medium">{node.name}</span>
+          {isExpanded ? (
+            <FolderOpen size={12} style={{ color: TOKENS.yellow, flexShrink: 0 }} />
+          ) : (
+            <Folder size={12} style={{ color: TOKENS.yellow, flexShrink: 0 }} />
+          )}
+          <span style={{ flex: 1, textAlign: 'left', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {node.name}
+          </span>
           {hasReadme && (
-            <span title="Has README" className="flex-shrink-0">
-              <BookOpen
-                size={11}
-                className={isReadmeActive ? 'text-primary' : 'text-outline/40'}
-              />
-            </span>
+            <BookOpen
+              size={10}
+              style={{
+                color: isActive ? TOKENS.amber : 'rgba(118,117,117,0.55)',
+                flexShrink: 0,
+              }}
+            />
           )}
-          <span className="ml-auto text-[0.625rem] text-outline/50 tabular-nums font-medium">
+          <span style={{ fontSize: 10, color: 'rgba(118,117,117,0.5)', flexShrink: 0 }}>
             {fileCount}
           </span>
         </button>
         {isExpanded &&
           node.children.map((child) => (
-            <TreeItem key={child.path} node={child} depth={depth + 1} />
+            <TreeItem key={child.path} node={child} depth={depth + 1} searchQuery={searchQuery} />
           ))}
       </div>
     );
@@ -250,18 +205,14 @@ function TreeItem({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
 
   // File node
   const isIvk = node.type === 'ivk';
-  const isActive = isIvk
-    ? activeFilePath === node.path
-    : activeDocPath === node.path;
+  const isActive = activeTabPath === node.path;
 
-  // Parse method from .ivk file content
   const method = useMemo<HttpMethod | null>(() => {
     if (!isIvk) return null;
     const file = getFileByPath(node.path);
     if (!file) return null;
     try {
-      const parsed = parseIvk(file.content);
-      return parsed.method;
+      return parseIvk(file.content).method;
     } catch {
       return null;
     }
@@ -269,65 +220,104 @@ function TreeItem({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
 
   const handleClick = () => {
     if (isIvk) {
-      setActiveFile(node.path);
-      // Clear doc selection
-      useDocsStore.getState().clearActiveDoc();
+      const tab: TabData = { kind: 'ivk', path: node.path, name: node.name, method: method ?? undefined };
+      openTab(tab);
+      useCollectionStore.getState().setActiveFile(node.path);
     } else {
-      setActiveDoc(node.path);
-      // Clear ivk selection
-      useCollectionStore.getState().setActiveFile('');
+      const tab: TabData = { kind: 'folder', path: node.path, name: node.name };
+      openTab(tab);
     }
   };
 
   return (
     <button
-      className={`relative w-full flex items-center gap-2 py-2 px-3 text-sm transition-colors duration-150 ${
-        isActive
-          ? 'bg-surface-highest text-primary'
-          : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
-      }`}
-      style={{ paddingLeft: pl + 24 }}
       onClick={handleClick}
+      style={{
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        paddingLeft: pl + 16,
+        paddingRight: 10,
+        paddingTop: 5,
+        paddingBottom: 5,
+        background: isActive ? TOKENS.s5 : 'transparent',
+        color: isActive ? TOKENS.amber : TOKENS.fg2,
+        fontSize: 12,
+        border: 'none',
+        cursor: 'pointer',
+        borderRadius: 0,
+        transition: 'background 0.12s, color 0.12s',
+        position: 'relative',
+        fontFamily: 'inherit',
+        textAlign: 'left',
+      }}
     >
-      <IndentGuides depth={depth} />
-      {/* Active file left accent bar */}
       {isActive && (
-        <span className="absolute left-0 top-0.5 bottom-0.5 w-[2px] rounded-full bg-primary" />
+        <span
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 4,
+            bottom: 4,
+            width: 2,
+            borderRadius: 2,
+            background: TOKENS.amber,
+          }}
+        />
       )}
       {isIvk && method ? (
-        <MethodBadge method={method} />
-      ) : isIvk ? (
-        <Zap size={14} className="text-amber-400 flex-shrink-0" />
+        <MethodBadge method={method} compact />
       ) : (
-        <FileText size={14} className="text-blue-400/80 flex-shrink-0" />
+        <FileText size={11} style={{ color: 'rgba(96,165,250,0.75)', flexShrink: 0 }} />
       )}
-      <span className="truncate">{node.name}</span>
-      {!isIvk && (
-        <span className="ml-auto text-[0.5625rem] font-bold tracking-wider text-outline/40 flex-shrink-0">
-          MD
-        </span>
-      )}
+      <span style={{ flex: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {node.name}
+      </span>
     </button>
   );
 }
 
-export function UnifiedTree() {
+/* ------------------------------------------------------------------ */
+/*  Exported component                                                 */
+/* ------------------------------------------------------------------ */
+interface UnifiedTreeProps {
+  searchQuery?: string;
+}
+
+export function UnifiedTree({ searchQuery }: UnifiedTreeProps) {
   const ivkFiles = useCollectionStore((s) => s.files);
   const mdFiles = useDocsStore((s) => s.docs);
-  const tree = buildUnifiedTree(ivkFiles, mdFiles);
+  const tree = useMemo(() => buildUnifiedTree(ivkFiles, mdFiles), [ivkFiles, mdFiles]);
 
-  if (tree.length === 0) {
+  // Filter tree based on search
+  const filteredTree = useMemo(() => {
+    if (!searchQuery?.trim()) return tree;
+    const q = searchQuery.toLowerCase();
+    function filterNode(node: TreeNode): TreeNode | null {
+      if (node.type === 'folder') {
+        const filteredChildren = node.children.map(filterNode).filter(Boolean) as TreeNode[];
+        if (filteredChildren.length > 0) return { ...node, children: filteredChildren };
+        if (node.name.toLowerCase().includes(q)) return node;
+        return null;
+      }
+      return node.name.toLowerCase().includes(q) ? node : null;
+    }
+    return tree.map(filterNode).filter(Boolean) as TreeNode[];
+  }, [tree, searchQuery]);
+
+  if (filteredTree.length === 0) {
     return (
-      <div className="px-3 py-6 text-xs text-outline text-center">
-        No files loaded
+      <div style={{ padding: '24px 12px', textAlign: 'center', color: TOKENS.fg3, fontSize: 12 }}>
+        {searchQuery ? 'No matching files' : 'No files loaded'}
       </div>
     );
   }
 
   return (
-    <div className="py-1.5">
-      {tree.map((node) => (
-        <TreeItem key={node.path} node={node} />
+    <div style={{ paddingTop: 4, paddingBottom: 4 }}>
+      {filteredTree.map((node) => (
+        <TreeItem key={node.path} node={node} searchQuery={searchQuery} />
       ))}
     </div>
   );

@@ -9,46 +9,78 @@ import {
 } from '@codemirror/view';
 import { RangeSetBuilder } from '@codemirror/state';
 import type { Extension } from '@codemirror/state';
+import { syntaxHighlighting, HighlightStyle } from '@codemirror/language';
+import { tags } from '@lezer/highlight';
 import type { EnvManager } from 'ivkjs';
+
+// ── Syntax Highlighting (matching the design spec) ──────────────────
+
+const invokerHighlight = HighlightStyle.define([
+  // Strings — soft green
+  { tag: tags.string, color: '#a3d6a7' },
+  // Property names / keys — on-surface-variant
+  { tag: tags.propertyName, color: '#acabaa' },
+  // Numbers — blue
+  { tag: tags.number, color: '#60a5fa' },
+  // Booleans — amber dim
+  { tag: tags.bool, color: '#dbc3a1' },
+  // null — amber dim
+  { tag: tags.null, color: '#dbc3a1' },
+  // Braces, brackets, punctuation
+  { tag: tags.brace, color: '#acabaa' },
+  { tag: tags.squareBracket, color: '#acabaa' },
+  { tag: tags.separator, color: '#767575' },     // commas
+  { tag: tags.punctuation, color: '#acabaa' },    // colons
+]);
 
 // ── Dark Theme ──────────────────────────────────────────────────────
 
 const ivkTheme = EditorView.theme(
   {
     '&': {
-      backgroundColor: '#14171e',
-      color: '#e2e4e9',
+      backgroundColor: '#0e0e0e',
+      color: '#e7e5e4',
       fontSize: '13px',
       fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
+      lineHeight: '1.6',
     },
     '.cm-content': {
-      caretColor: '#ffffff',
-      padding: '8px 0',
+      caretColor: '#e6c188',
+      padding: '12px 0',
     },
     '&.cm-focused .cm-cursor': {
-      borderLeftColor: '#ffffff',
+      borderLeftColor: '#e6c188',
+    },
+    '&.cm-focused': {
+      outline: 'none',
     },
     '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection': {
-      backgroundColor: 'rgba(59, 130, 246, 0.2)',
+      backgroundColor: 'rgba(230, 193, 136, 0.15)',
     },
     '.cm-gutters': {
-      backgroundColor: '#14171e',
-      color: '#5c6070',
+      backgroundColor: '#131313',
+      color: '#484848',
       border: 'none',
+      minWidth: '36px',
+    },
+    '.cm-lineNumbers .cm-gutterElement': {
+      textAlign: 'right',
+      padding: '0 8px 0 12px',
     },
     '.cm-activeLineGutter': {
-      backgroundColor: 'rgba(59, 130, 246, 0.08)',
+      backgroundColor: 'transparent',
+      color: '#767575',
     },
     '.cm-activeLine': {
-      backgroundColor: 'rgba(59, 130, 246, 0.05)',
+      backgroundColor: 'transparent',
     },
     '.cm-matchingBracket': {
-      backgroundColor: 'rgba(59, 130, 246, 0.25)',
+      backgroundColor: 'rgba(230, 193, 136, 0.2)',
       outline: 'none',
     },
     '.cm-tooltip': {
-      backgroundColor: '#1c2029',
-      border: '1px solid #2a2e3a',
+      backgroundColor: '#191a1a',
+      border: '1px solid #484848',
       borderRadius: '6px',
       boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
     },
@@ -57,7 +89,7 @@ const ivkTheme = EditorView.theme(
         padding: '4px 8px',
       },
       '& > ul > li[aria-selected]': {
-        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+        backgroundColor: 'rgba(230, 193, 136, 0.15)',
       },
     },
   },
@@ -161,6 +193,7 @@ function createVarHoverTooltip(envManager: EnvManager) {
 export function createIvkExtensions(envManager: EnvManager): Extension[] {
   return [
     ivkTheme,
+    syntaxHighlighting(invokerHighlight),
     createVarDecoPlugin(envManager),
     createVarHoverTooltip(envManager),
   ];

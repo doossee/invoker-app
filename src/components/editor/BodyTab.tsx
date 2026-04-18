@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { EditorView, keymap } from '@codemirror/view';
+import { EditorView, keymap, lineNumbers } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import { json } from '@codemirror/lang-json';
 import { defaultKeymap, indentWithTab } from '@codemirror/commands';
@@ -28,6 +28,7 @@ export function BodyTab({ body, onChange }: Props) {
         doc: body,
         extensions: [
           keymap.of([...defaultKeymap, indentWithTab]),
+          lineNumbers(),
           json(),
           ...createIvkExtensions(envManager),
           EditorView.updateListener.of((update) => {
@@ -85,12 +86,26 @@ export function BodyTab({ body, onChange }: Props) {
   }, [formatJson]);
 
   return (
-    <div className="flex flex-col h-full">
-      <div ref={containerRef} className="flex-1 overflow-auto" />
-      <div className="flex items-center px-3 py-1.5 ghost-border-t">
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div ref={containerRef} style={{ flex: 1, overflow: 'auto' }} />
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          padding: '4px 12px',
+          boxShadow: 'inset 0 1px 0 rgba(66,71,84,0.18)',
+        }}
+      >
         <button
           onClick={formatJson}
-          className="text-xs text-on-surface-variant hover:text-primary transition-colors"
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#767575',
+            fontSize: 11,
+            cursor: 'pointer',
+            fontFamily: "'JetBrains Mono', monospace",
+          }}
         >
           Format JSON
         </button>

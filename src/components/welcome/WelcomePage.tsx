@@ -12,193 +12,74 @@ import {
 } from 'lucide-react';
 import { isTauri } from '@/lib/platform';
 import { useOpenCollection } from '@/hooks/useOpenCollection';
+import { useEditorStore } from '@/stores/editor-store';
+import {
+  TOKENS,
+  InvokerMark,
+  PrimaryBtn,
+  GhostBtn,
+  Tile,
+  TileHeader,
+  Chip,
+  Kbd,
+  LearnCard,
+} from '@/components/shared/primitives';
 
-/* ------------------------------------------------------------------ */
-/*  Invoker Mark (the arc + dot logo)                                  */
-/* ------------------------------------------------------------------ */
-function InvokerMark({ size = 16, color = 'var(--ivk-primary)' }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 72 72" fill="none" className="shrink-0 block">
-      <path d="M 56 36 A 20 20 0 1 0 36 56" stroke={color} strokeWidth="10" strokeLinecap="round" />
-      <circle cx="56" cy="56" r="6" fill={color} />
-    </svg>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Tile primitives                                                    */
-/* ------------------------------------------------------------------ */
-function Tile({
-  children,
-  className = '',
-  gradient = false,
-  style,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  gradient?: boolean;
-  style?: React.CSSProperties;
-}) {
-  return (
-    <div
-      className={`bg-surface-low rounded-[14px] p-[18px] flex flex-col ${className}`}
-      style={{
-        boxShadow: 'inset 0 0 0 1px rgba(66,71,84,0.28)',
-        ...(gradient
-          ? { background: 'linear-gradient(135deg, rgba(230,193,136,0.06), rgba(230,193,136,0) 60%)' }
-          : {}),
-        ...style,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-function TileHeader({ icon, label }: { icon: React.ReactNode; label: string }) {
-  return (
-    <div className="flex items-center gap-1.5 font-mono text-[10px] text-outline tracking-[0.1em] uppercase">
-      <span className="text-primary flex">{icon}</span>
-      <span>{label}</span>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Buttons                                                            */
-/* ------------------------------------------------------------------ */
-function PrimaryBtn({
-  children,
-  onClick,
-  disabled,
-}: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-primary text-on-primary border-none rounded-lg cursor-pointer text-[13px] font-semibold disabled:opacity-50"
-    >
-      {children}
-    </button>
-  );
-}
-
-function GhostBtn({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-container text-on-surface border-none rounded-lg cursor-pointer text-[13px] font-medium"
-      style={{ boxShadow: 'inset 0 0 0 1px rgba(66,71,84,0.28)' }}
-    >
-      {children}
-    </button>
-  );
-}
-
-function Chip({ children, icon }: { children: React.ReactNode; icon: React.ReactNode }) {
-  return (
-    <span
-      className="inline-flex items-center gap-[5px] px-[9px] py-[3px] rounded-full text-[11px] text-on-surface-variant bg-surface-container"
-      style={{ boxShadow: 'inset 0 0 0 1px rgba(66,71,84,0.18)' }}
-    >
-      <span className="text-outline flex">{icon}</span>
-      {children}
-    </span>
-  );
-}
-
-function Kbd({ children }: { children: React.ReactNode }) {
-  return (
-    <span
-      className="font-mono text-[10px] font-medium px-[5px] py-[2px] rounded text-on-surface-variant bg-surface-container inline-flex items-center justify-center leading-none"
-      style={{
-        boxShadow: 'inset 0 0 0 1px rgba(66,71,84,0.28)',
-        minWidth: 18,
-      }}
-    >
-      {children}
-    </span>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Learn card                                                         */
-/* ------------------------------------------------------------------ */
-function LearnCard({
-  n,
-  title,
-  body,
-}: {
-  n: string;
-  title: string;
-  body: React.ReactNode;
-}) {
-  return (
-    <div
-      className="bg-surface-low rounded-xl p-4"
-      style={{ boxShadow: 'inset 0 0 0 1px rgba(66,71,84,0.28)' }}
-    >
-      <div className="font-mono text-[11px] text-outline mb-2">{n}</div>
-      <div
-        className="font-semibold text-[15px] text-on-surface mb-1.5"
-        style={{ fontFamily: "'Manrope', sans-serif" }}
-      >
-        {title}
-      </div>
-      <div className="text-xs text-on-surface-variant leading-relaxed">{body}</div>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Main component                                                     */
-/* ------------------------------------------------------------------ */
 export function WelcomePage() {
   const { openCollection, loading } = useOpenCollection();
   const tauriApp = isTauri();
+  const setCommandPaletteOpen = useEditorStore((s) => s.setCommandPaletteOpen);
 
   return (
     <div
-      className="h-full overflow-auto bg-surface-lowest text-on-surface"
-      style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
+      style={{
+        height: '100%',
+        overflow: 'auto',
+        background: TOKENS.s1,
+        color: TOKENS.fg1,
+        fontFamily: "'Inter', system-ui, sans-serif",
+      }}
     >
-      <div className="max-w-[1040px] mx-auto" style={{ padding: '48px 40px 64px' }}>
+      <div style={{ maxWidth: 1040, margin: '0 auto', padding: '48px 40px 64px' }}>
         {/* ============ HERO ============ */}
-        <div className="flex items-start gap-5 mb-11">
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20, marginBottom: 44 }}>
           <div
-            className="w-14 h-14 rounded-[14px] flex items-center justify-center shrink-0"
             style={{
+              width: 56,
+              height: 56,
+              borderRadius: 14,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
               background: 'rgba(230,193,136,0.08)',
-              boxShadow: 'inset 0 0 0 1px rgba(230,193,136,0.35)',
+              boxShadow: `inset 0 0 0 1px ${TOKENS.strokeHot}`,
             }}
           >
             <InvokerMark size={30} />
           </div>
-          <div className="flex-1">
+          <div style={{ flex: 1 }}>
             <div
-              className="text-on-surface leading-[1.1]"
               style={{
                 fontFamily: "'Manrope', sans-serif",
                 fontWeight: 700,
                 fontSize: 34,
                 letterSpacing: '-0.02em',
+                lineHeight: 1.1,
+                color: TOKENS.fg1,
               }}
             >
               A git-native API workspace.
             </div>
-            <div className="mt-2.5 text-on-surface-variant text-[15px] max-w-[520px] leading-normal">
+            <div style={{ marginTop: 10, color: TOKENS.fg2, fontSize: 15, maxWidth: 520, lineHeight: 1.5 }}>
               Requests live as plain{' '}
-              <code className="font-mono text-[13px] text-primary">.ivk</code> files next to their
-              code. Docs are{' '}
-              <code className="font-mono text-[13px] text-primary">README.md</code> in folders.
-              Publish as a static site — no server, no account.
+              <code style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: TOKENS.amber }}>.ivk</code>{' '}
+              files next to their code. Docs are{' '}
+              <code style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: TOKENS.amber }}>README.md</code>{' '}
+              in folders. Publish as a static site — no server, no account.
             </div>
           </div>
-          <div className="flex gap-2 shrink-0">
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
             <GhostBtn>
               <BookOpen size={13} />
               Docs
@@ -210,89 +91,98 @@ export function WelcomePage() {
           </div>
         </div>
 
-        {/* ============ BENTO ============ */}
+        {/* ============ BENTO GRID ============ */}
         <div
-          className="grid gap-3 mb-10"
           style={{
+            display: 'grid',
+            gap: 12,
             gridTemplateColumns: 'repeat(6, 1fr)',
             gridTemplateRows: 'repeat(2, minmax(140px, auto))',
+            marginBottom: 40,
           }}
         >
-          {/* TILE 1 — Open folder — tall */}
-          <Tile
-            gradient
-            className="p-[22px]"
-            style={{ gridColumn: 'span 3', gridRow: 'span 2' }}
-          >
+          {/* TILE 1 — Open Collection */}
+          <Tile gradient style={{ gridColumn: 'span 3', gridRow: 'span 2', padding: 22 }}>
             <TileHeader icon={<FolderOpen size={14} />} label="Open folder" />
             <div
-              className="mt-3.5 text-on-surface leading-[1.2]"
               style={{
+                marginTop: 14,
                 fontFamily: "'Manrope', sans-serif",
                 fontWeight: 600,
                 fontSize: 22,
                 letterSpacing: '-0.01em',
+                lineHeight: 1.2,
+                color: TOKENS.fg1,
               }}
             >
               Point Invoker at a folder of .ivk and .md files.
             </div>
-            <div className="mt-2 text-on-surface-variant text-[13px] leading-normal">
+            <div style={{ marginTop: 8, color: TOKENS.fg2, fontSize: 13, lineHeight: 1.5 }}>
               Everything stays on your disk. No sign-in, no sync, no cloud.
             </div>
-            <div className="mt-[22px] flex gap-2">
-              {tauriApp ? (
-                <PrimaryBtn onClick={openCollection} disabled={loading}>
-                  <FolderOpen size={13} />
-                  Choose folder...
-                </PrimaryBtn>
-              ) : (
-                <PrimaryBtn disabled>
-                  <FolderOpen size={13} />
-                  Choose folder...
-                </PrimaryBtn>
-              )}
+            <div style={{ marginTop: 22, display: 'flex', gap: 8 }}>
+              <PrimaryBtn onClick={tauriApp ? openCollection : undefined} disabled={loading || !tauriApp}>
+                <FolderOpen size={13} />
+                Choose folder...
+              </PrimaryBtn>
               <GhostBtn>
                 <Copy size={13} />
                 Clone from Git
               </GhostBtn>
             </div>
-            <div className="flex-1" />
-            <div className="flex gap-2 mt-6 flex-wrap">
+            <div style={{ flex: 1 }} />
+            <div style={{ marginTop: 24, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <Chip icon={<FileText size={10} />}>.ivk format</Chip>
               <Chip icon={<BookOpen size={10} />}>README.md</Chip>
               <Chip icon={<Link size={10} />}>Git-native</Chip>
             </div>
           </Tile>
 
-          {/* TILE 2 — New request */}
-          <Tile className="p-[18px]" style={{ gridColumn: 'span 3', gridRow: 'span 1' }}>
+          {/* TILE 2 — New Request */}
+          <Tile style={{ gridColumn: 'span 3', gridRow: 'span 1', padding: 18 }}>
             <TileHeader icon={<Send size={13} />} label="New request" />
             <div
-              className="mt-2 text-on-surface"
               style={{
+                marginTop: 8,
                 fontFamily: "'Manrope', sans-serif",
                 fontWeight: 600,
                 fontSize: 17,
+                color: TOKENS.fg1,
               }}
             >
               Fire a request without a collection.
             </div>
-            <div className="flex-1" />
-            <div className="flex gap-2 items-center mt-3">
+            <div style={{ flex: 1 }} />
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 12 }}>
               <div
-                className="inline-flex items-center gap-0 h-[30px] rounded-lg bg-surface-container font-mono text-[11px] text-on-surface-variant overflow-hidden flex-1 min-w-0"
-                style={{ boxShadow: 'inset 0 0 0 1px rgba(66,71,84,0.28)' }}
+                style={{
+                  flex: 1,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0,
+                  height: 30,
+                  borderRadius: 8,
+                  background: TOKENS.s3,
+                  boxShadow: `inset 0 0 0 1px ${TOKENS.stroke}`,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 11,
+                  overflow: 'hidden',
+                }}
               >
                 <span
-                  className="px-2.5 font-bold"
                   style={{
-                    color: 'var(--ivk-method-get)',
-                    borderRight: '1px solid rgba(66,71,84,0.18)',
+                    padding: '0 10px',
+                    fontWeight: 700,
+                    color: TOKENS.green,
+                    borderRight: `1px solid ${TOKENS.strokeSoft}`,
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
                   }}
                 >
                   GET
                 </span>
-                <span className="px-2.5 opacity-70">https://...</span>
+                <span style={{ padding: '0 10px', opacity: 0.7, color: TOKENS.fg2 }}>https://...</span>
               </div>
               <PrimaryBtn>
                 <ArrowRight size={13} />
@@ -301,9 +191,9 @@ export function WelcomePage() {
           </Tile>
 
           {/* TILE 3 — Recent */}
-          <Tile className="p-[18px]" style={{ gridColumn: 'span 2' }}>
+          <Tile style={{ gridColumn: 'span 2', padding: 18 }}>
             <TileHeader icon={<Clock size={13} />} label="Recent" />
-            <div className="mt-2.5 flex flex-col gap-1.5">
+            <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
               {[
                 { n: 'OVI Internal', s: '460 reqs' },
                 { n: 'Stripe Playbook', s: '127 reqs' },
@@ -311,43 +201,61 @@ export function WelcomePage() {
               ].map((r) => (
                 <button
                   key={r.n}
-                  className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-transparent border-none cursor-pointer text-on-surface"
-                  style={{ fontFamily: 'inherit' }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '6px 8px',
+                    borderRadius: 6,
+                    border: 'none',
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    color: TOKENS.fg1,
+                    fontFamily: 'inherit',
+                  }}
                 >
-                  <InvokerMark size={11} color="var(--ivk-outline)" />
-                  <span className="flex-1 text-left text-xs">{r.n}</span>
-                  <span className="text-[10px] text-outline">{r.s}</span>
+                  <InvokerMark size={11} color={TOKENS.fg3} />
+                  <span style={{ flex: 1, textAlign: 'left', fontSize: 12 }}>{r.n}</span>
+                  <span style={{ fontSize: 10, color: TOKENS.fg3 }}>{r.s}</span>
                 </button>
               ))}
             </div>
           </Tile>
 
-          {/* TILE 4 — Command palette teaser */}
+          {/* TILE 4 — Command Palette */}
           <Tile
-            className="p-[18px] items-start"
-            style={{ gridColumn: 'span 1' }}
+            style={{ gridColumn: 'span 1', padding: 18, alignItems: 'flex-start', cursor: 'pointer' }}
           >
-            <TileHeader icon={<Terminal size={13} />} label="Palette" />
-            <div className="flex-1" />
-            <div className="flex gap-1 items-center">
-              <Kbd>{'\u2318'}</Kbd>
-              <Kbd>K</Kbd>
+            <div onClick={() => setCommandPaletteOpen(true)} style={{ width: '100%' }}>
+              <TileHeader icon={<Terminal size={13} />} label="Palette" />
+              <div style={{ flex: 1, minHeight: 30 }} />
+              <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                <Kbd>⌘</Kbd>
+                <Kbd>K</Kbd>
+              </div>
+              <div style={{ marginTop: 8, fontSize: 11, color: TOKENS.fg2 }}>Do anything.</div>
             </div>
-            <div className="mt-2 text-[11px] text-on-surface-variant">Do anything.</div>
           </Tile>
         </div>
 
         {/* ============ SIGNAL LINE ============ */}
-        <div className="flex items-center gap-3.5 mb-5">
-          <div className="flex-1 h-px" style={{ background: 'rgba(66,71,84,0.18)' }} />
-          <div className="font-mono text-[10px] text-outline tracking-[0.12em]">
-            LEARN &middot; 3 MIN
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
+          <div style={{ flex: 1, height: 1, background: TOKENS.strokeSoft }} />
+          <div
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 10,
+              color: TOKENS.fg3,
+              letterSpacing: '0.12em',
+            }}
+          >
+            LEARN · 3 MIN
           </div>
-          <div className="flex-1 h-px" style={{ background: 'rgba(66,71,84,0.18)' }} />
+          <div style={{ flex: 1, height: 1, background: TOKENS.strokeSoft }} />
         </div>
 
         {/* ============ LEARN GRID ============ */}
-        <div className="grid grid-cols-3 gap-3">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
           <LearnCard
             n="01"
             title="The .ivk format"
@@ -364,8 +272,15 @@ export function WelcomePage() {
             body={
               <>
                 <code
-                  className="font-mono text-xs text-primary px-1.5 py-px rounded bg-surface-container"
-                  style={{ boxShadow: 'inset 0 0 0 1px rgba(66,71,84,0.18)' }}
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 12,
+                    color: TOKENS.amber,
+                    padding: '1px 6px',
+                    borderRadius: 4,
+                    background: TOKENS.s3,
+                    boxShadow: `inset 0 0 0 1px ${TOKENS.strokeSoft}`,
+                  }}
                 >
                   npm run invoker:build
                 </code>{' '}

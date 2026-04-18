@@ -39,7 +39,7 @@ export function ResizablePanel({ width, onWidthChange, minWidth = 180, maxWidth 
   );
 
   return (
-    <div className="relative flex-shrink-0" style={{ width }}>
+    <div className="relative flex-shrink-0" style={{ width, height: '100%' }}>
       {children}
       <div
         className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary/30 transition-colors z-10"
