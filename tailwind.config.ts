@@ -6,16 +6,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        bg: '#0c0e13',
-        surface: '#14171e',
-        'surface-2': '#1c2029',
-        border: '#2a2e3a',
-        'text-primary': '#e2e4e9',
-        'text-dim': '#8b8fa3',
-        'text-muted': '#5c6070',
-        accent: '#3b82f6',
-        'var-set': '#a78bfa',
-        'var-unset': '#f87171',
+        bg: 'var(--ivk-bg)',
+        surface: 'var(--ivk-surface)',
+        'surface-2': 'var(--ivk-surface-hover)',
+        border: 'var(--ivk-border)',
+        'text-primary': 'var(--ivk-text)',
+        'text-dim': 'var(--ivk-text-secondary)',
+        'text-muted': 'var(--ivk-text-muted)',
+        accent: 'var(--ivk-accent)',
+        'var-set': 'var(--ivk-var-set)',
+        'var-unset': 'var(--ivk-var-unset)',
       },
       fontFamily: {
         mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace'],
