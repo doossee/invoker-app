@@ -6,6 +6,61 @@ export interface DocFile {
 
 export const sampleDocs: DocFile[] = [
   {
+    path: 'auth/README.md',
+    title: 'Authentication',
+    content: `# Authentication
+
+This folder contains auth-related endpoints for the OVI platform.
+
+## Flow
+
+1. Call \`Auth.login\` with phone + code
+2. Post-script saves the returned token to \`{{token}}\`
+3. Subsequent requests use \`@auth bearer {{token}}\`
+
+## Endpoints
+
+\`\`\`ivk
+POST {{baseUrl}}/post
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "method": "Auth.login",
+  "params": {
+    "phone": "{{phone}}"
+  }
+}
+\`\`\`
+
+## Notes
+
+- Tokens expire after 24 hours
+- Use \`Auth.getMe\` to verify the current session
+`,
+  },
+  {
+    path: 'users/README.md',
+    title: 'Users API',
+    content: `# Users API
+
+CRUD operations for user management.
+
+## Endpoints
+
+- **List** — paginated list of all users
+- **Create** — create a new user account
+
+## Environment variables
+
+| Variable | Description |
+|---|---|
+| \`baseUrl\` | API base URL |
+| \`userName\` | Name for new user |
+| \`userEmail\` | Email for new user |
+`,
+  },
+  {
     path: 'getting-started.md',
     title: 'Getting Started',
     content: `# Getting Started

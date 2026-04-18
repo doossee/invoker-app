@@ -284,7 +284,7 @@ function EnvDropdown({ onClose, onManage }: { onClose: () => void; onManage: () 
         left: 0,
         marginBottom: 4,
         width: 180,
-        background: '#0e0e0e',
+        background: TOKENS.s1,
         border: `1px solid ${TOKENS.fg4}`,
         borderRadius: 8,
         padding: 4,

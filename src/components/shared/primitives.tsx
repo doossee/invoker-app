@@ -5,34 +5,38 @@ import { ChevronDown } from 'lucide-react';
 /*  Design tokens                                                      */
 /* ------------------------------------------------------------------ */
 export const TOKENS = {
-  s0: '#000000',
-  s1: '#0a0a0a',
-  s2: '#131313',
-  s3: '#191a1a',
-  s4: '#1f2020',
-  s5: '#252626',
-  fg1: '#e7e5e4',
-  fg2: '#acabaa',
-  fg3: '#767575',
-  fg4: '#484848',
-  amber: '#e6c188',
-  amberDim: '#dbc3a1',
-  amberHot: '#ffcdb3',
-  red: '#f97758',
-  green: '#4ae176',
+  // Surface levels — use CSS variables so theme switching works
+  s0: 'var(--ivk-surface-lowest)',
+  s1: 'var(--ivk-surface)',
+  s2: 'var(--ivk-surface-low)',
+  s3: 'var(--ivk-surface-container)',
+  s4: 'var(--ivk-surface-high)',
+  s5: 'var(--ivk-surface-highest)',
+  // Text
+  fg1: 'var(--ivk-on-surface)',
+  fg2: 'var(--ivk-on-surface-variant)',
+  fg3: 'var(--ivk-outline)',
+  fg4: 'var(--ivk-outline-variant)',
+  // Accent
+  amber: 'var(--ivk-primary)',
+  amberDim: 'var(--ivk-secondary)',
+  amberHot: 'var(--ivk-tertiary)',
+  red: 'var(--ivk-error)',
+  green: 'var(--ivk-success)',
   blue: '#60a5fa',
   yellow: '#facc15',
+  // Borders — these stay hardcoded since they're opacity-based
   stroke: 'rgba(66,71,84,0.28)',
   strokeSoft: 'rgba(66,71,84,0.18)',
   strokeHot: 'rgba(230,193,136,0.35)',
 };
 
 export const METHOD_PALETTE: Record<string, { c: string; bg: string }> = {
-  GET:    { c: '#4ae176', bg: 'rgba(74,225,118,0.14)' },
-  POST:   { c: '#e6c188', bg: 'rgba(230,193,136,0.15)' },
-  PUT:    { c: '#dbc3a1', bg: 'rgba(219,195,161,0.14)' },
-  PATCH:  { c: '#ffcdb3', bg: 'rgba(255,205,179,0.14)' },
-  DELETE: { c: '#f97758', bg: 'rgba(249,119,88,0.14)' },
+  GET:    { c: 'var(--ivk-method-get)', bg: 'rgba(74,225,118,0.14)' },
+  POST:   { c: 'var(--ivk-method-post)', bg: 'rgba(230,193,136,0.15)' },
+  PUT:    { c: 'var(--ivk-method-put)', bg: 'rgba(219,195,161,0.14)' },
+  PATCH:  { c: 'var(--ivk-method-patch)', bg: 'rgba(255,205,179,0.14)' },
+  DELETE: { c: 'var(--ivk-method-delete)', bg: 'rgba(249,119,88,0.14)' },
 };
 
 /* ------------------------------------------------------------------ */
@@ -127,7 +131,7 @@ export function PrimaryBtn({
         gap: 6,
         padding: '6px 14px',
         background: disabled ? 'rgba(230,193,136,0.5)' : TOKENS.amber,
-        color: '#3a2807',
+        color: 'var(--ivk-on-primary)',
         border: 'none',
         borderRadius: 8,
         fontFamily: 'inherit',

@@ -17,9 +17,11 @@ export function FolderTabBody({ folderPath }: Props) {
   const [innerTab, setInnerTab] = useState('README.md');
   const docs = useDocsStore((s) => s.docs);
 
-  // Find README.md for this folder
-  const readmePath = `${folderPath}/README.md`;
-  const readmeDoc = docs.find((d) => d.path === readmePath);
+  // Find README.md for this folder (case-insensitive)
+  const readmeDoc = docs.find((d) => {
+    const lower = d.path.toLowerCase();
+    return lower === `${folderPath.toLowerCase()}/readme.md`;
+  });
 
   return (
     <Panel style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0 }}>

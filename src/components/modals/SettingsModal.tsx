@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   X,
   Sliders,
@@ -9,6 +9,7 @@ import {
   User,
 } from 'lucide-react';
 import { TOKENS, Kbd, Toggle, Select } from '@/components/shared/primitives';
+import { useTheme } from '@/themes/theme-provider';
 
 interface Props {
   onClose: () => void;
@@ -27,6 +28,15 @@ const PAGES: { id: SettingsPage; label: string; icon: React.ReactNode }[] = [
 
 export function SettingsModal({ onClose }: Props) {
   const [activePage, setActivePage] = useState<SettingsPage>('general');
+
+  // Escape key to close
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
 
   return (
     <div
@@ -216,30 +226,31 @@ function GeneralPage() {
 }
 
 function AppearancePage() {
-  const themes = [
-    { id: 'dark', label: 'Dark', bg: '#0a0a0a', fg: '#e7e5e4', accent: '#e6c188' },
-    { id: 'light', label: 'Paper', bg: '#f6f4ef', fg: '#23201c', accent: '#b87333' },
-    { id: 'dim', label: 'Dim', bg: '#1c1c1c', fg: '#cfcbc5', accent: '#d9b382' },
-  ];
-  const [activeTheme, setActiveTheme] = useState('dark');
-  const accentColors = ['#e6c188', '#f97758', '#4ae176', '#60a5fa', '#c084fc', '#f472b6'];
-  const [activeAccent, setActiveAccent] = useState('#e6c188');
+  const { theme: currentTheme, setTheme, themes: availableThemes } = useTheme();
+
+  const themeSwatches = availableThemes.map((t) => ({
+    id: t.id,
+    label: t.name,
+    bg: t.colors.surfaceLowest,
+    fg: t.colors.onSurface,
+    accent: t.colors.primary,
+  }));
 
   return (
     <>
       <PageTitle note="Customize how the app looks.">Appearance</PageTitle>
 
       {/* Theme swatches */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 24 }}>
-        {themes.map((theme) => (
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(themeSwatches.length, 4)}, 1fr)`, gap: 10, marginBottom: 10 }}>
+        {themeSwatches.map((swatch) => (
           <button
-            key={theme.id}
-            onClick={() => setActiveTheme(theme.id)}
+            key={swatch.id}
+            onClick={() => setTheme(swatch.id)}
             style={{
               height: 72,
               borderRadius: 8,
-              background: theme.bg,
-              boxShadow: activeTheme === theme.id
+              background: swatch.bg,
+              boxShadow: currentTheme.id === swatch.id
                 ? `inset 0 0 0 1px ${TOKENS.amber}, 0 0 0 2px rgba(230,193,136,0.2)`
                 : `inset 0 0 0 1px ${TOKENS.strokeSoft}`,
               border: 'none',
@@ -252,42 +263,20 @@ function AppearancePage() {
             }}
           >
             <div style={{ display: 'flex', gap: 3 }}>
-              <div style={{ width: 20, height: 3, borderRadius: 2, background: theme.accent }} />
-              <div style={{ width: 14, height: 3, borderRadius: 2, background: theme.fg, opacity: 0.3 }} />
+              <div style={{ width: 20, height: 3, borderRadius: 2, background: swatch.accent }} />
+              <div style={{ width: 14, height: 3, borderRadius: 2, background: swatch.fg, opacity: 0.3 }} />
             </div>
           </button>
         ))}
       </div>
       <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
-        {themes.map((theme) => (
-          <div key={theme.id} style={{ flex: 1, textAlign: 'center', fontSize: 11, fontWeight: 500, color: activeTheme === theme.id ? TOKENS.amber : TOKENS.fg2 }}>
-            {theme.label}
+        {themeSwatches.map((swatch) => (
+          <div key={swatch.id} style={{ flex: 1, textAlign: 'center', fontSize: 11, fontWeight: 500, color: currentTheme.id === swatch.id ? TOKENS.amber : TOKENS.fg2 }}>
+            {swatch.label}
           </div>
         ))}
       </div>
 
-      {/* Accent color */}
-      <Row label="Accent color">
-        <div style={{ display: 'flex', gap: 6 }}>
-          {accentColors.map((color) => (
-            <button
-              key={color}
-              onClick={() => setActiveAccent(color)}
-              style={{
-                width: 20,
-                height: 20,
-                borderRadius: 9999,
-                background: color,
-                border: 'none',
-                cursor: 'pointer',
-                boxShadow: activeAccent === color
-                  ? `0 0 0 2px rgba(230,193,136,0.25), inset 0 0 0 1px rgba(0,0,0,0.2)`
-                  : `inset 0 0 0 1px rgba(0,0,0,0.2)`,
-              }}
-            />
-          ))}
-        </div>
-      </Row>
       <Row label="Reduce motion"><Toggle /></Row>
     </>
   );
