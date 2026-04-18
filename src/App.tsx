@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from 'react';
-import { TopBar } from '@/components/layout/TopBar';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { StatusBar } from '@/components/layout/StatusBar';
 import { ResizablePanel } from '@/components/layout/ResizablePanel';
@@ -78,12 +77,10 @@ export function App() {
 
   return (
     <div className="h-screen flex flex-col bg-surface-lowest text-on-surface overflow-hidden">
-      <TopBar onOpenSettings={() => setEnvSettingsOpen(true)} />
-
       <div className="flex-1 flex overflow-hidden">
         <div className="p-3 flex-shrink-0">
           <ResizablePanel width={sidebarWidth} onWidthChange={setSidebarWidth}>
-            <Sidebar>
+            <Sidebar onOpenSettings={() => setEnvSettingsOpen(true)}>
               <UnifiedTree />
             </Sidebar>
           </ResizablePanel>

@@ -1,13 +1,15 @@
 import type { ReactNode } from 'react';
-import { Plus, Zap } from 'lucide-react';
+import { Plus, Settings, Zap } from 'lucide-react';
+import { EnvSwitcher } from '@/components/env/EnvSwitcher';
 
 interface Props {
   children: ReactNode;
+  onOpenSettings: () => void;
 }
 
-export function Sidebar({ children }: Props) {
+export function Sidebar({ children, onOpenSettings }: Props) {
   return (
-    <div className="bg-surface-container-low rounded-xl border border-outline-variant/30 h-[calc(100vh-5.5rem)] overflow-hidden flex flex-col">
+    <div className="bg-surface-container-low rounded-xl border border-outline-variant/30 h-[calc(100vh-1.5rem)] overflow-hidden flex flex-col">
       {/* Project header */}
       <div className="px-3 pt-3 pb-2">
         <div className="flex items-center justify-between">
@@ -43,6 +45,18 @@ export function Sidebar({ children }: Props) {
       {/* File tree */}
       <div className="flex-1 overflow-y-auto">
         {children}
+      </div>
+
+      {/* Footer: env switcher + settings */}
+      <div className="mt-auto px-3 py-2 ghost-border-t flex items-center justify-between">
+        <EnvSwitcher onManage={onOpenSettings} />
+        <button
+          onClick={onOpenSettings}
+          className="p-1.5 rounded-md hover:bg-surface-container text-outline hover:text-on-surface transition-colors"
+          title="Settings"
+        >
+          <Settings size={14} />
+        </button>
       </div>
     </div>
   );
