@@ -3,7 +3,7 @@ import { parseIvk, type IvkRequest, type RunResult } from 'ivkjs';
 import { Play, ExternalLink, Loader2, CheckCircle, XCircle, Terminal } from 'lucide-react';
 import { Badge } from '@/components/shared/Badge';
 import { useCollectionStore } from '@/stores/collection-store';
-import { useEditorStore } from '@/stores/editor-store';
+import { useDocsStore } from '@/stores/docs-store';
 import { useRequest } from '@/hooks/useRequest';
 import { useEnv } from '@/hooks/useEnv';
 
@@ -82,7 +82,6 @@ export function IvkBlock({ source }: Props) {
 
   const getFileByPath = useCollectionStore((s) => s.getFileByPath);
   const setActiveFile = useCollectionStore((s) => s.setActiveFile);
-  const setSidebarView = useEditorStore((s) => s.setSidebarView);
   const { get: getVar } = useEnv();
 
   const file = filePath ? getFileByPath(filePath) : undefined;
@@ -112,8 +111,9 @@ export function IvkBlock({ source }: Props) {
   const handleOpen = useCallback(() => {
     if (!filePath) return;
     setActiveFile(filePath);
-    setSidebarView('collection');
-  }, [filePath, setActiveFile, setSidebarView]);
+    // Clear doc selection so the editor shows
+    useDocsStore.getState().clearActiveDoc();
+  }, [filePath, setActiveFile]);
 
   // Error: file not found
   if (!filePath) {
