@@ -7,7 +7,7 @@ interface Props {
 
 export function Sidebar({ children }: Props) {
   return (
-    <div className="h-full bg-surface overflow-y-auto flex flex-col">
+    <div className="bg-surface-container-low rounded-xl border border-outline-variant/30 h-[calc(100vh-5.5rem)] overflow-hidden flex flex-col">
       {/* Project header */}
       <div className="px-3 pt-3 pb-2">
         <div className="flex items-center justify-between">

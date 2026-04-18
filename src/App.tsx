@@ -81,11 +81,13 @@ export function App() {
       <TopBar onOpenSettings={() => setEnvSettingsOpen(true)} />
 
       <div className="flex-1 flex overflow-hidden">
-        <ResizablePanel width={sidebarWidth} onWidthChange={setSidebarWidth}>
-          <Sidebar>
-            <UnifiedTree />
-          </Sidebar>
-        </ResizablePanel>
+        <div className="p-3 flex-shrink-0">
+          <ResizablePanel width={sidebarWidth} onWidthChange={setSidebarWidth}>
+            <Sidebar>
+              <UnifiedTree />
+            </Sidebar>
+          </ResizablePanel>
+        </div>
 
         <div className="flex-1 overflow-hidden">
           {activeDocPath ? (
