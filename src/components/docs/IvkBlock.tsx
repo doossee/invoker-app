@@ -152,9 +152,9 @@ export function IvkBlock({ source }: Props) {
   const hasBody = body.trim().length > 0;
 
   return (
-    <div className="my-4 rounded-lg border border-outline-variant bg-surface overflow-hidden">
-      {/* Top row: method + url + name + actions */}
-      <div className="flex items-center gap-2 px-3 py-2.5 bg-surface-container/50">
+    <div className="my-4 rounded-lg ghost-border bg-surface-low overflow-hidden">
+      {/* Header row: method badge + URL + name + actions */}
+      <div className="flex items-center gap-2 px-4 py-3">
         <Badge type="method" value={method} />
         <span className="text-xs font-mono text-on-surface-variant truncate flex-1">
           {renderTextWithVars(url, getVar)}
@@ -163,7 +163,7 @@ export function IvkBlock({ source }: Props) {
         <button
           onClick={handleRun}
           disabled={loading}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium bg-primary/15 text-primary hover:bg-primary/25 disabled:opacity-50 transition-colors shrink-0"
+          className="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium bg-primary text-on-primary hover:bg-primary/90 disabled:opacity-50 transition-colors duration-150 shrink-0"
         >
           {loading ? (
             <Loader2 size={12} className="animate-spin" />
@@ -174,7 +174,7 @@ export function IvkBlock({ source }: Props) {
         </button>
         <button
           onClick={handleOpen}
-          className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors shrink-0"
+          className="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150 shrink-0"
         >
           <ExternalLink size={12} />
           Open
@@ -182,28 +182,30 @@ export function IvkBlock({ source }: Props) {
       </div>
 
       {/* Description + headers + body */}
-      <div className="px-3 py-2 space-y-2">
-        {description && (
-          <p className="text-xs text-outline m-0">{description}</p>
-        )}
+      {(description || displayHeaders.length > 0 || hasBody) && (
+        <div className="px-4 pb-4 space-y-3">
+          {description && (
+            <p className="text-xs text-outline m-0">{description}</p>
+          )}
 
-        {displayHeaders.length > 0 && (
-          <div className="space-y-0.5">
-            {displayHeaders.map(([key, value]) => (
-              <div key={key} className="text-[11px] font-mono text-on-surface-variant">
-                <span className="text-outline">{key}:</span>{' '}
-                {renderTextWithVars(value, getVar)}
-              </div>
-            ))}
-          </div>
-        )}
+          {displayHeaders.length > 0 && (
+            <div className="space-y-0.5">
+              {displayHeaders.map(([key, value]) => (
+                <div key={key} className="text-[11px] font-mono text-on-surface-variant">
+                  <span className="text-outline">{key}:</span>{' '}
+                  {renderTextWithVars(value, getVar)}
+                </div>
+              ))}
+            </div>
+          )}
 
-        {hasBody && (
-          <pre className="bg-surface-lowest rounded-lg border border-outline-variant p-3 overflow-x-auto text-[11px] font-mono text-on-surface-variant leading-relaxed m-0">
-            {renderTextWithVars(body, getVar)}
-          </pre>
-        )}
-      </div>
+          {hasBody && (
+            <pre className="bg-surface-lowest rounded-md p-3 overflow-x-auto max-h-48 overflow-y-auto text-[11px] font-mono text-on-surface-variant leading-relaxed m-0">
+              {renderTextWithVars(body, getVar)}
+            </pre>
+          )}
+        </div>
+      )}
 
       {/* Response area */}
       {displayResult && <IvkBlockResponse result={displayResult} />}
@@ -218,9 +220,9 @@ function IvkBlockResponse({ result }: { result: RunResult }) {
   const allPassed = passedTests === testResults.length;
 
   return (
-    <div className="border-t border-outline-variant">
+    <div className="ghost-border-t">
       {/* Status summary */}
-      <div className="flex items-center gap-3 px-3 py-2 bg-surface-container/30">
+      <div className="flex items-center gap-3 px-4 py-2.5">
         <Badge type="status" value={response.status} />
         <span className="text-[11px] text-on-surface-variant">{response.time}ms</span>
         <span className="text-[11px] text-on-surface-variant">{formatBytes(response.size)}</span>
@@ -240,14 +242,14 @@ function IvkBlockResponse({ result }: { result: RunResult }) {
 
       {/* Response body */}
       {response.body !== undefined && response.body !== null && (
-        <pre className="px-3 py-2 text-[11px] font-mono text-on-surface-variant leading-relaxed overflow-x-auto max-h-60 overflow-y-auto">
+        <pre className="px-4 py-3 text-[11px] font-mono text-on-surface-variant leading-relaxed overflow-x-auto max-h-60 overflow-y-auto bg-surface-lowest mx-4 mb-4 rounded-md">
           {formatBody(response.body)}
         </pre>
       )}
 
       {/* Test results */}
       {testResults.length > 0 && (
-        <div className="px-3 py-2 border-t border-outline-variant space-y-1">
+        <div className="px-4 py-3 ghost-border-t space-y-1.5">
           {testResults.map((test, idx) => (
             <div key={idx} className="flex items-start gap-1.5 text-[11px]">
               {test.passed ? (
@@ -270,7 +272,7 @@ function IvkBlockResponse({ result }: { result: RunResult }) {
 
       {/* Console logs */}
       {logs.length > 0 && (
-        <div className="px-3 py-2 border-t border-outline-variant space-y-0.5">
+        <div className="px-4 py-3 ghost-border-t space-y-1">
           {logs.map((log, idx) => (
             <div key={idx} className="flex items-start gap-1.5 text-[11px] font-mono">
               <Terminal size={11} className="text-outline shrink-0 mt-0.5" />
