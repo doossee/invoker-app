@@ -1,14 +1,14 @@
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, ChevronDown } from 'lucide-react';
 import type { HttpMethod } from 'ivkjs';
 
 const METHODS: HttpMethod[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
 const methodColors: Record<string, string> = {
-  GET: 'text-green-400',
-  POST: 'text-blue-400',
-  PUT: 'text-amber-400',
-  PATCH: 'text-purple-400',
-  DELETE: 'text-red-400',
+  GET: 'var(--ivk-method-get)',
+  POST: 'var(--ivk-method-post)',
+  PUT: 'var(--ivk-method-put)',
+  PATCH: 'var(--ivk-method-patch)',
+  DELETE: 'var(--ivk-method-delete)',
 };
 
 interface Props {
@@ -21,20 +21,31 @@ interface Props {
 }
 
 export function UrlBar({ method, url, onMethodChange, onUrlChange, onSend, loading }: Props) {
-  return (
-    <div className="flex items-center gap-2 p-3 ghost-border-b">
-      <select
-        value={method}
-        onChange={(e) => onMethodChange(e.target.value as HttpMethod)}
-        className={`bg-surface-container ${methodColors[method] ?? 'text-on-surface'} text-xs font-mono font-medium px-2 py-2 rounded-md border border-outline-variant focus:border-primary/50 focus:outline-none cursor-pointer appearance-none min-w-[80px] text-center`}
-      >
-        {METHODS.map((m) => (
-          <option key={m} value={m}>
-            {m}
-          </option>
-        ))}
-      </select>
+  const color = methodColors[method] ?? 'var(--ivk-on-surface)';
 
+  return (
+    <div
+      className="flex items-stretch h-[38px] bg-surface-container rounded-[10px] overflow-hidden"
+      style={{ boxShadow: 'inset 0 0 0 1px rgba(66,71,84,0.28)' }}
+    >
+      {/* Method selector */}
+      <div className="relative flex items-center shrink-0" style={{ borderRight: '1px solid rgba(66,71,84,0.18)' }}>
+        <select
+          value={method}
+          onChange={(e) => onMethodChange(e.target.value as HttpMethod)}
+          className="appearance-none bg-transparent font-mono text-xs font-semibold pl-3 pr-7 h-full cursor-pointer focus:outline-none"
+          style={{ color, minWidth: 84 }}
+        >
+          {METHODS.map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+        </select>
+        <ChevronDown size={10} className="absolute right-2 text-outline pointer-events-none" />
+      </div>
+
+      {/* URL input */}
       <input
         type="text"
         value={url}
@@ -43,25 +54,22 @@ export function UrlBar({ method, url, onMethodChange, onUrlChange, onSend, loadi
           if (e.key === 'Enter' && !loading) onSend();
         }}
         placeholder="Enter URL or paste cURL..."
-        className="flex-1 bg-surface-container text-on-surface text-sm font-mono px-3 py-2 rounded-md border border-outline-variant focus:border-primary/50 focus:outline-none"
+        className="flex-1 bg-transparent text-on-surface text-[13px] font-mono px-3 focus:outline-none min-w-0"
       />
 
+      {/* Send button */}
       <button
         onClick={onSend}
         disabled={loading}
-        className="flex items-center gap-1.5 bg-primary hover:bg-primary/80 disabled:bg-primary/50 text-on-primary text-xs font-medium px-4 py-2 rounded-md transition-colors"
+        className="flex items-center gap-1.5 px-[18px] bg-primary text-on-primary border-none cursor-pointer text-[13px] font-semibold disabled:opacity-50 shrink-0"
+        style={{ fontFamily: 'inherit' }}
       >
         {loading ? (
-          <>
-            <Loader2 size={14} className="animate-spin" />
-            ...
-          </>
+          <Loader2 size={13} className="animate-spin" />
         ) : (
-          <>
-            <Send size={14} />
-            Send
-          </>
+          <Send size={13} />
         )}
+        <span>Send</span>
       </button>
     </div>
   );
