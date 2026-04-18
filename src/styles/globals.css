@@ -5,14 +5,30 @@
 @tailwind utilities;
 
 body {
-  @apply bg-bg text-text-primary;
+  @apply bg-surface-lowest text-on-surface;
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
 * {
-  @apply border-border;
+  @apply border-outline-variant;
+}
+
+/* Ghost border utility — softer than hard borders */
+@layer utilities {
+  .ghost-border {
+    box-shadow: inset 0 0 0 1px rgba(66, 71, 84, 0.15);
+  }
+  .ghost-border-b {
+    box-shadow: inset 0 -1px 0 0 rgba(66, 71, 84, 0.15);
+  }
+  .ghost-border-t {
+    box-shadow: inset 0 1px 0 0 rgba(66, 71, 84, 0.15);
+  }
+  .ghost-border-r {
+    box-shadow: inset -1px 0 0 0 rgba(66, 71, 84, 0.15);
+  }
 }
 
 /* CodeMirror ivk variable decorations */
@@ -35,13 +51,13 @@ body {
 }
 .ivk-cm-tooltip-name {
   font-family: 'JetBrains Mono', monospace;
-  color: var(--ivk-text-secondary);
+  color: var(--ivk-on-surface-variant);
   font-size: 11px;
 }
 .ivk-cm-tooltip-badge-set {
   font-size: 10px;
   padding: 1px 6px;
-  border-radius: 4px;
+  border-radius: 6px;
   background: rgba(167, 139, 250, 0.15);
   color: var(--ivk-var-set);
   font-weight: 500;
@@ -49,41 +65,41 @@ body {
 .ivk-cm-tooltip-badge-unset {
   font-size: 10px;
   padding: 1px 6px;
-  border-radius: 4px;
+  border-radius: 6px;
   background: rgba(248, 113, 113, 0.15);
   color: var(--ivk-var-unset);
   font-weight: 500;
 }
 .ivk-cm-tooltip-value {
   font-family: 'JetBrains Mono', monospace;
-  background: var(--ivk-bg);
+  background: var(--ivk-surface-lowest);
   padding: 4px 8px;
-  border-radius: 4px;
-  color: var(--ivk-text);
+  border-radius: 6px;
+  color: var(--ivk-on-surface);
   font-size: 11px;
   word-break: break-all;
 }
 .ivk-cm-tooltip-value.ivk-cm-tooltip-unset {
-  color: var(--ivk-text-muted);
+  color: var(--ivk-outline);
   font-style: italic;
 }
 
 /* Markdown prose styling */
 .invoker-prose {
   line-height: 1.75;
-  color: var(--ivk-text);
+  color: var(--ivk-on-surface);
 }
-.invoker-prose h1 { font-size: 1.75rem; font-weight: 700; margin: 2rem 0 0.75rem; color: var(--ivk-text); }
-.invoker-prose h2 { font-size: 1.4rem; font-weight: 600; margin: 1.75rem 0 0.5rem; color: var(--ivk-text); padding-bottom: 0.3rem; border-bottom: 1px solid var(--ivk-border); }
-.invoker-prose h3 { font-size: 1.15rem; font-weight: 600; margin: 1.25rem 0 0.5rem; color: var(--ivk-text); }
-.invoker-prose p { margin: 0.75rem 0; color: var(--ivk-text-secondary); }
-.invoker-prose ul, .invoker-prose ol { margin: 0.5rem 0; padding-left: 1.5rem; color: var(--ivk-text-secondary); }
+.invoker-prose h1 { font-size: 1.75rem; font-weight: 700; margin: 2rem 0 0.75rem; color: var(--ivk-on-surface); }
+.invoker-prose h2 { font-size: 1.4rem; font-weight: 600; margin: 1.75rem 0 0.5rem; color: var(--ivk-on-surface); padding-bottom: 0.3rem; border-bottom: 1px solid var(--ivk-outline-variant); }
+.invoker-prose h3 { font-size: 1.15rem; font-weight: 600; margin: 1.25rem 0 0.5rem; color: var(--ivk-on-surface); }
+.invoker-prose p { margin: 0.75rem 0; color: var(--ivk-on-surface-variant); }
+.invoker-prose ul, .invoker-prose ol { margin: 0.5rem 0; padding-left: 1.5rem; color: var(--ivk-on-surface-variant); }
 .invoker-prose li { margin: 0.25rem 0; }
-.invoker-prose strong { color: var(--ivk-text); font-weight: 600; }
-.invoker-prose a { color: var(--ivk-accent); text-decoration: none; }
+.invoker-prose strong { color: var(--ivk-on-surface); font-weight: 600; }
+.invoker-prose a { color: var(--ivk-primary); text-decoration: none; }
 .invoker-prose a:hover { text-decoration: underline; }
-.invoker-prose blockquote { border-left: 3px solid var(--ivk-accent); padding-left: 1rem; margin: 1rem 0; color: var(--ivk-text-muted); }
+.invoker-prose blockquote { border-left: 3px solid var(--ivk-primary); padding-left: 1rem; margin: 1rem 0; color: var(--ivk-outline); }
 .invoker-prose table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
-.invoker-prose th { background: var(--ivk-surface); font-weight: 600; text-align: left; padding: 8px 12px; border: 1px solid var(--ivk-border); font-size: 0.875rem; color: var(--ivk-text); }
-.invoker-prose td { padding: 8px 12px; border: 1px solid var(--ivk-border); font-size: 0.875rem; color: var(--ivk-text-secondary); }
-.invoker-prose hr { border: none; border-top: 1px solid var(--ivk-border); margin: 2rem 0; }
+.invoker-prose th { background: var(--ivk-surface-container); font-weight: 600; text-align: left; padding: 8px 12px; border: 1px solid var(--ivk-outline-variant); font-size: 0.875rem; color: var(--ivk-on-surface); }
+.invoker-prose td { padding: 8px 12px; border: 1px solid var(--ivk-outline-variant); font-size: 0.875rem; color: var(--ivk-on-surface-variant); }
+.invoker-prose hr { border: none; border-top: 1px solid var(--ivk-outline-variant); margin: 2rem 0; }

@@ -77,7 +77,7 @@ function TreeItem({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
     return (
       <div>
         <button
-          className="w-full flex items-center gap-1.5 py-1 px-2 text-xs text-text-dim hover:bg-surface-2 hover:text-text-primary transition-colors"
+          className="w-full flex items-center gap-1.5 py-1 px-2 text-xs text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
           style={{ paddingLeft: pl }}
           onClick={() => toggleFolder(node.path)}
         >
@@ -97,15 +97,15 @@ function TreeItem({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
     <button
       className={`w-full flex items-center gap-1.5 py-1 px-2 text-xs transition-colors ${
         isActive
-          ? 'bg-accent/10 text-accent'
-          : 'text-text-dim hover:bg-surface-2 hover:text-text-primary'
+          ? 'bg-primary/10 text-primary'
+          : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
       }`}
       style={{ paddingLeft: pl + 16 }}
       onClick={() => setActiveFile(node.path)}
     >
       <File size={14} />
       <span className="truncate">{node.name}</span>
-      <span className="ml-auto text-[9px] text-text-muted font-mono uppercase">ivk</span>
+      <span className="ml-auto text-[9px] text-outline font-mono uppercase">ivk</span>
     </button>
   );
 }

@@ -54,18 +54,18 @@ export function KeyValueTable({
             value={key}
             onChange={(e) => updateKey(key, e.target.value)}
             placeholder={keyPlaceholder}
-            className="flex-1 bg-surface-2 text-text-primary text-xs font-mono px-2 py-1.5 rounded border border-transparent focus:border-accent/50 focus:outline-none"
+            className="flex-1 bg-surface-container text-on-surface text-xs font-mono px-2 py-1.5 rounded-md border border-transparent focus:border-primary/50 focus:outline-none"
           />
           <input
             type="text"
             value={value}
             onChange={(e) => updateValue(key, e.target.value)}
             placeholder={valuePlaceholder}
-            className="flex-1 bg-surface-2 text-text-primary text-xs font-mono px-2 py-1.5 rounded border border-transparent focus:border-accent/50 focus:outline-none"
+            className="flex-1 bg-surface-container text-on-surface text-xs font-mono px-2 py-1.5 rounded-md border border-transparent focus:border-primary/50 focus:outline-none"
           />
           <button
             onClick={() => removeRow(key)}
-            className="p-1 text-text-muted hover:text-red-400 transition-colors"
+            className="p-1 text-outline hover:text-red-400 transition-colors"
           >
             <X size={14} />
           </button>
@@ -74,7 +74,7 @@ export function KeyValueTable({
 
       <button
         onClick={addRow}
-        className="flex items-center gap-1 text-xs text-text-dim hover:text-accent transition-colors mt-2"
+        className="flex items-center gap-1 text-xs text-on-surface-variant hover:text-primary transition-colors mt-2"
       >
         <Plus size={12} />
         Add

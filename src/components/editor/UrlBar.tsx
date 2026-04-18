@@ -22,11 +22,11 @@ interface Props {
 
 export function UrlBar({ method, url, onMethodChange, onUrlChange, onSend, loading }: Props) {
   return (
-    <div className="flex items-center gap-2 p-3 border-b border-border">
+    <div className="flex items-center gap-2 p-3 ghost-border-b">
       <select
         value={method}
         onChange={(e) => onMethodChange(e.target.value as HttpMethod)}
-        className={`bg-surface-2 ${methodColors[method] ?? 'text-text-primary'} text-xs font-mono font-medium px-2 py-2 rounded border border-border focus:border-accent/50 focus:outline-none cursor-pointer appearance-none min-w-[80px] text-center`}
+        className={`bg-surface-container ${methodColors[method] ?? 'text-on-surface'} text-xs font-mono font-medium px-2 py-2 rounded-md border border-outline-variant focus:border-primary/50 focus:outline-none cursor-pointer appearance-none min-w-[80px] text-center`}
       >
         {METHODS.map((m) => (
           <option key={m} value={m}>
@@ -43,13 +43,13 @@ export function UrlBar({ method, url, onMethodChange, onUrlChange, onSend, loadi
           if (e.key === 'Enter' && !loading) onSend();
         }}
         placeholder="Enter URL or paste cURL..."
-        className="flex-1 bg-surface-2 text-text-primary text-sm font-mono px-3 py-2 rounded border border-border focus:border-accent/50 focus:outline-none"
+        className="flex-1 bg-surface-container text-on-surface text-sm font-mono px-3 py-2 rounded-md border border-outline-variant focus:border-primary/50 focus:outline-none"
       />
 
       <button
         onClick={onSend}
         disabled={loading}
-        className="flex items-center gap-1.5 bg-accent hover:bg-accent/80 disabled:bg-accent/50 text-white text-xs font-medium px-4 py-2 rounded transition-colors"
+        className="flex items-center gap-1.5 bg-primary hover:bg-primary/80 disabled:bg-primary/50 text-on-primary text-xs font-medium px-4 py-2 rounded-md transition-colors"
       >
         {loading ? (
           <>

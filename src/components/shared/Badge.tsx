@@ -23,7 +23,7 @@ export function Badge({ type, value }: Props) {
     const method = String(value).toUpperCase();
     const color = methodColors[method] ?? 'bg-gray-500/15 text-gray-400';
     return (
-      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-medium ${color}`}>
+      <span className={`inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-mono font-medium ${color}`}>
         {method}
       </span>
     );
@@ -32,7 +32,7 @@ export function Badge({ type, value }: Props) {
   const code = typeof value === 'number' ? value : parseInt(String(value), 10) || 0;
   const color = statusColor(code);
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-medium ${color}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-mono font-medium ${color}`}>
       {code === 0 ? 'ERR' : code}
     </span>
   );

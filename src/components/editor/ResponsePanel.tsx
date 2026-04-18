@@ -38,7 +38,7 @@ export function ResponsePanel({ result, loading }: Props) {
   // Empty state
   if (!result && !loading) {
     return (
-      <div className="flex items-center justify-center py-8 text-text-muted text-xs">
+      <div className="flex items-center justify-center py-8 text-outline text-xs">
         Click Send to execute the request
       </div>
     );
@@ -47,7 +47,7 @@ export function ResponsePanel({ result, loading }: Props) {
   // Loading state
   if (loading) {
     return (
-      <div className="flex items-center justify-center gap-2 py-8 text-text-dim text-xs">
+      <div className="flex items-center justify-center gap-2 py-8 text-on-surface-variant text-xs">
         <Loader2 size={14} className="animate-spin" />
         Sending...
       </div>
@@ -72,10 +72,10 @@ export function ResponsePanel({ result, loading }: Props) {
   return (
     <div className="flex flex-col overflow-hidden">
       {/* Status bar */}
-      <div className="flex items-center gap-3 px-3 py-2 border-b border-border bg-surface">
+      <div className="flex items-center gap-3 px-3 py-2 ghost-border-b bg-surface">
         <Badge type="status" value={response.status} />
-        <span className="text-xs text-text-dim">{response.time}ms</span>
-        <span className="text-xs text-text-dim">{formatBytes(response.size)}</span>
+        <span className="text-xs text-on-surface-variant">{response.time}ms</span>
+        <span className="text-xs text-on-surface-variant">{formatBytes(response.size)}</span>
         {hasTests && (
           <span
             className={`text-xs font-medium ${
@@ -91,7 +91,7 @@ export function ResponsePanel({ result, loading }: Props) {
       </div>
 
       {/* Response tab bar */}
-      <div className="flex items-center border-b border-border px-3">
+      <div className="flex items-center ghost-border-b px-3">
         {tabs
           .filter((t) => t.show)
           .map((tab) => (
@@ -100,13 +100,13 @@ export function ResponsePanel({ result, loading }: Props) {
               onClick={() => setActiveTab(tab.key)}
               className={`px-3 py-1.5 text-xs font-medium transition-colors relative ${
                 activeTab === tab.key
-                  ? 'text-accent'
-                  : 'text-text-dim hover:text-text-primary'
+                  ? 'text-primary'
+                  : 'text-on-surface-variant hover:text-on-surface'
               }`}
             >
               {tab.label}
               {activeTab === tab.key && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
               )}
             </button>
           ))}
@@ -115,7 +115,7 @@ export function ResponsePanel({ result, loading }: Props) {
       {/* Tab content */}
       <div className="flex-1 overflow-auto">
         {activeTab === 'body' && (
-          <pre className="p-3 text-xs font-mono text-text-primary whitespace-pre-wrap break-words leading-relaxed">
+          <pre className="p-3 text-xs font-mono text-on-surface whitespace-pre-wrap break-words leading-relaxed">
             {formatBody(response.body)}
           </pre>
         )}
@@ -124,8 +124,8 @@ export function ResponsePanel({ result, loading }: Props) {
           <div className="p-3 space-y-1">
             {Object.entries(response.headers).map(([key, value]) => (
               <div key={key} className="flex gap-2 text-xs font-mono">
-                <span className="text-accent shrink-0">{key}:</span>
-                <span className="text-text-primary break-all">{value}</span>
+                <span className="text-primary shrink-0">{key}:</span>
+                <span className="text-on-surface break-all">{value}</span>
               </div>
             ))}
           </div>
@@ -141,7 +141,7 @@ export function ResponsePanel({ result, loading }: Props) {
                   <XCircle size={14} className="text-red-400 shrink-0 mt-0.5" />
                 )}
                 <div>
-                  <span className={test.passed ? 'text-text-primary' : 'text-red-400'}>
+                  <span className={test.passed ? 'text-on-surface' : 'text-red-400'}>
                     {test.name}
                   </span>
                   {test.error && (
@@ -159,8 +159,8 @@ export function ResponsePanel({ result, loading }: Props) {
           <div className="p-3 space-y-0.5">
             {logs.map((log, idx) => (
               <div key={idx} className="flex items-start gap-2 text-xs font-mono">
-                <Terminal size={12} className="text-text-muted shrink-0 mt-0.5" />
-                <span className="text-text-dim">{log}</span>
+                <Terminal size={12} className="text-outline shrink-0 mt-0.5" />
+                <span className="text-on-surface-variant">{log}</span>
               </div>
             ))}
           </div>

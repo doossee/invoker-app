@@ -42,11 +42,11 @@ export function AuthTab({ auth, onChange }: Props) {
   return (
     <div className="p-3 space-y-3">
       <div>
-        <label className="text-xs text-text-dim mb-1 block">Auth Type</label>
+        <label className="text-xs text-on-surface-variant mb-1 block">Auth Type</label>
         <select
           value={type}
           onChange={(e) => setType(e.target.value as AuthType)}
-          className="bg-surface-2 text-text-primary text-xs font-mono px-2 py-1.5 rounded border border-border focus:border-accent/50 focus:outline-none cursor-pointer"
+          className="bg-surface-container text-on-surface text-xs font-mono px-2 py-1.5 rounded-md border border-outline-variant focus:border-primary/50 focus:outline-none cursor-pointer"
         >
           <option value="none">None</option>
           <option value="bearer">Bearer Token</option>
@@ -56,13 +56,13 @@ export function AuthTab({ auth, onChange }: Props) {
 
       {type === 'bearer' && (
         <div>
-          <label className="text-xs text-text-dim mb-1 block">Token</label>
+          <label className="text-xs text-on-surface-variant mb-1 block">Token</label>
           <input
             type="text"
             value={token}
             onChange={(e) => setToken(e.target.value)}
             placeholder="{{token}}"
-            className="w-full bg-surface-2 text-text-primary text-xs font-mono px-2 py-1.5 rounded border border-border focus:border-accent/50 focus:outline-none"
+            className="w-full bg-surface-container text-on-surface text-xs font-mono px-2 py-1.5 rounded-md border border-outline-variant focus:border-primary/50 focus:outline-none"
           />
         </div>
       )}
@@ -70,23 +70,23 @@ export function AuthTab({ auth, onChange }: Props) {
       {type === 'basic' && (
         <div className="space-y-2">
           <div>
-            <label className="text-xs text-text-dim mb-1 block">Username</label>
+            <label className="text-xs text-on-surface-variant mb-1 block">Username</label>
             <input
               type="text"
               value={user}
               onChange={(e) => setUser(e.target.value)}
               placeholder="username"
-              className="w-full bg-surface-2 text-text-primary text-xs font-mono px-2 py-1.5 rounded border border-border focus:border-accent/50 focus:outline-none"
+              className="w-full bg-surface-container text-on-surface text-xs font-mono px-2 py-1.5 rounded-md border border-outline-variant focus:border-primary/50 focus:outline-none"
             />
           </div>
           <div>
-            <label className="text-xs text-text-dim mb-1 block">Password</label>
+            <label className="text-xs text-on-surface-variant mb-1 block">Password</label>
             <input
               type="text"
               value={pass}
               onChange={(e) => setPass(e.target.value)}
               placeholder="password"
-              className="w-full bg-surface-2 text-text-primary text-xs font-mono px-2 py-1.5 rounded border border-border focus:border-accent/50 focus:outline-none"
+              className="w-full bg-surface-container text-on-surface text-xs font-mono px-2 py-1.5 rounded-md border border-outline-variant focus:border-primary/50 focus:outline-none"
             />
           </div>
         </div>

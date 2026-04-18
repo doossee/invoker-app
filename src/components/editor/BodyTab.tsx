@@ -87,10 +87,10 @@ export function BodyTab({ body, onChange }: Props) {
   return (
     <div className="flex flex-col h-full">
       <div ref={containerRef} className="flex-1 overflow-auto" />
-      <div className="flex items-center px-3 py-1.5 border-t border-border">
+      <div className="flex items-center px-3 py-1.5 ghost-border-t">
         <button
           onClick={formatJson}
-          className="text-xs text-text-dim hover:text-accent transition-colors"
+          className="text-xs text-on-surface-variant hover:text-primary transition-colors"
         >
           Format JSON
         </button>

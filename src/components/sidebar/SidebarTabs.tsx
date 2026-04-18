@@ -5,12 +5,12 @@ interface Props {
 
 export function SidebarTabs({ view, onChange }: Props) {
   return (
-    <div className="flex border-b border-border">
+    <div className="flex ghost-border-b">
       <button
         className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${
           view === 'collection'
-            ? 'text-accent border-b-2 border-accent'
-            : 'text-text-muted hover:text-text-dim'
+            ? 'text-primary border-b-2 border-primary'
+            : 'text-outline hover:text-on-surface-variant'
         }`}
         onClick={() => onChange('collection')}
       >
@@ -19,8 +19,8 @@ export function SidebarTabs({ view, onChange }: Props) {
       <button
         className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${
           view === 'docs'
-            ? 'text-accent border-b-2 border-accent'
-            : 'text-text-muted hover:text-text-dim'
+            ? 'text-primary border-b-2 border-primary'
+            : 'text-outline hover:text-on-surface-variant'
         }`}
         onClick={() => onChange('docs')}
       >

@@ -67,7 +67,7 @@ function ScriptEditor({ label, value, onChange }: ScriptEditorProps) {
 
   return (
     <div className="space-y-1">
-      <div className="text-xs font-mono text-text-dim px-3 pt-2">{label}</div>
+      <div className="text-xs font-mono text-on-surface-variant px-3 pt-2">{label}</div>
       <div ref={containerRef} className="min-h-[80px] max-h-[200px] overflow-auto" />
     </div>
   );
@@ -75,7 +75,7 @@ function ScriptEditor({ label, value, onChange }: ScriptEditorProps) {
 
 export function ScriptsTab({ scripts, onChange }: Props) {
   return (
-    <div className="divide-y divide-border">
+    <div className="divide-y divide-outline-variant">
       <ScriptEditor
         label="> pre"
         value={scripts.pre}

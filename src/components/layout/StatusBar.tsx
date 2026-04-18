@@ -13,10 +13,10 @@ export function StatusBar() {
     : '(sample)';
 
   return (
-    <div className="h-6 bg-surface border-t flex items-center px-3 gap-4 text-[11px] text-text-muted flex-shrink-0">
+    <div className="h-6 bg-surface ghost-border-t flex items-center px-3 gap-4 text-[11px] text-outline flex-shrink-0">
       {activeEnv && (
         <span className="flex items-center gap-1">
-          <span className="text-amber-400">⚡</span>
+          <span className="text-tertiary">⚡</span>
           {activeEnv.name}
         </span>
       )}

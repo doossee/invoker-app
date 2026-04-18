@@ -128,7 +128,7 @@ function TreeItem({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
     return (
       <div>
         <button
-          className="w-full flex items-center gap-1.5 py-1 px-2 text-xs text-text-dim hover:bg-surface-2 hover:text-text-primary transition-colors"
+          className="w-full flex items-center gap-1.5 py-1 px-2 text-xs text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
           style={{ paddingLeft: pl }}
           onClick={handleToggle}
         >
@@ -170,8 +170,8 @@ function TreeItem({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
     <button
       className={`w-full flex items-center gap-1.5 py-1 px-2 text-xs transition-colors ${
         isActive
-          ? 'bg-accent/10 text-accent'
-          : 'text-text-dim hover:bg-surface-2 hover:text-text-primary'
+          ? 'bg-primary/10 text-primary'
+          : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
       }`}
       style={{ paddingLeft: pl + 16 }}
       onClick={handleClick}
@@ -182,7 +182,7 @@ function TreeItem({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
         <FileText size={14} className="text-blue-400 flex-shrink-0" />
       )}
       <span className="truncate">{node.name}</span>
-      <span className="ml-auto text-[9px] text-text-muted font-mono uppercase">
+      <span className="ml-auto text-[9px] text-outline font-mono uppercase">
         {isIvk ? 'ivk' : 'md'}
       </span>
     </button>
@@ -196,7 +196,7 @@ export function UnifiedTree() {
 
   if (tree.length === 0) {
     return (
-      <div className="px-3 py-4 text-xs text-text-muted text-center">
+      <div className="px-3 py-4 text-xs text-outline text-center">
         No files loaded
       </div>
     );

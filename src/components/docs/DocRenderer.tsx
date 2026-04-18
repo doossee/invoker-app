@@ -43,8 +43,8 @@ export function DocRenderer({ docPath }: Props) {
 
       if (lang || className) {
         return (
-          <pre className="bg-surface rounded-lg border border-border p-4 overflow-x-auto my-3">
-            <code className="text-sm font-mono text-text-primary block">
+          <pre className="bg-surface-container rounded-lg border border-outline-variant p-4 overflow-x-auto my-3">
+            <code className="text-sm font-mono text-on-surface block">
               {codeString}
             </code>
           </pre>
@@ -53,7 +53,7 @@ export function DocRenderer({ docPath }: Props) {
 
       return (
         <code
-          className="bg-surface-2 px-1.5 py-0.5 rounded text-sm font-mono text-var-set"
+          className="bg-surface-container px-1.5 py-0.5 rounded-md text-sm font-mono text-var-set"
           {...props}
         >
           {children}

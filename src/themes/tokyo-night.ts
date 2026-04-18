@@ -5,36 +5,46 @@ export const tokyoNight: InvokerTheme = {
   id: 'tokyo-night',
   type: 'dark',
   colors: {
-    bg: '#1a1b26',
-    surface: '#24283b',
-    surfaceHover: '#292e42',
-    surfaceActive: '#33384e',
-    border: '#3b4261',
-    borderSubtle: '#292e42',
-    text: '#a9b1d6',
-    textSecondary: '#787c99',
-    textMuted: '#565a6e',
-    accent: '#7aa2f7',
-    accentHover: '#5d8ffa',
-    accentSubtle: 'rgba(122,162,247,0.15)',
+    // MD3 Surface containers
+    surfaceLowest: '#16171f',
+    surfaceLow: '#1a1b26',
+    surface: '#1a1b26',
+    surfaceContainer: '#24283b',
+    surfaceHigh: '#292e42',
+    surfaceHighest: '#33384e',
+
+    // Text
+    onSurface: '#a9b1d6',
+    onSurfaceVariant: '#787c99',
+    outline: '#565a6e',
+    outlineVariant: '#3b4261',
+
+    // Accent
+    primary: '#7aa2f7',
+    onPrimary: '#002c72',
+    secondary: '#bb9af7',
+    tertiary: '#9ece6a',
+    error: '#f7768e',
+
+    // Semantic
     success: '#9ece6a',
     warning: '#e0af68',
-    error: '#f7768e',
     info: '#7aa2f7',
+
+    // Method badges
     methodGet: '#9ece6a',
     methodPost: '#e0af68',
     methodPut: '#7aa2f7',
     methodPatch: '#bb9af7',
     methodDelete: '#f7768e',
+
+    // Variables
     varSet: '#bb9af7',
     varUnset: '#f7768e',
+
+    // Editor
     editorBg: '#1a1b26',
     editorGutter: '#16171f',
-    editorSelection: 'rgba(122,162,247,0.2)',
-    sidebarBg: '#16171f',
-    sidebarItemHover: '#24283b',
-    sidebarItemActive: 'rgba(122,162,247,0.1)',
-    statusBarBg: '#16171f',
-    statusBarText: '#565a6e',
+    editorSelection: 'rgba(122, 162, 247, 0.2)',
   },
 };

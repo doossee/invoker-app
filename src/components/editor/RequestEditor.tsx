@@ -143,7 +143,7 @@ export function RequestEditor({ filePath }: Props) {
 
   if (!request) {
     return (
-      <div className="h-full flex items-center justify-center text-text-muted text-sm">
+      <div className="h-full flex items-center justify-center text-outline text-sm">
         Could not parse request file.
       </div>
     );
@@ -162,20 +162,20 @@ export function RequestEditor({ filePath }: Props) {
       />
 
       {/* Tab Bar */}
-      <div className="flex items-center border-b border-border px-3">
+      <div className="flex items-center ghost-border-b px-3">
         {TABS.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`px-3 py-2 text-xs font-medium transition-colors relative ${
               activeTab === tab
-                ? 'text-accent'
-                : 'text-text-dim hover:text-text-primary'
+                ? 'text-primary'
+                : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
             {tab}
             {activeTab === tab && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
             )}
           </button>
         ))}
@@ -203,7 +203,7 @@ export function RequestEditor({ filePath }: Props) {
 
       {/* Response Panel with resize handle */}
       <div
-        className="h-1 cursor-row-resize hover:bg-accent/30 transition-colors flex-shrink-0 border-t border-border"
+        className="h-1 cursor-row-resize hover:bg-primary/30 transition-colors flex-shrink-0 ghost-border-t"
         onMouseDown={onResizeMouseDown}
       />
       <div className="flex-shrink-0 overflow-hidden" style={{ height: responseHeight }}>

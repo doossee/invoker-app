@@ -5,36 +5,46 @@ export const catppuccinMocha: InvokerTheme = {
   id: 'catppuccin-mocha',
   type: 'dark',
   colors: {
-    bg: '#1e1e2e',
-    surface: '#313244',
-    surfaceHover: '#45475a',
-    surfaceActive: '#585b70',
-    border: '#45475a',
-    borderSubtle: '#313244',
-    text: '#cdd6f4',
-    textSecondary: '#a6adc8',
-    textMuted: '#6c7086',
-    accent: '#89b4fa',
-    accentHover: '#74c7ec',
-    accentSubtle: 'rgba(137,180,250,0.15)',
+    // MD3 Surface containers
+    surfaceLowest: '#11111b',
+    surfaceLow: '#181825',
+    surface: '#1e1e2e',
+    surfaceContainer: '#313244',
+    surfaceHigh: '#45475a',
+    surfaceHighest: '#585b70',
+
+    // Text
+    onSurface: '#cdd6f4',
+    onSurfaceVariant: '#a6adc8',
+    outline: '#6c7086',
+    outlineVariant: '#45475a',
+
+    // Accent
+    primary: '#89b4fa',
+    onPrimary: '#003c88',
+    secondary: '#cba6f7',
+    tertiary: '#a6e3a1',
+    error: '#f38ba8',
+
+    // Semantic
     success: '#a6e3a1',
     warning: '#f9e2af',
-    error: '#f38ba8',
     info: '#89b4fa',
+
+    // Method badges
     methodGet: '#a6e3a1',
     methodPost: '#f9e2af',
     methodPut: '#89b4fa',
     methodPatch: '#cba6f7',
     methodDelete: '#f38ba8',
+
+    // Variables
     varSet: '#cba6f7',
     varUnset: '#f38ba8',
+
+    // Editor
     editorBg: '#1e1e2e',
     editorGutter: '#181825',
-    editorSelection: 'rgba(137,180,250,0.2)',
-    sidebarBg: '#181825',
-    sidebarItemHover: '#313244',
-    sidebarItemActive: 'rgba(137,180,250,0.1)',
-    statusBarBg: '#181825',
-    statusBarText: '#6c7086',
+    editorSelection: 'rgba(137, 180, 250, 0.2)',
   },
 };

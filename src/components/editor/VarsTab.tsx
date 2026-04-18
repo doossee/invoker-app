@@ -36,7 +36,7 @@ export function VarsTab({ request }: Props) {
 
   if (varNames.length === 0) {
     return (
-      <div className="p-3 text-xs text-text-muted italic">
+      <div className="p-3 text-xs text-outline italic">
         No variables referenced in this request.
       </div>
     );
@@ -60,10 +60,10 @@ export function VarsTab({ request }: Props) {
               value={value ?? ''}
               onChange={(e) => setVariable(name, e.target.value)}
               placeholder="not set"
-              className="flex-1 bg-surface-2 text-text-primary text-xs font-mono px-2 py-1.5 rounded border border-transparent focus:border-accent/50 focus:outline-none"
+              className="flex-1 bg-surface-container text-on-surface text-xs font-mono px-2 py-1.5 rounded-md border border-transparent focus:border-primary/50 focus:outline-none"
             />
             <span
-              className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+              className={`text-[10px] px-1.5 py-0.5 rounded-sm font-medium ${
                 isSet
                   ? 'bg-green-500/15 text-green-400'
                   : 'bg-red-500/15 text-red-400'

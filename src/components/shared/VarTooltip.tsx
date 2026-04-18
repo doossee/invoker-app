@@ -69,14 +69,14 @@ export function VarTooltip({ varName, value, position, onSave, onClose }: Props)
   return (
     <div
       ref={ref}
-      className="fixed z-50 bg-surface-2 border border-border rounded-lg shadow-xl p-3 min-w-[220px] max-w-[320px]"
+      className="fixed z-50 bg-surface-container border border-outline-variant rounded-lg shadow-xl p-3 min-w-[220px] max-w-[320px]"
       style={{ left: position.x, top: position.y }}
     >
       {/* Header */}
       <div className="flex items-center justify-between gap-2 mb-2">
-        <code className="text-xs font-mono text-text-muted">{varName}</code>
+        <code className="text-xs font-mono text-outline">{varName}</code>
         <span
-          className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+          className={`text-[10px] px-1.5 py-0.5 rounded-sm font-medium ${
             isSet ? 'bg-purple-500/15 text-purple-400' : 'bg-red-500/15 text-red-400'
           }`}
         >
@@ -96,11 +96,11 @@ export function VarTooltip({ varName, value, position, onSave, onClose }: Props)
               if (e.key === 'Enter') handleSave();
               if (e.key === 'Escape') { setEditing(false); onClose(); }
             }}
-            className="flex-1 bg-bg text-text-primary text-xs font-mono px-2 py-1.5 rounded border border-accent/50 focus:outline-none"
+            className="flex-1 bg-surface-lowest text-on-surface text-xs font-mono px-2 py-1.5 rounded-md border border-primary/50 focus:outline-none"
           />
           <button
             onClick={handleSave}
-            className="px-2 py-1.5 bg-accent text-white text-xs rounded hover:bg-accent/80 transition-colors"
+            className="px-2 py-1.5 bg-primary text-on-primary text-xs rounded-md hover:bg-primary/80 transition-colors"
           >
             Save
           </button>
@@ -110,17 +110,17 @@ export function VarTooltip({ varName, value, position, onSave, onClose }: Props)
           className="flex items-center gap-1 cursor-pointer group"
           onClick={() => { setEditing(true); setDraft(value ?? ''); }}
         >
-          <div className="flex-1 bg-bg rounded px-2 py-1.5 text-xs font-mono min-h-[28px] flex items-center">
+          <div className="flex-1 bg-surface-lowest rounded-md px-2 py-1.5 text-xs font-mono min-h-[28px] flex items-center">
             {isSet ? (
-              <span className="text-text-primary">{value}</span>
+              <span className="text-on-surface">{value}</span>
             ) : (
-              <span className="text-text-muted italic">click to set</span>
+              <span className="text-outline italic">click to set</span>
             )}
           </div>
           {isSet && (
             <button
               onClick={(e) => { e.stopPropagation(); handleCopy(); }}
-              className="p-1 text-text-muted hover:text-text-primary transition-colors"
+              className="p-1 text-outline hover:text-on-surface transition-colors"
             >
               {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
             </button>

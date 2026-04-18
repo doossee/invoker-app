@@ -134,39 +134,39 @@ export function EnvSettings({ onClose }: Props) {
       onClick={handleBackdropClick}
       className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 pt-20"
     >
-      <div className="bg-surface border border-border rounded-lg shadow-2xl w-[600px] max-h-[80vh] flex flex-col">
+      <div className="bg-surface border border-outline-variant rounded-lg shadow-2xl w-[600px] max-h-[80vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
-          <h2 className="text-sm font-semibold text-text-primary">Settings</h2>
+        <div className="flex items-center justify-between px-4 py-3 ghost-border-b flex-shrink-0">
+          <h2 className="text-sm font-semibold text-on-surface">Settings</h2>
           <button
             onClick={onClose}
-            className="p-1 rounded hover:bg-surface-2 text-text-muted hover:text-text-primary transition-colors"
+            className="p-1 rounded-md hover:bg-surface-container text-outline hover:text-on-surface transition-colors"
           >
             <X size={16} />
           </button>
         </div>
 
         {/* Theme picker */}
-        <div className="px-4 py-3 border-b border-border flex-shrink-0">
+        <div className="px-4 py-3 ghost-border-b flex-shrink-0">
           <div className="flex items-center gap-1.5 mb-2">
-            <Palette size={14} className="text-text-muted" />
-            <span className="text-xs font-semibold text-text-primary">Theme</span>
+            <Palette size={14} className="text-outline" />
+            <span className="text-xs font-semibold text-on-surface">Theme</span>
           </div>
           <div className="grid grid-cols-2 gap-1.5">
             {availableThemes.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setActiveTheme(t.id)}
-                className={`flex items-center gap-2 px-2.5 py-2 rounded text-xs transition-colors text-left ${
+                className={`flex items-center gap-2 px-2.5 py-2 rounded-md text-xs transition-colors text-left ${
                   activeTheme.id === t.id
-                    ? 'bg-accent/10 text-accent ring-1 ring-accent/30'
-                    : 'bg-surface-2 text-text-dim hover:text-text-primary hover:bg-surface-2/80'
+                    ? 'bg-primary/10 text-primary ring-1 ring-primary/30'
+                    : 'bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-high'
                 }`}
               >
                 {/* Color preview dots */}
                 <div className="flex gap-0.5 flex-shrink-0">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: t.colors.bg }} />
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: t.colors.accent }} />
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: t.colors.surfaceLowest }} />
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: t.colors.primary }} />
                   <span className="w-2.5 h-2.5 rounded-full" style={{ background: t.colors.success }} />
                 </div>
                 <span className="flex-1 truncate">{t.name}</span>
@@ -178,29 +178,29 @@ export function EnvSettings({ onClose }: Props) {
 
         {/* Environments section header */}
         <div className="px-4 pt-3 pb-1 flex-shrink-0">
-          <span className="text-xs font-semibold text-text-primary">Environments</span>
+          <span className="text-xs font-semibold text-on-surface">Environments</span>
         </div>
 
         {/* Env list */}
         <div className="flex-1 overflow-y-auto">
           {envs.map((env, index) => (
-            <div key={index} className="border-b border-border last:border-0">
+            <div key={index} className="border-b border-outline-variant last:border-0">
               {/* Env row */}
               <div
-                className="flex items-center gap-2 px-4 py-3 hover:bg-surface-2 cursor-pointer transition-colors"
+                className="flex items-center gap-2 px-4 py-3 hover:bg-surface-container cursor-pointer transition-colors"
                 onClick={() => toggleExpand(index)}
               >
                 {expandedIndex === index ? (
-                  <ChevronDown size={14} className="text-text-muted flex-shrink-0" />
+                  <ChevronDown size={14} className="text-outline flex-shrink-0" />
                 ) : (
-                  <ChevronRight size={14} className="text-text-muted flex-shrink-0" />
+                  <ChevronRight size={14} className="text-outline flex-shrink-0" />
                 )}
                 <span
                   className="w-2 h-2 rounded-full flex-shrink-0"
                   style={{ background: env.color ?? '#22c55e' }}
                 />
-                <span className="flex-1 text-sm text-text-primary">{env.name}</span>
-                <span className="text-xs text-text-muted mr-2">
+                <span className="flex-1 text-sm text-on-surface">{env.name}</span>
+                <span className="text-xs text-outline mr-2">
                   {varCount(env)} variable{varCount(env) !== 1 ? 's' : ''}
                 </span>
                 <button
@@ -208,7 +208,7 @@ export function EnvSettings({ onClose }: Props) {
                     e.stopPropagation();
                     handleDelete(index);
                   }}
-                  className="p-1 rounded hover:bg-surface text-text-muted hover:text-red-400 transition-colors"
+                  className="p-1 rounded-md hover:bg-surface text-outline hover:text-red-400 transition-colors"
                   title="Delete environment"
                 >
                   <Trash2 size={14} />
@@ -217,10 +217,10 @@ export function EnvSettings({ onClose }: Props) {
 
               {/* Expanded content */}
               {expandedIndex === index && (
-                <div className="px-4 pb-4 space-y-3 bg-bg/30">
+                <div className="px-4 pb-4 space-y-3 bg-surface-lowest/30">
                   {/* Name edit */}
                   <div className="flex items-center gap-2 pt-1">
-                    <label className="text-xs text-text-dim w-12 flex-shrink-0">Name</label>
+                    <label className="text-xs text-on-surface-variant w-12 flex-shrink-0">Name</label>
                     <input
                       type="text"
                       value={editingName[index] ?? env.name}
@@ -231,16 +231,16 @@ export function EnvSettings({ onClose }: Props) {
                           e.currentTarget.blur();
                         }
                       }}
-                      className="flex-1 bg-surface-2 text-text-primary text-xs px-2 py-1.5 rounded border border-transparent focus:border-accent/50 focus:outline-none"
+                      className="flex-1 bg-surface-container text-on-surface text-xs px-2 py-1.5 rounded-md border border-transparent focus:border-primary/50 focus:outline-none"
                     />
                     <button
                       onClick={() => {
                         setActiveEnv(index);
                       }}
-                      className={`text-xs px-2 py-1 rounded transition-colors ${
+                      className={`text-xs px-2 py-1 rounded-md transition-colors ${
                         settings.activeEnvironmentIndex === index
-                          ? 'bg-accent/20 text-accent'
-                          : 'bg-surface-2 text-text-dim hover:text-text-primary'
+                          ? 'bg-primary/20 text-primary'
+                          : 'bg-surface-container text-on-surface-variant hover:text-on-surface'
                       }`}
                     >
                       {settings.activeEnvironmentIndex === index ? 'Active' : 'Set active'}
@@ -249,7 +249,7 @@ export function EnvSettings({ onClose }: Props) {
 
                   {/* Variables */}
                   <div>
-                    <p className="text-xs text-text-dim mb-2">Variables</p>
+                    <p className="text-xs text-on-surface-variant mb-2">Variables</p>
                     <KeyValueTable
                       entries={env.variables || {}}
                       onChange={(vars) => handleVariablesChange(index, vars)}
@@ -263,7 +263,7 @@ export function EnvSettings({ onClose }: Props) {
           ))}
 
           {/* Add environment */}
-          <div className="px-4 py-3 border-t border-border">
+          <div className="px-4 py-3 border-t border-outline-variant">
             <div className="flex items-center gap-2">
               <input
                 type="text"
@@ -273,12 +273,12 @@ export function EnvSettings({ onClose }: Props) {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleAddEnv();
                 }}
-                className="flex-1 bg-surface-2 text-text-primary text-xs px-2 py-1.5 rounded border border-transparent focus:border-accent/50 focus:outline-none"
+                className="flex-1 bg-surface-container text-on-surface text-xs px-2 py-1.5 rounded-md border border-transparent focus:border-primary/50 focus:outline-none"
               />
               <button
                 onClick={handleAddEnv}
                 disabled={!newEnvName.trim()}
-                className="flex items-center gap-1 text-xs px-3 py-1.5 rounded bg-accent/10 text-accent hover:bg-accent/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Plus size={12} />
                 Add
@@ -289,12 +289,12 @@ export function EnvSettings({ onClose }: Props) {
 
         {/* Reset to author defaults (published mode only) */}
         {hasDefaults && (
-          <div className="px-4 py-3 border-t border-border flex-shrink-0">
+          <div className="px-4 py-3 border-t border-outline-variant flex-shrink-0">
             <div className="flex items-center gap-2">
-              <p className="text-xs text-text-dim flex-1">Override author defaults</p>
+              <p className="text-xs text-on-surface-variant flex-1">Override author defaults</p>
               <button
                 onClick={resetToDefaults}
-                className="flex items-center gap-1.5 text-xs px-2 py-1 rounded bg-surface-2 text-text-dim hover:text-text-primary transition-colors"
+                className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-md bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors"
               >
                 <RotateCcw size={12} />
                 Reset to defaults
@@ -304,12 +304,12 @@ export function EnvSettings({ onClose }: Props) {
         )}
 
         {/* Import/Export footer */}
-        <div className="px-4 py-3 border-t border-border flex-shrink-0 space-y-2">
+        <div className="px-4 py-3 border-t border-outline-variant flex-shrink-0 space-y-2">
           <div className="flex items-center gap-2">
-            <p className="text-xs text-text-dim flex-1">Import / Export</p>
+            <p className="text-xs text-on-surface-variant flex-1">Import / Export</p>
             <button
               onClick={handleExport}
-              className="flex items-center gap-1.5 text-xs px-2 py-1 rounded bg-surface-2 text-text-dim hover:text-text-primary transition-colors"
+              className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-md bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors"
             >
               <Copy size={12} />
               {copyDone ? 'Copied!' : 'Export to clipboard'}
@@ -324,12 +324,12 @@ export function EnvSettings({ onClose }: Props) {
                 setImportError('');
               }}
               rows={3}
-              className="flex-1 bg-surface-2 text-text-primary text-xs font-mono px-2 py-1.5 rounded border border-transparent focus:border-accent/50 focus:outline-none resize-none"
+              className="flex-1 bg-surface-container text-on-surface text-xs font-mono px-2 py-1.5 rounded-md border border-transparent focus:border-primary/50 focus:outline-none resize-none"
             />
             <button
               onClick={handleImport}
               disabled={!importText.trim()}
-              className="text-xs px-3 py-1.5 rounded bg-accent/10 text-accent hover:bg-accent/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed mt-0.5"
+              className="text-xs px-3 py-1.5 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed mt-0.5"
             >
               Import
             </button>

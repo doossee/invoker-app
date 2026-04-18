@@ -14,8 +14,8 @@ export function TopBar({ onOpenSettings }: Props) {
   const published = isPublished();
 
   return (
-    <div className="h-10 bg-surface border-b flex items-center px-4 gap-3 flex-shrink-0">
-      <div className="flex items-center gap-1.5 text-accent font-semibold text-sm">
+    <div className="h-10 bg-surface ghost-border-b flex items-center px-4 gap-3 flex-shrink-0">
+      <div className="flex items-center gap-1.5 text-primary font-semibold text-sm">
         {published && siteConfig ? (
           <>
             <span>{siteConfig.nav?.logo ?? '⚡'}</span>
@@ -34,7 +34,7 @@ export function TopBar({ onOpenSettings }: Props) {
           onClick={openCollection}
           disabled={loading}
           title="Open Collection Folder"
-          className="p-1 rounded hover:bg-surface-2 text-text-muted hover:text-text-primary transition-colors disabled:opacity-50"
+          className="p-1 rounded-md hover:bg-surface-container text-outline hover:text-on-surface transition-colors disabled:opacity-50"
         >
           <FolderOpen size={16} />
         </button>
@@ -48,7 +48,7 @@ export function TopBar({ onOpenSettings }: Props) {
               href={link.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs px-2 py-1 rounded text-text-muted hover:text-text-primary hover:bg-surface-2 transition-colors"
+              className="text-xs px-2 py-1 rounded-md text-outline hover:text-on-surface hover:bg-surface-container transition-colors"
             >
               {link.label}
             </a>
@@ -63,7 +63,7 @@ export function TopBar({ onOpenSettings }: Props) {
       {!published && (
         <button
           onClick={onOpenSettings}
-          className="p-1 rounded hover:bg-surface-2 text-text-muted hover:text-text-primary transition-colors"
+          className="p-1 rounded-md hover:bg-surface-container text-outline hover:text-on-surface transition-colors"
         >
           <Settings size={16} />
         </button>

@@ -16,37 +16,65 @@ function applyTheme(theme: InvokerTheme) {
   const root = document.documentElement;
   const { colors } = theme;
 
-  root.style.setProperty('--ivk-bg', colors.bg);
+  // MD3 Surface containers
+  root.style.setProperty('--ivk-surface-lowest', colors.surfaceLowest);
+  root.style.setProperty('--ivk-surface-low', colors.surfaceLow);
   root.style.setProperty('--ivk-surface', colors.surface);
-  root.style.setProperty('--ivk-surface-hover', colors.surfaceHover);
-  root.style.setProperty('--ivk-surface-active', colors.surfaceActive);
-  root.style.setProperty('--ivk-border', colors.border);
-  root.style.setProperty('--ivk-border-subtle', colors.borderSubtle);
-  root.style.setProperty('--ivk-text', colors.text);
-  root.style.setProperty('--ivk-text-secondary', colors.textSecondary);
-  root.style.setProperty('--ivk-text-muted', colors.textMuted);
-  root.style.setProperty('--ivk-accent', colors.accent);
-  root.style.setProperty('--ivk-accent-hover', colors.accentHover);
-  root.style.setProperty('--ivk-accent-subtle', colors.accentSubtle);
+  root.style.setProperty('--ivk-surface-container', colors.surfaceContainer);
+  root.style.setProperty('--ivk-surface-high', colors.surfaceHigh);
+  root.style.setProperty('--ivk-surface-highest', colors.surfaceHighest);
+
+  // Text / on-surface
+  root.style.setProperty('--ivk-on-surface', colors.onSurface);
+  root.style.setProperty('--ivk-on-surface-variant', colors.onSurfaceVariant);
+  root.style.setProperty('--ivk-outline', colors.outline);
+  root.style.setProperty('--ivk-outline-variant', colors.outlineVariant);
+
+  // Accent
+  root.style.setProperty('--ivk-primary', colors.primary);
+  root.style.setProperty('--ivk-on-primary', colors.onPrimary);
+  root.style.setProperty('--ivk-secondary', colors.secondary);
+  root.style.setProperty('--ivk-tertiary', colors.tertiary);
+  root.style.setProperty('--ivk-error', colors.error);
+
+  // Semantic
   root.style.setProperty('--ivk-success', colors.success);
   root.style.setProperty('--ivk-warning', colors.warning);
-  root.style.setProperty('--ivk-error', colors.error);
   root.style.setProperty('--ivk-info', colors.info);
+
+  // Method badges
   root.style.setProperty('--ivk-method-get', colors.methodGet);
   root.style.setProperty('--ivk-method-post', colors.methodPost);
   root.style.setProperty('--ivk-method-put', colors.methodPut);
   root.style.setProperty('--ivk-method-patch', colors.methodPatch);
   root.style.setProperty('--ivk-method-delete', colors.methodDelete);
+
+  // Variables
   root.style.setProperty('--ivk-var-set', colors.varSet);
   root.style.setProperty('--ivk-var-unset', colors.varUnset);
+
+  // Editor
   root.style.setProperty('--ivk-editor-bg', colors.editorBg);
   root.style.setProperty('--ivk-editor-gutter', colors.editorGutter);
   root.style.setProperty('--ivk-editor-selection', colors.editorSelection);
-  root.style.setProperty('--ivk-sidebar-bg', colors.sidebarBg);
-  root.style.setProperty('--ivk-sidebar-item-hover', colors.sidebarItemHover);
-  root.style.setProperty('--ivk-sidebar-item-active', colors.sidebarItemActive);
-  root.style.setProperty('--ivk-status-bar-bg', colors.statusBarBg);
-  root.style.setProperty('--ivk-status-bar-text', colors.statusBarText);
+
+  // Legacy CSS variable aliases (backward compat for globals.css and CodeMirror)
+  root.style.setProperty('--ivk-bg', colors.surfaceLowest);
+  root.style.setProperty('--ivk-surface-hover', colors.surfaceContainer);
+  root.style.setProperty('--ivk-surface-active', colors.surfaceHigh);
+  root.style.setProperty('--ivk-border', colors.outlineVariant);
+  root.style.setProperty('--ivk-border-subtle', colors.outlineVariant);
+  root.style.setProperty('--ivk-text', colors.onSurface);
+  root.style.setProperty('--ivk-text-secondary', colors.onSurfaceVariant);
+  root.style.setProperty('--ivk-text-muted', colors.outline);
+  root.style.setProperty('--ivk-accent', colors.primary);
+  root.style.setProperty('--ivk-accent-hover', colors.primary);
+  root.style.setProperty('--ivk-accent-subtle', `${colors.primary}26`);
+  root.style.setProperty('--ivk-sidebar-bg', colors.surface);
+  root.style.setProperty('--ivk-sidebar-item-hover', colors.surfaceContainer);
+  root.style.setProperty('--ivk-sidebar-item-active', `${colors.primary}1a`);
+  root.style.setProperty('--ivk-status-bar-bg', colors.surface);
+  root.style.setProperty('--ivk-status-bar-text', colors.outline);
 
   // Set the theme type attribute for conditional CSS
   root.setAttribute('data-theme', theme.type);
