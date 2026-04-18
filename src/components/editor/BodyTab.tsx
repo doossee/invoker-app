@@ -77,6 +77,13 @@ export function BodyTab({ body, onChange }: Props) {
     }
   }, []);
 
+  // Listen for Cmd+Shift+F keyboard shortcut
+  useEffect(() => {
+    const handler = () => formatJson();
+    window.addEventListener('invoker:format-json-editor', handler);
+    return () => window.removeEventListener('invoker:format-json-editor', handler);
+  }, [formatJson]);
+
   return (
     <div className="flex flex-col h-full">
       <div ref={containerRef} className="flex-1 overflow-auto" />

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { TopBar } from '@/components/layout/TopBar';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { StatusBar } from '@/components/layout/StatusBar';
@@ -12,6 +12,7 @@ import { useEditorStore } from '@/stores/editor-store';
 import { useCollectionStore } from '@/stores/collection-store';
 import { useDocsStore } from '@/stores/docs-store';
 import { useEnvStore } from '@/stores/env-store';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { watchCollection, loadCollection, loadFromManifest } from '@/lib/file-system';
 import { isPublished } from '@/lib/platform';
 
@@ -24,6 +25,25 @@ export function App() {
   const activeFilePath = useCollectionStore((s) => s.activeFilePath);
   const activeDocPath = useDocsStore((s) => s.activeDocPath);
   const collectionPath = useCollectionStore((s) => s.collectionPath);
+
+  // Global keyboard shortcuts
+  const shortcutHandlers = useMemo(() => ({
+    onSend: () => {
+      window.dispatchEvent(new CustomEvent('invoker:send'));
+    },
+    onSwitchEnv: () => {
+      const state = useEnvStore.getState();
+      const envs = state.settings.environments;
+      if (envs.length === 0) return;
+      const next = (state.settings.activeEnvironmentIndex + 1) % envs.length;
+      state.setActiveEnv(next);
+    },
+    onFormatJson: () => {
+      window.dispatchEvent(new CustomEvent('invoker:format-json'));
+    },
+  }), []);
+
+  useKeyboardShortcuts(shortcutHandlers);
 
   // Published mode: load manifest at startup
   useEffect(() => {

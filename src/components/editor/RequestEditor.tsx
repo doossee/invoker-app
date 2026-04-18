@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { parseIvk, type IvkRequest, type HttpMethod } from 'ivkjs';
 import { useCollectionStore } from '@/stores/collection-store';
 import { useEditorStore } from '@/stores/editor-store';
@@ -59,6 +59,24 @@ export function RequestEditor({ filePath }: Props) {
   const handleSend = useCallback(async () => {
     if (!request || loading) return;
     await run(request);
+  }, [request, loading, run]);
+
+  // Listen for global keyboard shortcut events
+  useEffect(() => {
+    const onSend = () => {
+      if (request && !loading) {
+        run(request);
+      }
+    };
+    const onFormatJson = () => {
+      window.dispatchEvent(new CustomEvent('invoker:format-json-editor'));
+    };
+    window.addEventListener('invoker:send', onSend);
+    window.addEventListener('invoker:format-json', onFormatJson);
+    return () => {
+      window.removeEventListener('invoker:send', onSend);
+      window.removeEventListener('invoker:format-json', onFormatJson);
+    };
   }, [request, loading, run]);
 
   const handleMethodChange = useCallback((method: HttpMethod) => {
