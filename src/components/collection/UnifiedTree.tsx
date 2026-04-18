@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ChevronRight, ChevronDown, Zap, FileText, Folder, FolderOpen } from 'lucide-react';
+import { ChevronRight, ChevronDown, Zap, FileText, Folder, FolderOpen, BookOpen } from 'lucide-react';
 import { parseIvk, type HttpMethod } from 'ivkjs';
 import { useCollectionStore } from '@/stores/collection-store';
 import { useDocsStore } from '@/stores/docs-store';
@@ -69,8 +69,12 @@ function buildUnifiedTree(
     }
   }
 
-  // Add .md files
+  // Add .md files — skip README.md (implicit in its parent folder)
   for (const doc of mdFiles) {
+    const lowerPath = doc.path.toLowerCase();
+    if (lowerPath.endsWith('/readme.md') || lowerPath === 'readme.md') {
+      continue;
+    }
     const parts = doc.path.split('/');
     const node: TreeNode = {
       name: parts[parts.length - 1]!.replace('.md', ''),
@@ -170,20 +174,45 @@ function TreeItem({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
     const isExpanded = ivkExpandedFolders.has(node.path) || docExpandedFolders.has(node.path);
     const fileCount = countFiles(node);
 
+    // Check if this folder has a README.md in the docs store
+    const docs = useDocsStore.getState().docs;
+    const readmePath = `${node.path}/README.md`;
+    const readme = docs.find(
+      (d) =>
+        d.path.toLowerCase() === readmePath.toLowerCase() ||
+        d.path.toLowerCase() === `${node.path}/readme.md`,
+    );
+    const hasReadme = !!readme;
+    const isReadmeActive = activeDocPath === readme?.path;
+
     const handleToggle = () => {
       // Toggle in both stores to keep them in sync
       toggleIvkFolder(node.path);
       toggleDocFolder(node.path);
+
+      // If this folder has a README, open it in the doc renderer
+      if (readme) {
+        useDocsStore.getState().setActiveDoc(readme.path);
+        useCollectionStore.getState().setActiveFile('');
+      }
     };
 
     return (
       <div>
         <button
-          className="relative w-full flex items-center gap-1.5 py-2 px-2 text-xs text-on-surface-variant hover:bg-surface-container/70 hover:text-on-surface transition-colors duration-150"
+          className={`relative w-full flex items-center gap-1.5 py-2 px-2 text-xs transition-colors duration-150 ${
+            isReadmeActive
+              ? 'bg-primary/10 text-primary'
+              : 'text-on-surface-variant hover:bg-surface-container/70 hover:text-on-surface'
+          }`}
           style={{ paddingLeft: pl }}
           onClick={handleToggle}
         >
           <IndentGuides depth={depth} />
+          {/* Active README left accent bar */}
+          {isReadmeActive && (
+            <span className="absolute left-0 top-1 bottom-1 w-0.5 rounded-full bg-primary" />
+          )}
           {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
           {isExpanded ? (
             <FolderOpen size={14} className="text-amber-400 flex-shrink-0" />
@@ -191,6 +220,14 @@ function TreeItem({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
             <Folder size={14} className="text-amber-400 flex-shrink-0" />
           )}
           <span className="truncate">{node.name}</span>
+          {hasReadme && (
+            <span title="Has README" className="flex-shrink-0">
+              <BookOpen
+                size={10}
+                className={isReadmeActive ? 'text-primary' : 'text-outline/50'}
+              />
+            </span>
+          )}
           <span className="ml-auto text-[9px] text-outline/60 tabular-nums">
             {fileCount}
           </span>
