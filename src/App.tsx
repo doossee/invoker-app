@@ -3,6 +3,7 @@ import { TopBar } from '@/components/layout/TopBar';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { StatusBar } from '@/components/layout/StatusBar';
 import { ResizablePanel } from '@/components/layout/ResizablePanel';
+import { ActivityBar } from '@/components/layout/ActivityBar';
 import { UnifiedTree } from '@/components/collection/UnifiedTree';
 import { WelcomePage } from '@/components/welcome/WelcomePage';
 import { RequestEditor } from '@/components/editor/RequestEditor';
@@ -81,6 +82,8 @@ export function App() {
       <TopBar onOpenSettings={() => setEnvSettingsOpen(true)} />
 
       <div className="flex-1 flex overflow-hidden">
+        <ActivityBar />
+
         <ResizablePanel width={sidebarWidth} onWidthChange={setSidebarWidth}>
           <Sidebar>
             <UnifiedTree />
