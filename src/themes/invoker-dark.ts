@@ -6,45 +6,45 @@ export const invokerDark: InvokerTheme = {
   type: 'dark',
   colors: {
     // MD3 Surface containers
-    surfaceLowest: '#0a0e14',
-    surfaceLow: '#181c22',
-    surface: '#10141a',
-    surfaceContainer: '#1c2026',
-    surfaceHigh: '#262a31',
-    surfaceHighest: '#31353c',
+    surfaceLowest: '#000000',
+    surfaceLow: '#131313',
+    surface: '#0e0e0e',
+    surfaceContainer: '#191a1a',
+    surfaceHigh: '#1f2020',
+    surfaceHighest: '#252626',
 
     // Text
-    onSurface: '#dfe2eb',
-    onSurfaceVariant: '#c2c6d6',
-    outline: '#8c909f',
-    outlineVariant: '#424754',
+    onSurface: '#e7e5e4',
+    onSurfaceVariant: '#acabaa',
+    outline: '#767575',
+    outlineVariant: '#484848',
 
     // Accent
-    primary: '#adc6ff',
-    onPrimary: '#002e6a',
-    secondary: '#ddb7ff',
-    tertiary: '#4ae176',
-    error: '#ffb4ab',
+    primary: '#e6c188',
+    onPrimary: '#543c0e',
+    secondary: '#dbc3a1',
+    tertiary: '#ffcdb3',
+    error: '#f97758',
 
     // Semantic
     success: '#4ae176',
-    warning: '#f59e0b',
-    info: '#adc6ff',
+    warning: '#e6c188',
+    info: '#dbc3a1',
 
     // Method badges
     methodGet: '#4ae176',
-    methodPost: '#f59e0b',
-    methodPut: '#adc6ff',
-    methodPatch: '#ddb7ff',
-    methodDelete: '#ffb4ab',
+    methodPost: '#e6c188',
+    methodPut: '#dbc3a1',
+    methodPatch: '#ffcdb3',
+    methodDelete: '#f97758',
 
     // Variables
-    varSet: '#ddb7ff',
-    varUnset: '#ffb4ab',
+    varSet: '#dbc3a1',
+    varUnset: '#f97758',
 
     // Editor
-    editorBg: '#0a0e14',
-    editorGutter: '#10141a',
-    editorSelection: 'rgba(173, 198, 255, 0.15)',
+    editorBg: '#0e0e0e',
+    editorGutter: '#131313',
+    editorSelection: 'rgba(230, 193, 136, 0.15)',
   },
 };
