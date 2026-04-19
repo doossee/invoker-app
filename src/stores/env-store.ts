@@ -126,3 +126,6 @@ export const useEnvStore = create<EnvState>((set, get) => {
     },
   };
 });
+
+// Expose store globally for CodeMirror tooltip (non-React context)
+(window as any).__ivk_env_store = useEnvStore;

@@ -170,17 +170,55 @@ function createVarHoverTooltip(envManager: EnvManager) {
               ? 'ivk-cm-tooltip-badge-set'
               : 'ivk-cm-tooltip-badge-unset';
             const statusText = isSet ? 'Environment' : 'Not Found';
-            const displayValue = isSet ? value : 'not set';
+            const displayValue = isSet ? String(value) : '';
 
-            dom.innerHTML = `
-              <div class="ivk-cm-tooltip-header">
-                <code class="ivk-cm-tooltip-name">${varName}</code>
-                <span class="${statusClass}">${statusText}</span>
-              </div>
-              <div class="ivk-cm-tooltip-value ${isSet ? '' : 'ivk-cm-tooltip-unset'}">
-                ${displayValue}
-              </div>
+            // Header
+            const header = document.createElement('div');
+            header.className = 'ivk-cm-tooltip-header';
+            header.innerHTML = `
+              <code class="ivk-cm-tooltip-name">${varName}</code>
+              <span class="${statusClass}">${statusText}</span>
             `;
+            dom.appendChild(header);
+
+            // Editable input
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = displayValue;
+            input.placeholder = 'Enter value...';
+            input.className = 'ivk-cm-tooltip-input';
+
+            const saveValue = () => {
+              const newVal = input.value;
+              // Save to environment via zustand store
+              const store = (window as any).__ivk_env_store;
+              if (store) {
+                const state = store.getState();
+                const envs = state.settings.environments;
+                const idx = state.settings.activeEnvironmentIndex;
+                if (envs[idx]) {
+                  envs[idx].variables[varName] = newVal;
+                  state.persist();
+                  // Refresh envManager
+                  state.envManager.setEnvironments(envs, idx);
+                }
+              }
+            };
+
+            input.addEventListener('keydown', (e) => {
+              e.stopPropagation();
+              if (e.key === 'Enter') {
+                saveValue();
+                input.blur();
+              }
+              if (e.key === 'Escape') {
+                input.blur();
+              }
+            });
+
+            input.addEventListener('blur', saveValue);
+
+            dom.appendChild(input);
 
             return { dom };
           },

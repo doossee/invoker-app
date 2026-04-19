@@ -85,6 +85,27 @@ body {
   font-size: 11px;
   word-break: break-all;
 }
+.ivk-cm-tooltip-input {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--ivk-surface-lowest);
+  padding: 5px 8px;
+  border-radius: 6px;
+  color: var(--ivk-on-surface);
+  font-size: 11px;
+  width: 100%;
+  border: 1px solid var(--ivk-outline-variant);
+  outline: none;
+  box-sizing: border-box;
+  margin-top: 4px;
+}
+.ivk-cm-tooltip-input:focus {
+  border-color: var(--ivk-primary);
+  box-shadow: 0 0 0 1px rgba(230, 193, 136, 0.2);
+}
+.ivk-cm-tooltip-input::placeholder {
+  color: var(--ivk-outline);
+  font-style: italic;
+}
 .ivk-cm-tooltip-value.ivk-cm-tooltip-unset {
   color: var(--ivk-outline);
   font-style: italic;
