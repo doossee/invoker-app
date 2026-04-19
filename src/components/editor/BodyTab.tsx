@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { EditorView, keymap, lineNumbers } from '@codemirror/view';
+import { EditorView, keymap, lineNumbers, placeholder } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import { json } from '@codemirror/lang-json';
 import { defaultKeymap, indentWithTab } from '@codemirror/commands';
@@ -29,6 +29,7 @@ export function BodyTab({ body, onChange }: Props) {
         extensions: [
           keymap.of([...defaultKeymap, indentWithTab]),
           lineNumbers(),
+          placeholder('Start typing or paste JSON, XML, or plain text...'),
           json(),
           ...createIvkExtensions(envManager),
           EditorView.updateListener.of((update) => {

@@ -78,6 +78,10 @@ const ivkTheme = EditorView.theme(
       backgroundColor: 'rgba(230, 193, 136, 0.2)',
       outline: 'none',
     },
+    '.cm-placeholder': {
+      color: '#767575',
+      fontStyle: 'italic',
+    },
     '.cm-tooltip': {
       backgroundColor: '#191a1a',
       border: '1px solid #484848',
