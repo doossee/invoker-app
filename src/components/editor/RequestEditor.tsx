@@ -34,35 +34,47 @@ type RequestTabName = (typeof REQUEST_TABS)[number];
 function BodyTypePill({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const types = ['json', 'raw', 'form-data', 'binary', 'graphql'];
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: 2,
-      fontSize: 10,
-      fontFamily: "'JetBrains Mono', monospace",
-      paddingRight: 8,
-      flexShrink: 0,
-    }}>
-      {types.map((t) => (
-        <button
-          key={t}
-          onClick={() => onChange(t)}
-          style={{
-            padding: '3px 6px',
-            borderRadius: 4,
-            background: value === t ? TOKENS.s5 : 'transparent',
-            color: value === t ? TOKENS.amber : TOKENS.fg3,
-            border: 'none',
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            fontSize: 10,
-            fontWeight: 500,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {t}
-        </button>
-      ))}
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        padding: '4px 10px',
+        borderBottom: `1px solid ${TOKENS.strokeSoft}`,
+        flexShrink: 0,
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          gap: 2,
+          background: TOKENS.s3,
+          borderRadius: 6,
+          boxShadow: `inset 0 0 0 1px ${TOKENS.strokeSoft}`,
+          padding: 2,
+        }}
+      >
+        {types.map((t) => (
+          <button
+            key={t}
+            onClick={() => onChange(t)}
+            style={{
+              padding: '3px 8px',
+              borderRadius: 4,
+              background: value === t ? TOKENS.s5 : 'transparent',
+              color: value === t ? TOKENS.amber : TOKENS.fg3,
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 10,
+              fontWeight: 500,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -221,12 +233,10 @@ export function RequestEditor({ filePath }: Props) {
             tabs={REQUEST_TABS}
             active={requestTab}
             onChange={setRequestTab}
-            right={
-              requestTab === 'Body' ? (
-                <BodyTypePill value={bodyType} onChange={setBodyType} />
-              ) : undefined
-            }
           />
+          {requestTab === 'Body' && (
+            <BodyTypePill value={bodyType} onChange={setBodyType} />
+          )}
           <div style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
             {requestTab === 'Body' && <BodyTab body={request.body} onChange={handleBodyChange} />}
             {requestTab === 'Headers' && <HeadersTab headers={request.headers} onChange={handleHeadersChange} />}

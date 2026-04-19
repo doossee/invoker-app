@@ -337,13 +337,22 @@ export function TabBar({
         flexShrink: 0,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', minWidth: 0, overflow: 'hidden' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          minWidth: 0,
+          flex: 1,
+          overflowX: 'auto' as const,
+          scrollbarWidth: 'none' as const,
+        }}
+      >
         {tabs.map((t) => (
           <button
             key={t}
             onClick={() => onChange(t)}
             style={{
-              padding: '0 10px',
+              padding: '0 12px',
               height: 34,
               background: 'transparent',
               border: 'none',
@@ -362,8 +371,8 @@ export function TabBar({
               <span
                 style={{
                   position: 'absolute' as const,
-                  left: 8,
-                  right: 8,
+                  left: 10,
+                  right: 10,
                   bottom: -1,
                   height: 2,
                   background: TOKENS.amber,
@@ -375,10 +384,10 @@ export function TabBar({
         ))}
       </div>
       {right && (
-        <>
-          <div style={{ flex: 1, minWidth: 2 }} />
-          <div style={{ flexShrink: 0 }}>{right}</div>
-        </>
+        <div style={{ flexShrink: 0, borderLeft: `1px solid ${TOKENS.strokeSoft}`, height: 20, marginLeft: 4 }} />
+      )}
+      {right && (
+        <div style={{ flexShrink: 0 }}>{right}</div>
       )}
     </div>
   );
