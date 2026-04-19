@@ -38,7 +38,7 @@ const invokerHighlight = HighlightStyle.define([
 const ivkTheme = EditorView.theme(
   {
     '&': {
-      backgroundColor: '#0e0e0e',
+      backgroundColor: 'transparent',
       color: '#e7e5e4',
       fontSize: '13px',
       fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
@@ -58,7 +58,7 @@ const ivkTheme = EditorView.theme(
       backgroundColor: 'rgba(230, 193, 136, 0.15)',
     },
     '.cm-gutters': {
-      backgroundColor: '#131313',
+      backgroundColor: 'transparent',
       color: '#484848',
       border: 'none',
       minWidth: '36px',
