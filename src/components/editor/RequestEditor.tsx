@@ -38,6 +38,7 @@ function BodyTypePill({ value, onChange }: { value: string; onChange: (v: string
       style={{
         display: 'flex',
         alignItems: 'center',
+        justifyContent: 'flex-end',
         gap: 8,
         padding: '4px 10px',
         borderBottom: `1px solid ${TOKENS.strokeSoft}`,
