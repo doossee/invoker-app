@@ -172,7 +172,7 @@ function createVarHoverTooltip(envManager: EnvManager) {
             const statusText = isSet ? 'Environment' : 'Not Found';
             const displayValue = isSet ? String(value) : '';
 
-            // Header
+            // Header: varName + source badge
             const header = document.createElement('div');
             header.className = 'ivk-cm-tooltip-header';
             header.innerHTML = `
@@ -181,16 +181,37 @@ function createVarHoverTooltip(envManager: EnvManager) {
             `;
             dom.appendChild(header);
 
-            // Editable input
+            // Value row: editable input + copy button
+            const valueRow = document.createElement('div');
+            valueRow.className = 'ivk-cm-tooltip-value-row';
+
             const input = document.createElement('input');
             input.type = 'text';
             input.value = displayValue;
             input.placeholder = 'Enter value...';
             input.className = 'ivk-cm-tooltip-input';
 
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'ivk-cm-tooltip-copy';
+            copyBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+            copyBtn.title = 'Copy value';
+            copyBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              navigator.clipboard.writeText(input.value);
+              copyBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+              copyBtn.style.color = '#4ae176';
+              setTimeout(() => {
+                copyBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+                copyBtn.style.color = '';
+              }, 1500);
+            });
+
+            valueRow.appendChild(input);
+            valueRow.appendChild(copyBtn);
+            dom.appendChild(valueRow);
+
             const saveValue = () => {
               const newVal = input.value;
-              // Save to environment via zustand store
               const store = (window as any).__ivk_env_store;
               if (store) {
                 const state = store.getState();
@@ -199,7 +220,6 @@ function createVarHoverTooltip(envManager: EnvManager) {
                 if (envs[idx]) {
                   envs[idx].variables[varName] = newVal;
                   state.persist();
-                  // Refresh envManager
                   state.envManager.setEnvironments(envs, idx);
                 }
               }
@@ -217,8 +237,6 @@ function createVarHoverTooltip(envManager: EnvManager) {
             });
 
             input.addEventListener('blur', saveValue);
-
-            dom.appendChild(input);
 
             return { dom };
           },

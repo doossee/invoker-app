@@ -85,6 +85,12 @@ body {
   font-size: 11px;
   word-break: break-all;
 }
+.ivk-cm-tooltip-value-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
 .ivk-cm-tooltip-input {
   font-family: 'JetBrains Mono', monospace;
   background: var(--ivk-surface-lowest);
@@ -92,11 +98,11 @@ body {
   border-radius: 6px;
   color: var(--ivk-on-surface);
   font-size: 11px;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   border: 1px solid var(--ivk-outline-variant);
   outline: none;
   box-sizing: border-box;
-  margin-top: 4px;
 }
 .ivk-cm-tooltip-input:focus {
   border-color: var(--ivk-primary);
@@ -105,6 +111,23 @@ body {
 .ivk-cm-tooltip-input::placeholder {
   color: var(--ivk-outline);
   font-style: italic;
+}
+.ivk-cm-tooltip-copy {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--ivk-outline);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.ivk-cm-tooltip-copy:hover {
+  color: var(--ivk-on-surface-variant);
+  background: var(--ivk-surface-container);
 }
 .ivk-cm-tooltip-value.ivk-cm-tooltip-unset {
   color: var(--ivk-outline);
