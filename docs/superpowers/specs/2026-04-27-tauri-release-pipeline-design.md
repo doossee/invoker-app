@@ -297,7 +297,7 @@ pub fn run() {
 }
 ```
 
-**`src-tauri/capabilities/main.json`** — grant updater permission. Add `"updater:default"` to the `permissions` array.
+**`src-tauri/capabilities/default.json`** — grant updater permission. Add `"updater:default"` to the `permissions` array.
 
 **`src-tauri/tauri.conf.json`** — add `plugins.updater` block:
 
@@ -361,7 +361,7 @@ No additional secrets — that is the entirety of the trust footprint.
 | `invoker-app/package.json` | MODIFIED | Add `"release"` script |
 | `invoker-app/src-tauri/Cargo.toml` | MODIFIED | Fix metadata; add `tauri-plugin-updater` |
 | `invoker-app/src-tauri/src/lib.rs` | MODIFIED | Register updater plugin |
-| `invoker-app/src-tauri/capabilities/main.json` | MODIFIED | Grant `updater:default` |
+| `invoker-app/src-tauri/capabilities/default.json` | MODIFIED | Grant `updater:default` |
 | `invoker-app/src-tauri/tauri.conf.json` | MODIFIED | Add `plugins.updater` block with endpoints + pubkey |
 | `invoker-app/src-tauri/.gitignore` | MODIFIED | Ignore `*.key`, `*.key.pub` |
 
