@@ -4,23 +4,40 @@ import { isTauri, isPublished } from './platform';
 describe('isTauri', () => {
   // Each test mutates window — restore afterward so tests are independent.
   afterEach(() => {
-    delete (window as unknown as Record<string, unknown>).__TAURI__;
+    const w = window as unknown as Record<string, unknown>;
+    delete w.__TAURI__;
+    delete w.__TAURI_INTERNALS__;
+    delete w.isTauri;
   });
 
   it('returns false in a plain browser environment', () => {
     expect(isTauri()).toBe(false);
   });
 
-  it('returns true when window.__TAURI__ is set (any value)', () => {
+  it('returns true when window.__TAURI__ is set (Tauri v1 legacy)', () => {
     (window as unknown as Record<string, unknown>).__TAURI__ = {};
     expect(isTauri()).toBe(true);
   });
 
-  it('returns true even if __TAURI__ is falsy (presence-only check)', () => {
-    // Tauri 2 sometimes sets __TAURI__ to undefined as a marker. The check
-    // is deliberately presence-based ('in' operator) so we still detect it.
-    (window as unknown as Record<string, unknown>).__TAURI__ = undefined;
+  it('returns true when window.__TAURI_INTERNALS__ is set (Tauri v2 IPC bridge)', () => {
+    // This is the actual signal in Tauri 2 — the runtime injects
+    // __TAURI_INTERNALS__ for the JS↔Rust IPC bridge. Without detecting it,
+    // Tauri 2 desktop builds silently fall through to the browser path
+    // (causing "Open folder → no reaction" UX bugs).
+    (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = {};
     expect(isTauri()).toBe(true);
+  });
+
+  it('returns true when window.isTauri is true (Tauri v2 official flag)', () => {
+    // Tauri 2 also sets window.isTauri = true at startup as the public
+    // detection signal — same convention used by @tauri-apps/api's own check.
+    (window as unknown as Record<string, unknown>).isTauri = true;
+    expect(isTauri()).toBe(true);
+  });
+
+  it('returns false when window.isTauri is set but falsy', () => {
+    (window as unknown as Record<string, unknown>).isTauri = false;
+    expect(isTauri()).toBe(false);
   });
 });
 
