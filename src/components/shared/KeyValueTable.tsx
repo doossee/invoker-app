@@ -35,14 +35,13 @@ export function KeyValueTable({
   }
 
   function addRow() {
-    // Find a unique empty key
-    let newKey = '';
-    let i = 0;
-    while (newKey in entries) {
-      i++;
-      newKey = `key${i}`;
-    }
-    onChange({ ...entries, [newKey]: '' });
+    // Find a unique placeholder key. Previous logic started with `newKey = ''`
+    // and `while (newKey in entries)` — since `'' in entries` is normally false,
+    // the loop never ran and the new key was always the empty string. Repeated
+    // Add clicks then collided on `''`, so only one row could ever appear.
+    let i = 1;
+    while (`key${i}` in entries) i++;
+    onChange({ ...entries, [`key${i}`]: '' });
   }
 
   return (
