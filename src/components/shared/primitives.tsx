@@ -116,15 +116,18 @@ export function PrimaryBtn({
   children,
   onClick,
   disabled,
+  title,
 }: {
   children: ReactNode;
   onClick?: () => void;
   disabled?: boolean;
+  title?: string;
 }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
+      title={title}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -148,24 +151,37 @@ export function PrimaryBtn({
 /* ------------------------------------------------------------------ */
 /*  GhostBtn                                                           */
 /* ------------------------------------------------------------------ */
-export function GhostBtn({ children, onClick }: { children: ReactNode; onClick?: () => void }) {
+export function GhostBtn({
+  children,
+  onClick,
+  disabled,
+  title,
+}: {
+  children: ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  title?: string;
+}) {
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
+      title={title}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
         gap: 6,
         padding: '6px 12px',
         background: TOKENS.s3,
-        color: TOKENS.fg1,
+        color: disabled ? TOKENS.fg3 : TOKENS.fg1,
         border: 'none',
         borderRadius: 8,
         boxShadow: `inset 0 0 0 1px ${TOKENS.stroke}`,
         fontFamily: 'inherit',
         fontSize: 13,
         fontWeight: 500,
-        cursor: 'pointer',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.5 : 1,
       }}
     >
       {children}
