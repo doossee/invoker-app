@@ -91,8 +91,12 @@ async function defaultRunner(cmd, args, opts = {}) {
     const child = spawn(cmd, args, { cwd: opts.cwd, env: process.env });
     let stdout = '';
     let stderr = '';
-    child.stdout.on('data', (d) => { stdout += d.toString(); });
-    child.stderr.on('data', (d) => { stderr += d.toString(); });
+    // setEncoding makes Node accumulate partial multi-byte chars internally,
+    // so 'data' events emit clean strings — no chunk-boundary corruption.
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    child.stdout.on('data', (d) => { stdout += d; });
+    child.stderr.on('data', (d) => { stderr += d; });
     child.on('close', (code) => resolve({ code, stdout, stderr }));
     child.on('error', (err) => resolve({ code: 127, stdout: '', stderr: err.message }));
   });
@@ -159,25 +163,45 @@ export async function runRelease({
     await writeFile(paths.cargoToml, rewriteCargoToml(cargo, version));
   }
 
-  // 5. Refresh Cargo.lock for `app` only. Skip on missing cargo (tauri-smoke catches drift later).
-  const cargoUpdate = await runner('cargo',
-    ['update', '-p', 'app', '--manifest-path', paths.cargoToml],
-    { cwd });
-  if (cargoUpdate.code !== 0 && cargoUpdate.code !== 127) {
-    throw new Error(`cargo update failed: ${cargoUpdate.stderr || cargoUpdate.stdout}`);
+  // Steps 5-8 wrap in try/catch so a failure after manifests are rewritten
+  // restores them via `git checkout -- <files>`. Without this, a partial
+  // failure leaves a confusing half-applied state on disk.
+  try {
+    // 5. Refresh Cargo.lock for `app` only.
+    const cargoUpdate = await runner('cargo',
+      ['update', '-p', 'app', '--manifest-path', paths.cargoToml],
+      { cwd });
+    if (cargoUpdate.code === 127) {
+      console.warn('warning: cargo update skipped (cargo not on PATH); Cargo.lock not refreshed — tauri-smoke CI will catch any drift');
+    } else if (cargoUpdate.code !== 0) {
+      throw new Error(`cargo update failed: ${cargoUpdate.stderr || cargoUpdate.stdout}`);
+    }
+
+    if (dryRun) return;
+
+    // 6. Stage the four files (three manifests + Cargo.lock).
+    const cargoLock = join(dirname(paths.cargoToml), 'Cargo.lock');
+    await runner('git', ['add', paths.packageJson, paths.tauriConf, paths.cargoToml, cargoLock], { cwd });
+
+    // 7. Commit.
+    const commitResult = await runner('git', ['commit', '-m', `chore: release ${tag}`], { cwd });
+    if (commitResult.code !== 0) {
+      throw new Error(`git commit failed: ${commitResult.stderr || commitResult.stdout}`);
+    }
+
+    // 8. Annotated tag.
+    const tagResult = await runner('git', ['tag', '-a', tag, '-m', `Release ${tag}`], { cwd });
+    if (tagResult.code !== 0) {
+      throw new Error(`git tag failed: ${tagResult.stderr || tagResult.stdout}`);
+    }
+  } catch (err) {
+    if (!dryRun) {
+      // Best-effort rollback: restore the three manifests so the maintainer
+      // doesn't have to clean up half-applied state.
+      await runner('git', ['checkout', '--', paths.packageJson, paths.tauriConf, paths.cargoToml], { cwd });
+    }
+    throw err;
   }
-
-  if (dryRun) return;
-
-  // 6. Stage the four files (three manifests + Cargo.lock).
-  const cargoLock = join(dirname(paths.cargoToml), 'Cargo.lock');
-  await runner('git', ['add', paths.packageJson, paths.tauriConf, paths.cargoToml, cargoLock], { cwd });
-
-  // 7. Commit.
-  await runner('git', ['commit', '-m', `chore: release ${tag}`], { cwd });
-
-  // 8. Annotated tag.
-  await runner('git', ['tag', '-a', tag, '-m', `Release ${tag}`], { cwd });
 }
 
 // CLI entry — only run when invoked directly.

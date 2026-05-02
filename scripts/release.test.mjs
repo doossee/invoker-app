@@ -215,3 +215,28 @@ test('runRelease invokes git add, commit, tag in order', async () => {
   assert.ok(addIdx >= 0 && commitIdx > addIdx && tagIdx > commitIdx,
     `expected add → commit → tag, got: ${calls.join('\n')}`);
 });
+
+test('runRelease rolls back manifest changes if git commit fails', async () => {
+  const dir = makeFixture();
+  const calls = [];
+  const runner = async (cmd, args) => {
+    calls.push(`${cmd} ${args.join(' ')}`);
+    if (cmd === 'git' && args[0] === 'status') return { code: 0, stdout: '', stderr: '' };
+    if (cmd === 'git' && args.join(' ') === 'rev-parse --abbrev-ref HEAD') return { code: 0, stdout: 'main\n', stderr: '' };
+    if (cmd === 'git' && args[0] === 'rev-parse' && args[1] === '-q' && args[2] === '--verify') return { code: 1, stdout: '', stderr: '' };
+    // Make commit fail.
+    if (cmd === 'git' && args[0] === 'commit') return { code: 1, stdout: '', stderr: 'pre-commit hook failed' };
+    return { code: 0, stdout: '', stderr: '' };
+  };
+  await assert.rejects(
+    runRelease({ version: '0.2.0', cwd: dir, runner, paths: {
+      packageJson: join(dir, 'package.json'),
+      tauriConf: join(dir, 'tauri.conf.json'),
+      cargoToml: join(dir, 'Cargo.toml'),
+    }}),
+    /git commit failed/i,
+  );
+  // Confirm rollback was attempted: git checkout -- <files> appears in calls.
+  const checkoutCall = calls.find(c => c.startsWith('git checkout --'));
+  assert.ok(checkoutCall, `expected rollback via git checkout, got calls:\n${calls.join('\n')}`);
+});
