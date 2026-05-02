@@ -11,7 +11,10 @@ import { RangeSetBuilder } from '@codemirror/state';
 import type { Extension } from '@codemirror/state';
 import { syntaxHighlighting, HighlightStyle } from '@codemirror/language';
 import { tags } from '@lezer/highlight';
+import { createElement } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
 import type { EnvManager } from 'ivkjs';
+import { VariablePopoverContent } from '@/components/shared/VariableTokens';
 
 // ── Syntax Highlighting (matching the design spec) ──────────────────
 
@@ -143,6 +146,13 @@ function createVarDecoPlugin(envManager: EnvManager) {
 }
 
 // ── Variable Hover Tooltip ──────────────────────────────────────────
+//
+// Mounts the shared <VariablePopoverContent> React component into a DOM
+// node managed by CodeMirror. One component, one visual style, one
+// persistence path — used here, in the URL bar overlay, and in inline
+// ivk blocks inside markdown docs. Previously this was a parallel
+// imperative DOM implementation; keeping a second codebase in sync with
+// the React version was the bug the user hit.
 
 function createVarHoverTooltip(envManager: EnvManager) {
   return hoverTooltip((view, pos) => {
@@ -156,89 +166,42 @@ function createVarHoverTooltip(envManager: EnvManager) {
       const to = from + match[0].length;
       if (pos >= from && pos <= to) {
         const varName = match[1];
-        const value = envManager.get(varName);
         const tooltip: Tooltip = {
           pos: from,
           end: to,
           above: true,
           create() {
             const dom = document.createElement('div');
-            dom.className = 'ivk-cm-tooltip-var';
+            const root: Root = createRoot(dom);
 
-            const isSet = value !== undefined;
-            const statusClass = isSet
-              ? 'ivk-cm-tooltip-badge-set'
-              : 'ivk-cm-tooltip-badge-unset';
-            const statusText = isSet ? 'Environment' : 'Not Found';
-            const displayValue = isSet ? String(value) : '';
-
-            // Header: varName + source badge
-            const header = document.createElement('div');
-            header.className = 'ivk-cm-tooltip-header';
-            header.innerHTML = `
-              <code class="ivk-cm-tooltip-name">${varName}</code>
-              <span class="${statusClass}">${statusText}</span>
-            `;
-            dom.appendChild(header);
-
-            // Value row: editable input + copy button
-            const valueRow = document.createElement('div');
-            valueRow.className = 'ivk-cm-tooltip-value-row';
-
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.value = displayValue;
-            input.placeholder = 'Enter value...';
-            input.className = 'ivk-cm-tooltip-input';
-
-            const copyBtn = document.createElement('button');
-            copyBtn.className = 'ivk-cm-tooltip-copy';
-            copyBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
-            copyBtn.title = 'Copy value';
-            copyBtn.addEventListener('click', (e) => {
-              e.stopPropagation();
-              navigator.clipboard.writeText(input.value);
-              copyBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-              copyBtn.style.color = '#4ae176';
-              setTimeout(() => {
-                copyBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
-                copyBtn.style.color = '';
-              }, 1500);
-            });
-
-            valueRow.appendChild(input);
-            valueRow.appendChild(copyBtn);
-            dom.appendChild(valueRow);
-
-            const saveValue = () => {
-              const newVal = input.value;
-              const store = (window as any).__ivk_env_store;
-              if (store) {
-                const state = store.getState();
-                const envs = state.settings.environments;
-                const idx = state.settings.activeEnvironmentIndex;
-                if (envs[idx]) {
-                  envs[idx].variables[varName] = newVal;
-                  state.persist();
-                  state.envManager.setEnvironments(envs, idx);
-                }
-              }
+            // Writes to the active env via the globally-exposed store so the
+            // React component stays UI-only. Keep this in sync with how
+            // other call sites (URL bar, inline block) use the env hook.
+            const saveValue = (newVal: string) => {
+              const store = (window as unknown as { __ivk_env_store?: { getState: () => { setVariable: (name: string, value: string) => void } } }).__ivk_env_store;
+              store?.getState().setVariable(varName, newVal);
+              render(); // pull fresh value and re-render so the input reflects it
             };
 
-            input.addEventListener('keydown', (e) => {
-              e.stopPropagation();
-              if (e.key === 'Enter') {
-                saveValue();
-                input.blur();
-              }
-              if (e.key === 'Escape') {
-                input.blur();
-              }
-            });
+            const render = () => {
+              const value = envManager.get(varName);
+              root.render(
+                createElement(VariablePopoverContent, {
+                  name: varName,
+                  value,
+                  onChange: saveValue,
+                }),
+              );
+            };
+            render();
 
-            input.addEventListener('blur', saveValue);
-
-            return { dom };
+            return {
+              dom,
+              destroy() {
+                // Detach React tree so subsequent renders don't leak.
+                root.unmount();
+              },
+            };
           },
         };
         return tooltip;

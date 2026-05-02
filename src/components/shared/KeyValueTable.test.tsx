@@ -3,6 +3,18 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { KeyValueTable } from './KeyValueTable';
 
+/**
+ * KeyValueTable owns its own `Pair[]` state internally so that:
+ *   - Empty rows can exist mid-edit even though they can't appear in the
+ *     parent's `Record<string, string>`.
+ *   - Cursor/focus survive when the user types a key (which would otherwise
+ *     reorder Object.entries and remount inputs).
+ *
+ * Tests exercise the externally-visible behavior: render existing entries,
+ * Add/Remove rows in the DOM, rename → onChange flushes, type a value →
+ * onChange flushes. Empty-key rows live in local state only and never reach
+ * the parent's onChange (verified explicitly).
+ */
 describe('KeyValueTable', () => {
   it('renders existing entries as input rows', () => {
     render(
@@ -11,72 +23,85 @@ describe('KeyValueTable', () => {
         onChange={() => {}}
       />,
     );
-    // Input fields show current keys/values.
     expect(screen.getByDisplayValue('Authorization')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Bearer abc')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Content-Type')).toBeInTheDocument();
     expect(screen.getByDisplayValue('application/json')).toBeInTheDocument();
   });
 
-  it('Add button adds a new row with a unique generated key', async () => {
+  it('Add button appends a new editable row to the DOM (does not call onChange yet)', async () => {
     const onChange = vi.fn();
     render(<KeyValueTable entries={{}} onChange={onChange} />);
 
-    const addBtn = screen.getByRole('button', { name: /add/i });
-    await userEvent.click(addBtn);
+    // Initially no key/value inputs (only the Add button).
+    expect(screen.queryAllByPlaceholderText('Key')).toHaveLength(0);
 
-    // First click should produce a single new entry with a non-empty key.
-    expect(onChange).toHaveBeenCalledOnce();
-    const firstCall = onChange.mock.calls[0][0] as Record<string, string>;
-    const keys = Object.keys(firstCall);
-    expect(keys).toHaveLength(1);
-    expect(keys[0]).not.toBe(''); // <-- the previous bug: started as ''
-    expect(firstCall[keys[0]]).toBe('');
+    await userEvent.click(screen.getByRole('button', { name: /add/i }));
+
+    // A new empty key input appears.
+    expect(screen.queryAllByPlaceholderText('Key')).toHaveLength(1);
+    // Empty rows aren't representable in Record<string, string>, so onChange
+    // is intentionally NOT called yet — wait for the user to type a key.
+    expect(onChange).not.toHaveBeenCalled();
   });
 
-  it('Add button generates a fresh key each click — never collides with existing keys', async () => {
-    const onChange = vi.fn();
-    // Start with one auto-style key already present.
-    render(<KeyValueTable entries={{ key1: '' }} onChange={onChange} />);
+  it('multiple Add clicks each append their own row (regression)', async () => {
+    // Original bug: addRow used `newKey = ''` + `while (newKey in entries)`,
+    // so every click overwrote `entries[''] = ''` and only one row could
+    // ever appear. Now addRow appends to local Pair[] state with stable IDs,
+    // so each click is independent.
+    render(<KeyValueTable entries={{}} onChange={() => {}} />);
 
     const addBtn = screen.getByRole('button', { name: /add/i });
     await userEvent.click(addBtn);
+    await userEvent.click(addBtn);
+    await userEvent.click(addBtn);
 
-    expect(onChange).toHaveBeenCalledOnce();
-    const next = onChange.mock.calls[0][0] as Record<string, string>;
-    // Should now contain BOTH the existing key1 AND a new unique one.
-    expect(Object.keys(next)).toHaveLength(2);
-    expect(next.key1).toBe(''); // existing preserved
-    const newKeys = Object.keys(next).filter((k) => k !== 'key1');
-    expect(newKeys).toHaveLength(1);
-    expect(newKeys[0]).not.toBe(''); // not the empty-string bug
-    expect(newKeys[0]).not.toBe('key1'); // didn't collide
+    expect(screen.queryAllByPlaceholderText('Key')).toHaveLength(3);
+    expect(screen.queryAllByPlaceholderText('Value')).toHaveLength(3);
   });
 
-  it('Add button works correctly across multiple clicks (regression)', async () => {
-    // The original bug: addRow used `let newKey = ''` and `while (newKey in entries)`.
-    // Since `'' in entries` is false initially, the loop never ran and newKey stayed ''.
-    // First click: { '': '' } added. Second click: `{ ...entries, '': '' }` overwrites.
-    // Result: clicking Add multiple times never added more than one row.
+  it('typing a key into a fresh row flushes through onChange with the typed key', async () => {
     const onChange = vi.fn();
-    let entries: Record<string, string> = {};
-    const { rerender } = render(<KeyValueTable entries={entries} onChange={onChange} />);
+    render(<KeyValueTable entries={{}} onChange={onChange} />);
 
-    const click = async () => {
-      const btn = screen.getByRole('button', { name: /add/i });
-      await userEvent.click(btn);
-      // Promote the latest onChange payload into the controlled state.
-      const calls = onChange.mock.calls;
-      entries = calls[calls.length - 1][0] as Record<string, string>;
-      rerender(<KeyValueTable entries={entries} onChange={onChange} />);
-    };
+    await userEvent.click(screen.getByRole('button', { name: /add/i }));
+    const keyInput = screen.getByPlaceholderText('Key');
+    await userEvent.type(keyInput, 'X-Trace');
 
-    await click();
-    await click();
-    await click();
+    // onChange fires per keystroke; after the full word, last call should
+    // have the complete key with empty value (the row's value field is still empty).
+    const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(last).toEqual({ 'X-Trace': '' });
+  });
 
-    expect(Object.keys(entries)).toHaveLength(3);
-    // None of the generated keys is the empty string.
-    expect(Object.keys(entries).every((k) => k !== '')).toBe(true);
+  it('typing into the value field flushes through onChange', async () => {
+    const onChange = vi.fn();
+    render(<KeyValueTable entries={{ 'X-Custom': '' }} onChange={onChange} />);
+
+    const valueInput = screen.getByPlaceholderText('Value');
+    await userEvent.type(valueInput, 'foo');
+
+    const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(last).toEqual({ 'X-Custom': 'foo' });
+  });
+
+  it('Remove (X) button drops the row and flushes the new entries', async () => {
+    const onChange = vi.fn();
+    render(
+      <KeyValueTable
+        entries={{ a: '1', b: '2' }}
+        onChange={onChange}
+      />,
+    );
+
+    // Find the X button next to the row whose key is 'a'.
+    const allButtons = screen.getAllByRole('button');
+    // First two role=button are the X-buttons (one per row), then the Add button.
+    // We click the first X to remove row 'a'.
+    await userEvent.click(allButtons[0]);
+
+    const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(last).toEqual({ b: '2' });
   });
 });

@@ -1,10 +1,12 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { EditorView, keymap, lineNumbers, placeholder } from '@codemirror/view';
-import { EditorState } from '@codemirror/state';
+import { Compartment, EditorState } from '@codemirror/state';
 import { json } from '@codemirror/lang-json';
 import { defaultKeymap, indentWithTab } from '@codemirror/commands';
+import { vim } from '@replit/codemirror-vim';
 import { createIvkExtensions } from '@/lib/cm-ivk';
 import { useEnvStore } from '@/stores/env-store';
+import { useEditorStore } from '@/stores/editor-store';
 
 interface Props {
   body: string;
@@ -14,19 +16,28 @@ interface Props {
 export function BodyTab({ body, onChange }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
+  const vimCompartmentRef = useRef<Compartment | null>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
   const envManager = useEnvStore((s) => s.envManager);
+  const vimMode = useEditorStore((s) => s.vimMode);
 
   // Create editor on mount
   useEffect(() => {
     if (!containerRef.current) return;
 
+    // Compartment lets us swap the vim extension on/off without recreating
+    // the entire EditorView (which would lose cursor position, history, etc.).
+    const vimCompartment = new Compartment();
+    vimCompartmentRef.current = vimCompartment;
+
     const view = new EditorView({
       state: EditorState.create({
         doc: body,
         extensions: [
+          // Vim must come BEFORE the default keymap so its bindings win.
+          vimCompartment.of(vimMode ? vim() : []),
           keymap.of([...defaultKeymap, indentWithTab]),
           lineNumbers(),
           placeholder('Start typing or paste JSON, XML, or plain text...'),
@@ -47,10 +58,21 @@ export function BodyTab({ body, onChange }: Props) {
     return () => {
       view.destroy();
       viewRef.current = null;
+      vimCompartmentRef.current = null;
     };
     // Only run on mount — body changes are pushed via transactions below
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [envManager]);
+
+  // Hot-swap the vim extension when the user toggles the setting.
+  useEffect(() => {
+    const view = viewRef.current;
+    const compartment = vimCompartmentRef.current;
+    if (!view || !compartment) return;
+    view.dispatch({
+      effects: compartment.reconfigure(vimMode ? vim() : []),
+    });
+  }, [vimMode]);
 
   // Sync external body changes into the editor
   useEffect(() => {

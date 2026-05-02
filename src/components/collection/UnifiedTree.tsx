@@ -1,15 +1,19 @@
 import { useMemo } from 'react';
-import { ChevronRight, ChevronDown, FileText, Folder, FolderOpen, BookOpen } from 'lucide-react';
+import { ChevronRight, ChevronDown, FileText, Folder, FolderOpen, BookOpen, Sparkles } from 'lucide-react';
 import { parseIvk, type HttpMethod } from 'ivkjs';
 import { useCollectionStore } from '@/stores/collection-store';
 import { useDocsStore } from '@/stores/docs-store';
 import { useEditorStore, type TabData } from '@/stores/editor-store';
+import { useOpenCollection } from '@/hooks/useOpenCollection';
 import { TOKENS, MethodBadge } from '@/components/shared/primitives';
 
 interface TreeNode {
   name: string;
   path: string;
   type: 'folder' | 'ivk' | 'md';
+  /** Parsed method for ivk nodes — baked at tree-build time so saves
+   * propagate to the sidebar badges without per-item parsing/subscriptions. */
+  method?: HttpMethod;
   children: TreeNode[];
 }
 
@@ -17,7 +21,7 @@ interface TreeNode {
 /*  Tree builder                                                       */
 /* ------------------------------------------------------------------ */
 function buildUnifiedTree(
-  ivkFiles: { path: string; name: string }[],
+  ivkFiles: { path: string; name: string; content: string }[],
   mdFiles: { path: string; title: string }[],
 ): TreeNode[] {
   const root: TreeNode[] = [];
@@ -48,10 +52,17 @@ function buildUnifiedTree(
 
   for (const file of ivkFiles) {
     const parts = file.path.split('/');
+    let method: HttpMethod | undefined;
+    try {
+      method = parseIvk(file.content).method;
+    } catch {
+      /* leave method undefined; icon fallback renders a file glyph */
+    }
     const node: TreeNode = {
       name: parts[parts.length - 1]!.replace('.ivk', ''),
       path: file.path,
       type: 'ivk',
+      method,
       children: [],
     };
     if (parts.length > 1) {
@@ -106,7 +117,6 @@ function TreeItem({ node, depth = 0, searchQuery }: { node: TreeNode; depth?: nu
   const toggleFolder = useCollectionStore((s) => s.toggleFolder);
   const activeTabPath = useEditorStore((s) => s.activeTabPath);
   const openTab = useEditorStore((s) => s.openTab);
-  const getFileByPath = useCollectionStore((s) => s.getFileByPath);
 
   const pl = 10 + depth * 14;
 
@@ -206,17 +216,7 @@ function TreeItem({ node, depth = 0, searchQuery }: { node: TreeNode; depth?: nu
   // File node
   const isIvk = node.type === 'ivk';
   const isActive = activeTabPath === node.path;
-
-  const method = useMemo<HttpMethod | null>(() => {
-    if (!isIvk) return null;
-    const file = getFileByPath(node.path);
-    if (!file) return null;
-    try {
-      return parseIvk(file.content).method;
-    } catch {
-      return null;
-    }
-  }, [isIvk, node.path, getFileByPath]);
+  const method = node.method ?? null;
 
   const handleClick = () => {
     if (isIvk) {
@@ -224,7 +224,8 @@ function TreeItem({ node, depth = 0, searchQuery }: { node: TreeNode; depth?: nu
       openTab(tab);
       useCollectionStore.getState().setActiveFile(node.path);
     } else {
-      const tab: TabData = { kind: 'folder', path: node.path, name: node.name };
+      // Loose .md docs render as standalone doc tabs (not as FolderTabBody).
+      const tab: TabData = { kind: 'doc', path: node.path, name: node.name };
       openTab(tab);
     }
   };
@@ -279,6 +280,69 @@ function TreeItem({ node, depth = 0, searchQuery }: { node: TreeNode; depth?: nu
 }
 
 /* ------------------------------------------------------------------ */
+/*  Empty state                                                        */
+/* ------------------------------------------------------------------ */
+function EmptyCollectionPrompt() {
+  const { openCollection, loadSample, canOpenFolder, loading } = useOpenCollection();
+  return (
+    <div style={{ padding: '20px 12px', textAlign: 'center' }}>
+      <FolderOpen size={20} style={{ color: TOKENS.fg4, margin: '0 auto 8px' }} />
+      <div style={{ fontSize: 12, color: TOKENS.fg2, marginBottom: 4 }}>No collection loaded</div>
+      <div style={{ fontSize: 11, color: TOKENS.fg3, marginBottom: 12, lineHeight: 1.5 }}>
+        Open a folder of <code style={{ fontFamily: "'JetBrains Mono', monospace", color: TOKENS.amber }}>.ivk</code> and <code style={{ fontFamily: "'JetBrains Mono', monospace", color: TOKENS.amber }}>.md</code> files to get started.
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <button
+          onClick={openCollection}
+          disabled={loading || !canOpenFolder}
+          title={canOpenFolder ? 'Open a folder' : 'Folder picker unavailable in this browser'}
+          style={{
+            padding: '5px 10px',
+            background: TOKENS.amber,
+            color: 'var(--ivk-on-primary)',
+            border: 'none',
+            borderRadius: 6,
+            fontSize: 11,
+            fontWeight: 600,
+            cursor: canOpenFolder ? 'pointer' : 'not-allowed',
+            opacity: canOpenFolder ? 1 : 0.5,
+            fontFamily: 'inherit',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 5,
+          }}
+        >
+          <FolderOpen size={11} />
+          Open folder
+        </button>
+        <button
+          onClick={loadSample}
+          style={{
+            padding: '5px 10px',
+            background: 'transparent',
+            color: TOKENS.fg2,
+            border: 'none',
+            borderRadius: 6,
+            boxShadow: `inset 0 0 0 1px ${TOKENS.strokeSoft}`,
+            fontSize: 11,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 5,
+          }}
+        >
+          <Sparkles size={11} />
+          Try sample
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Exported component                                                 */
 /* ------------------------------------------------------------------ */
 interface UnifiedTreeProps {
@@ -307,11 +371,14 @@ export function UnifiedTree({ searchQuery }: UnifiedTreeProps) {
   }, [tree, searchQuery]);
 
   if (filteredTree.length === 0) {
-    return (
-      <div style={{ padding: '24px 12px', textAlign: 'center', color: TOKENS.fg3, fontSize: 12 }}>
-        {searchQuery ? 'No matching files' : 'No files loaded'}
-      </div>
-    );
+    if (searchQuery) {
+      return (
+        <div style={{ padding: '24px 12px', textAlign: 'center', color: TOKENS.fg3, fontSize: 12 }}>
+          No matching files
+        </div>
+      );
+    }
+    return <EmptyCollectionPrompt />;
   }
 
   return (

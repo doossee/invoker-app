@@ -1,11 +1,12 @@
 import { create } from 'zustand';
-import type { RunResult } from 'ivkjs';
+import type { RunResult, HttpMethod } from 'ivkjs';
 import type { SiteConfig } from '@/types/site-config';
+import { useCollectionStore } from '@/stores/collection-store';
 
 export type SplitDirection = 'horizontal' | 'vertical';
 
 export interface TabData {
-  kind: 'ivk' | 'folder';
+  kind: 'ivk' | 'folder' | 'doc';
   path: string;
   name: string;
   method?: string;
@@ -20,8 +21,12 @@ interface EditorState {
 
   // Layout
   sidebarWidth: number;
+  sidebarCollapsed: boolean;
   responseHeight: number;
   splitDirection: SplitDirection;
+
+  // Editor preferences
+  vimMode: boolean;
 
   // Request editor state
   requestTab: string;
@@ -44,11 +49,21 @@ interface EditorState {
   closeTab: (path: string) => void;
   setActiveTab: (path: string) => void;
   markDirty: (path: string, dirty: boolean) => void;
+  /** Patch fields on an existing tab (e.g. method changed in the editor). */
+  updateTab: (path: string, patch: Partial<TabData>) => void;
 
   // Layout actions
   setSidebarWidth: (w: number) => void;
+  setSidebarCollapsed: (collapsed: boolean) => void;
+  toggleSidebar: () => void;
   setResponseHeight: (h: number) => void;
   setSplitDirection: (d: SplitDirection) => void;
+
+  // Editor preference actions
+  setVimMode: (on: boolean) => void;
+
+  // Inline request creation
+  createInlineTab: (opts?: { method?: HttpMethod; url?: string }) => string;
 
   // Editor tab state
   setRequestTab: (tab: string) => void;
@@ -73,8 +88,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   activeTabPath: null,
 
   sidebarWidth: Number(localStorage.getItem('invoker:sidebar-width')) || 260,
+  sidebarCollapsed: localStorage.getItem('invoker:sidebar-collapsed') === '1',
   responseHeight: Number(localStorage.getItem('invoker:response-height')) || 300,
   splitDirection: (localStorage.getItem('invoker:split-direction') as SplitDirection) || 'horizontal',
+  vimMode: localStorage.getItem('invoker:vim-mode') === '1',
 
   requestTab: 'Body',
   responseTab: 'Body',
@@ -125,9 +142,43 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       ),
     })),
 
+  updateTab: (path, patch) =>
+    set((state) => ({
+      tabs: state.tabs.map((t) => (t.path === path ? { ...t, ...patch } : t)),
+    })),
+
   setSidebarWidth: (w) => {
     set({ sidebarWidth: w });
     localStorage.setItem('invoker:sidebar-width', String(w));
+  },
+
+  setSidebarCollapsed: (collapsed) => {
+    set({ sidebarCollapsed: collapsed });
+    localStorage.setItem('invoker:sidebar-collapsed', collapsed ? '1' : '0');
+  },
+
+  toggleSidebar: () => {
+    const next = !get().sidebarCollapsed;
+    set({ sidebarCollapsed: next });
+    localStorage.setItem('invoker:sidebar-collapsed', next ? '1' : '0');
+  },
+
+  setVimMode: (on) => {
+    set({ vimMode: on });
+    localStorage.setItem('invoker:vim-mode', on ? '1' : '0');
+  },
+
+  createInlineTab: (opts) => {
+    const ts = Date.now().toString(36);
+    const path = `inline/Untitled-${ts}.ivk`;
+    const method = opts?.method ?? 'GET';
+    const url = opts?.url ?? '';
+    const content = `${method} ${url}\n`;
+    // Register inline file content BEFORE opening the tab so RequestEditor's
+    // first render finds it via getFileByPath.
+    useCollectionStore.getState().addInlineFile(path, content);
+    get().openTab({ kind: 'ivk', path, name: 'Untitled', method });
+    return path;
   },
 
   setResponseHeight: (h) => {

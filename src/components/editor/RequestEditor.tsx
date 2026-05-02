@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Search, Clock } from 'lucide-react';
-import { parseIvk, type IvkRequest, type HttpMethod } from 'ivkjs';
+import { Save, Check } from 'lucide-react';
+import { parseIvk, serializeIvk, type IvkRequest, type HttpMethod } from 'ivkjs';
 import { useCollectionStore } from '@/stores/collection-store';
 import { useEditorStore } from '@/stores/editor-store';
 import { useRequest } from '@/hooks/useRequest';
@@ -8,8 +8,6 @@ import {
   TOKENS,
   Panel,
   TabBar,
-  SplitToggle,
-  IconBtn,
 } from '@/components/shared/primitives';
 import { UrlBar } from './UrlBar';
 import { HeadersTab } from './HeadersTab';
@@ -85,14 +83,22 @@ function BodyTypePill({ value, onChange }: { value: string; onChange: (v: string
 /* ================================================================== */
 export function RequestEditor({ filePath }: Props) {
   const getFileByPath = useCollectionStore((s) => s.getFileByPath);
+  const saveRequest = useCollectionStore((s) => s.saveRequest);
 
   const requestTab = useEditorStore((s) => s.requestTab) as RequestTabName;
   const setRequestTab = useEditorStore((s) => s.setRequestTab);
   const splitDirection = useEditorStore((s) => s.splitDirection);
   const setSplitDirection = useEditorStore((s) => s.setSplitDirection);
   const setCommandPaletteOpen = useEditorStore((s) => s.setCommandPaletteOpen);
+  const markDirty = useEditorStore((s) => s.markDirty);
+  const updateTab = useEditorStore((s) => s.updateTab);
+  // Read the dirty flag from the tab so the Save button only lights up when
+  // there's something to save. `tabs` is subscribed so this re-renders when
+  // markDirty flips the flag.
+  const isDirty = useEditorStore((s) => s.tabs.find((t) => t.path === filePath)?.dirty ?? false);
 
   const [bodyType, setBodyType] = useState('json');
+  const [justSaved, setJustSaved] = useState(false);
 
   const file = getFileByPath(filePath);
 
@@ -128,6 +134,21 @@ export function RequestEditor({ filePath }: Props) {
     await run(request);
   }, [request, loading, run]);
 
+  const handleSave = useCallback(async () => {
+    if (!request) return;
+    const content = serializeIvk(request);
+    try {
+      await saveRequest(filePath, content);
+      markDirty(filePath, false);
+      setJustSaved(true);
+      window.setTimeout(() => setJustSaved(false), 1500);
+    } catch (e) {
+      // Surface a minimal error so the user knows the disk write failed.
+      // We keep the in-memory state so their edits aren't lost.
+      console.error('Save failed:', e);
+    }
+  }, [request, filePath, saveRequest, markDirty]);
+
   useEffect(() => {
     const onSend = () => {
       if (request && !loading) run(request);
@@ -135,48 +156,73 @@ export function RequestEditor({ filePath }: Props) {
     const onFormatJson = () => {
       window.dispatchEvent(new CustomEvent('invoker:format-json-editor'));
     };
+    // Only the currently-active editor's save listener should respond. Since
+    // we guard on request being non-null (tab closed = editor unmounted),
+    // this naturally only fires for the mounted request editor.
+    const onSave = () => {
+      handleSave();
+    };
     window.addEventListener('invoker:send', onSend);
     window.addEventListener('invoker:format-json', onFormatJson);
+    window.addEventListener('invoker:save', onSave);
     return () => {
       window.removeEventListener('invoker:send', onSend);
       window.removeEventListener('invoker:format-json', onFormatJson);
+      window.removeEventListener('invoker:save', onSave);
     };
-  }, [request, loading, run]);
+  }, [request, loading, run, handleSave]);
+
+  // Every field-change handler marks the tab dirty so the Save button lights
+  // up and the tab shows a dot until the user commits via ⌘S or the button.
+  const touch = useCallback(() => markDirty(filePath, true), [markDirty, filePath]);
 
   const handleMethodChange = useCallback((method: HttpMethod) => {
     setRequest((prev) => (prev ? { ...prev, method } : prev));
-  }, []);
+    // Live-sync the tab's badge so the tab header reflects the change
+    // immediately (not only after save). Sidebar updates via file.content
+    // changes — which only happens on save, intentionally.
+    updateTab(filePath, { method });
+    touch();
+  }, [touch, updateTab, filePath]);
 
   const handleUrlChange = useCallback((url: string) => {
     setRequest((prev) => (prev ? { ...prev, url } : prev));
-  }, []);
+    touch();
+  }, [touch]);
 
   const handleHeadersChange = useCallback((headers: Record<string, string>) => {
     setRequest((prev) => (prev ? { ...prev, headers } : prev));
-  }, []);
+    touch();
+  }, [touch]);
 
   const handleBodyChange = useCallback((body: string) => {
     setRequest((prev) => (prev ? { ...prev, body } : prev));
-  }, []);
+    touch();
+  }, [touch]);
 
   const handleAuthChange = useCallback((auth: string) => {
     setRequest((prev) =>
       prev ? { ...prev, directives: { ...prev.directives, auth } } : prev,
     );
-  }, []);
+    touch();
+  }, [touch]);
 
   const handleScriptsChange = useCallback(
     (scripts: { pre: string; post: string; test: string }) => {
       setRequest((prev) => (prev ? { ...prev, scripts } : prev));
+      touch();
     },
-    [],
+    [touch],
   );
 
   const handleDirectivesChange = useCallback(
     (directives: NonNullable<IvkRequest>['directives']) => {
       setRequest((prev) => (prev ? { ...prev, directives } : prev));
+      // `@name` is the display name for the tab, so reflect any change live.
+      if (directives.name) updateTab(filePath, { name: directives.name });
+      touch();
     },
-    [],
+    [touch, updateTab, filePath],
   );
 
   // Breadcrumb parts
@@ -207,7 +253,35 @@ export function RequestEditor({ filePath }: Props) {
     >
       {/* Breadcrumb + URL bar */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
-        <Breadcrumb parts={breadcrumbParts} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <Breadcrumb parts={breadcrumbParts} />
+          <button
+            onClick={handleSave}
+            disabled={!isDirty && !justSaved}
+            title={isDirty ? 'Save changes (⌘S)' : justSaved ? 'Saved' : 'No unsaved changes'}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              padding: '3px 8px',
+              background: isDirty ? 'rgba(230,193,136,0.12)' : 'transparent',
+              boxShadow: `inset 0 0 0 1px ${isDirty ? TOKENS.strokeHot : TOKENS.strokeSoft}`,
+              color: justSaved ? TOKENS.green : isDirty ? TOKENS.amber : TOKENS.fg3,
+              border: 'none',
+              borderRadius: 5,
+              fontSize: 10,
+              fontWeight: 600,
+              fontFamily: "'JetBrains Mono', monospace",
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              cursor: isDirty ? 'pointer' : 'default',
+              opacity: isDirty || justSaved ? 1 : 0.55,
+            }}
+          >
+            {justSaved ? <Check size={10} /> : <Save size={10} />}
+            {justSaved ? 'Saved' : 'Save'}
+          </button>
+        </div>
         <UrlBar
           method={request.method}
           url={request.url}

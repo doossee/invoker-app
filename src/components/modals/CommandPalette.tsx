@@ -111,12 +111,14 @@ export function CommandPalette({ onClose }: Props) {
       useCollectionStore.getState().setActiveFile(item.path);
     } else if (item.type === 'doc' && item.path) {
       const name = item.path.split('/').pop()?.replace('.md', '') ?? item.path;
-      const tab: TabData = { kind: 'folder', path: item.path, name, hasReadme: true };
+      const tab: TabData = { kind: 'doc', path: item.path, name };
       openTab(tab);
     } else if (item.name === 'Open Settings') {
       setSettingsOpen(true);
     } else if (item.name === 'Manage Environments') {
       setEnvSettingsOpen(true);
+    } else if (item.name === 'New Request') {
+      useEditorStore.getState().createInlineTab();
     }
     onClose();
   }

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { TOKENS, Kbd, Toggle, Select } from '@/components/shared/primitives';
 import { useTheme } from '@/themes/theme-provider';
+import { useEditorStore } from '@/stores/editor-store';
 
 interface Props {
   onClose: () => void;
@@ -283,22 +284,29 @@ function AppearancePage() {
 }
 
 function KeyboardPage() {
+  const vimMode = useEditorStore((s) => s.vimMode);
+  const setVimMode = useEditorStore((s) => s.setVimMode);
+
   const shortcuts = [
     { action: 'Command palette', keys: ['⌘', 'K'] },
     { action: 'Send request', keys: ['⌘', '↵'] },
+    { action: 'Save request', keys: ['⌘', 'S'] },
     { action: 'New request', keys: ['⌘', 'N'] },
     { action: 'Close tab', keys: ['⌘', 'W'] },
     { action: 'Next tab', keys: ['⌃', 'Tab'] },
     { action: 'Jump to request', keys: ['⌘', 'P'] },
     { action: 'Jump to env', keys: ['⌘', 'E'] },
     { action: 'Toggle sidebar', keys: ['⌘', '\\'] },
-    { action: 'Find in response', keys: ['⌘', 'F'] },
+    { action: 'Format JSON', keys: ['⌘', '⇧', 'F'] },
     { action: 'Run test suite', keys: ['⌘', '⇧', 'T'] },
   ];
 
   return (
     <>
       <PageTitle note="View and customize keyboard shortcuts.">Keyboard</PageTitle>
+      <Row label="Vim mode" hint="Use vim keybindings inside the body, scripts, and doc editors.">
+        <Toggle on={vimMode} onChange={setVimMode} />
+      </Row>
       {shortcuts.map((s) => (
         <Row key={s.action} label={s.action}>
           <div style={{ display: 'flex', gap: 3 }}>
