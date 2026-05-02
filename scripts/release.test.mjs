@@ -77,3 +77,24 @@ serde = { version = "1.0" }
 `;
   assert.throws(() => rewriteCargoToml(before, '0.2.0'), /\[package\] version/);
 });
+
+test('rewriteCargoToml handles [package.metadata.*] sub-tables before version', () => {
+  const before = `[package]
+name = "app"
+
+[package.metadata.bundle]
+identifier = "com.example.app"
+
+version = "0.1.0"
+
+[dependencies]
+serde = "1.0"
+`;
+  const after = rewriteCargoToml(before, '0.2.0');
+  // Version updated.
+  assert.match(after, /^version = "0\.2\.0"$/m);
+  // Sub-table preserved.
+  assert.match(after, /\[package\.metadata\.bundle\]/);
+  // Dependency untouched.
+  assert.match(after, /serde = "1\.0"/);
+});

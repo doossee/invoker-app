@@ -66,8 +66,9 @@ export function rewriteCargoToml(before, version) {
       inPackage = true;
       continue;
     }
-    // Any other section header ends [package].
-    if (inPackage && /^\s*\[[^\]]+\]\s*$/.test(line)) {
+    // Match a different top-level section header. Negative lookahead excludes
+    // `[package.metadata.*]` and similar sub-tables which are still part of [package].
+    if (inPackage && /^\s*\[(?!package[.\]])[^\]]+\]\s*$/.test(line)) {
       inPackage = false;
       continue;
     }

@@ -659,8 +659,9 @@ export function rewriteCargoToml(before, version) {
       inPackage = true;
       continue;
     }
-    // Any other section header ends [package].
-    if (inPackage && /^\s*\[[^\]]+\]\s*$/.test(line)) {
+    // Any other top-level section header ends [package]. Negative lookahead
+    // excludes [package.metadata.*] sub-tables, which are still part of [package].
+    if (inPackage && /^\s*\[(?!package[.\]])[^\]]+\]\s*$/.test(line)) {
       inPackage = false;
       continue;
     }
@@ -905,7 +906,7 @@ export function rewriteCargoToml(before, version) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     if (/^\s*\[package\]\s*$/.test(line)) { inPackage = true; continue; }
-    if (inPackage && /^\s*\[[^\]]+\]\s*$/.test(line)) { inPackage = false; continue; }
+    if (inPackage && /^\s*\[(?!package[.\]])[^\]]+\]\s*$/.test(line)) { inPackage = false; continue; }
     if (inPackage && /^\s*version\s*=\s*"/.test(line)) {
       lines[i] = line.replace(/version\s*=\s*"[^"]*"/, `version = "${version}"`);
       updated = true;
