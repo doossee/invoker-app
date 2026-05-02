@@ -17,6 +17,7 @@
     "http:allow-fetch",
     "dialog:default",
     "dialog:allow-open",
-    "opener:default"
+    "opener:default",
+    "updater:default"
   ]
 }
