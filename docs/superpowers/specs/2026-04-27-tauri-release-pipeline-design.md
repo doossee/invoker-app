@@ -306,7 +306,6 @@ pub fn run() {
   "plugins": {
     "fs": { "requireLiteralLeadingDot": false },
     "updater": {
-      "active": true,
       "endpoints": [
         "https://github.com/doossee/invoker-app/releases/latest/download/latest.json"
       ],

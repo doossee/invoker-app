@@ -350,7 +350,6 @@ Replace the `"plugins"` block in `src-tauri/tauri.conf.json` with:
     "requireLiteralLeadingDot": false
   },
   "updater": {
-    "active": true,
     "endpoints": [
       "https://github.com/doossee/invoker-app/releases/latest/download/latest.json"
     ],
