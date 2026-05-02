@@ -1,15 +1,24 @@
 # Releasing invoker-app
 
-A walk-through for cutting a release. ~10 minutes end-to-end.
+A walk-through for cutting a release. ~10–15 minutes end-to-end (build is the longest step).
+
+## Branch model recap
+
+- **`stage`** — default branch, all feature PRs land here. CI runs on every push.
+- **`main`** — production. Updated only via PR from `stage` when cutting a release.
+- Tags `v*` live on `main` and trigger the release workflow.
+
+A release is the act of (1) opening a `stage` → `main` PR, (2) merging it after CI is green, (3) running the bumper on `main`, (4) pushing the tag, (5) reviewing the draft release, (6) clicking Publish.
 
 ## Pre-flight
 
 Before starting:
 
-- [ ] Working tree is clean (`git status` shows nothing).
-- [ ] On `main`, up to date with `origin/main`.
-- [ ] Latest CI run on `main` is green (https://github.com/doossee/invoker-app/actions).
-- [ ] Released the previous tag if one was sitting unpublished.
+- [ ] All planned features have merged into `stage`.
+- [ ] Latest CI run on `stage` is green: https://github.com/doossee/invoker-app/actions
+- [ ] Open a PR `stage` → `main`, get it green, and merge with squash. (Required because `main` is protected.)
+- [ ] Now on `main` locally, working tree is clean (`git status` shows nothing).
+- [ ] No existing unpublished draft release for the version you're about to cut.
 
 ## Cut the release
 
