@@ -3,6 +3,7 @@ import { Folder, BookOpen, ExternalLink, FolderOpen, Play } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { parseIvk } from 'ivkjs';
+import { resolveInlineIvk } from '@/lib/inline-ivk';
 import { useCollectionStore } from '@/stores/collection-store';
 import { useDocsStore } from '@/stores/docs-store';
 import { useEditorStore, type TabData } from '@/stores/editor-store';
@@ -133,18 +134,33 @@ export function FolderTabBody({ folderPath }: Props) {
 /* ------------------------------------------------------------------ */
 function InlineIvkBlock({ content }: { content: string }) {
   const openTab = useEditorStore((s) => s.openTab);
+  const collectionFiles = useCollectionStore((s) => s.files);
   const [showResponse, setShowResponse] = useState(false);
   const [viewTab, setViewTab] = useState<'request' | 'response'>('request');
+
+  // Two block forms are valid:
+  //   - Full inline source (block contains a real .ivk request)
+  //   - `path: foo/bar.ivk` referencing a file in the current collection
+  // Without this resolution, path: blocks fell through parseIvk's catch and
+  // rendered "GET / No body" with an empty URL.
+  const resolved = resolveInlineIvk(content, collectionFiles);
 
   let method = 'GET';
   let url = '';
   let body: string | null = null;
-  try {
-    const parsed = parseIvk(content);
-    method = parsed.method;
-    url = parsed.url;
-    body = parsed.body;
-  } catch { /* ignore */ }
+  let resolveError: string | null = null;
+  if (resolved.ok) {
+    try {
+      const parsed = parseIvk(resolved.content);
+      method = parsed.method;
+      url = parsed.url;
+      body = parsed.body;
+    } catch (e) {
+      resolveError = (e as Error)?.message ?? 'failed to parse .ivk source';
+    }
+  } else {
+    resolveError = resolved.error;
+  }
 
   const mc = METHOD_PALETTE[method] ?? { c: TOKENS.fg3, bg: 'rgba(118,117,117,0.14)' };
 
@@ -153,6 +169,28 @@ function InlineIvkBlock({ content }: { content: string }) {
     const tab: TabData = { kind: 'ivk', path: `inline-${Date.now()}`, name, method };
     openTab(tab);
   };
+
+  // Show a clear error tile instead of pretending to render a "GET / No body"
+  // request when path: resolution or parsing failed.
+  if (resolveError) {
+    return (
+      <div
+        style={{
+          marginBottom: 18,
+          padding: '10px 14px',
+          borderRadius: 10,
+          background: 'rgba(229, 88, 88, 0.08)',
+          boxShadow: 'inset 0 0 0 1px rgba(229, 88, 88, 0.35)',
+          color: '#e58484',
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 12,
+          lineHeight: 1.5,
+        }}
+      >
+        <strong style={{ fontWeight: 600 }}>Inline ivk error:</strong> {resolveError}
+      </div>
+    );
+  }
 
   return (
     <div
