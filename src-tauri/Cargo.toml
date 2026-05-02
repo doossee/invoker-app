@@ -1,10 +1,11 @@
 [package]
 name = "app"
 version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
-license = ""
-repository = ""
+description = "A git-native API workspace. Requests as plain .ivk files next to your code."
+authors = ["Doston Kamilov <doossee.me@gmail.com>"]
+license = "MIT"
+repository = "https://github.com/doossee/invoker-app"
+homepage = "https://github.com/doossee/invoker-app"
 edition = "2021"
 rust-version = "1.77.2"
 
@@ -27,3 +28,4 @@ tauri-plugin-fs = "2.5.0"
 tauri-plugin-http = "2.5.8"
 tauri-plugin-dialog = "2.7.0"
 tauri-plugin-opener = "2.5.3"
+tauri-plugin-updater = "2.10.1"

@@ -28,6 +28,12 @@
   "plugins": {
     "fs": {
       "requireLiteralLeadingDot": false
+    },
+    "updater": {
+      "endpoints": [
+        "https://github.com/doossee/invoker-app/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEJGNzAwM0NDNDdEN0Q1OTkKUldTWjFkZEh6QU53djNoajA4VTlpMU15TlBFOUVpOG1ONS8wNDRaQzNkZ1pQRCtPYngrYTZ1WHYK"
     }
   },
   "bundle": {
