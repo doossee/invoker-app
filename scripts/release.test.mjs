@@ -98,3 +98,120 @@ serde = "1.0"
   // Dependency untouched.
   assert.match(after, /serde = "1\.0"/);
 });
+
+import { runRelease } from './release.mjs';
+import { mkdtempSync, writeFileSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+function makeFixture() {
+  const dir = mkdtempSync(join(tmpdir(), 'release-test-'));
+  writeFileSync(join(dir, 'package.json'),
+    '{\n  "name": "x",\n  "version": "0.1.0"\n}\n');
+  writeFileSync(join(dir, 'tauri.conf.json'),
+    '{\n  "productName": "Invoker",\n  "version": "0.1.0"\n}\n');
+  writeFileSync(join(dir, 'Cargo.toml'),
+    '[package]\nname = "app"\nversion = "0.1.0"\nedition = "2021"\n');
+  return dir;
+}
+
+test('runRelease rewrites all three files', async () => {
+  const dir = makeFixture();
+  const calls = [];
+  await runRelease({
+    version: '0.2.0',
+    cwd: dir,
+    runner: async (cmd, args) => {
+      calls.push([cmd, args.join(' ')]);
+      // Pretend git status is clean and we're on main.
+      if (cmd === 'git' && args[0] === 'status') return { code: 0, stdout: '', stderr: '' };
+      if (cmd === 'git' && args.join(' ') === 'rev-parse --abbrev-ref HEAD') return { code: 0, stdout: 'main\n', stderr: '' };
+      // Tag does not yet exist.
+      if (cmd === 'git' && args[0] === 'rev-parse' && args[1] === '-q' && args[2] === '--verify') return { code: 1, stdout: '', stderr: '' };
+      return { code: 0, stdout: '', stderr: '' };
+    },
+    paths: {
+      packageJson: join(dir, 'package.json'),
+      tauriConf: join(dir, 'tauri.conf.json'),
+      cargoToml: join(dir, 'Cargo.toml'),
+    },
+  });
+  assert.match(readFileSync(join(dir, 'package.json'), 'utf8'), /"version":\s*"0\.2\.0"/);
+  assert.match(readFileSync(join(dir, 'tauri.conf.json'), 'utf8'), /"version":\s*"0\.2\.0"/);
+  assert.match(readFileSync(join(dir, 'Cargo.toml'), 'utf8'), /^version = "0\.2\.0"$/m);
+});
+
+test('runRelease refuses if working tree is dirty', async () => {
+  const dir = makeFixture();
+  const runner = async (cmd, args) => {
+    if (cmd === 'git' && args[0] === 'status') return { code: 0, stdout: ' M package.json\n', stderr: '' };
+    return { code: 0, stdout: '', stderr: '' };
+  };
+  await assert.rejects(
+    runRelease({ version: '0.2.0', cwd: dir, runner, paths: {
+      packageJson: join(dir, 'package.json'),
+      tauriConf: join(dir, 'tauri.conf.json'),
+      cargoToml: join(dir, 'Cargo.toml'),
+    }}),
+    /dirty/i,
+  );
+});
+
+test('runRelease refuses if not on main branch', async () => {
+  const dir = makeFixture();
+  const runner = async (cmd, args) => {
+    if (cmd === 'git' && args[0] === 'status') return { code: 0, stdout: '', stderr: '' };
+    if (cmd === 'git' && args.join(' ') === 'rev-parse --abbrev-ref HEAD') return { code: 0, stdout: 'feature/x\n', stderr: '' };
+    return { code: 0, stdout: '', stderr: '' };
+  };
+  await assert.rejects(
+    runRelease({ version: '0.2.0', cwd: dir, runner, paths: {
+      packageJson: join(dir, 'package.json'),
+      tauriConf: join(dir, 'tauri.conf.json'),
+      cargoToml: join(dir, 'Cargo.toml'),
+    }}),
+    /branch/i,
+  );
+});
+
+test('runRelease refuses if tag already exists', async () => {
+  const dir = makeFixture();
+  const runner = async (cmd, args) => {
+    if (cmd === 'git' && args[0] === 'status') return { code: 0, stdout: '', stderr: '' };
+    if (cmd === 'git' && args.join(' ') === 'rev-parse --abbrev-ref HEAD') return { code: 0, stdout: 'main\n', stderr: '' };
+    // Tag exists (rev-parse exits 0).
+    if (cmd === 'git' && args[0] === 'rev-parse' && args[1] === '-q' && args[2] === '--verify') return { code: 0, stdout: 'abc1234\n', stderr: '' };
+    return { code: 0, stdout: '', stderr: '' };
+  };
+  await assert.rejects(
+    runRelease({ version: '0.2.0', cwd: dir, runner, paths: {
+      packageJson: join(dir, 'package.json'),
+      tauriConf: join(dir, 'tauri.conf.json'),
+      cargoToml: join(dir, 'Cargo.toml'),
+    }}),
+    /tag.*exists/i,
+  );
+});
+
+test('runRelease invokes git add, commit, tag in order', async () => {
+  const dir = makeFixture();
+  const calls = [];
+  const runner = async (cmd, args) => {
+    calls.push(`${cmd} ${args.join(' ')}`);
+    if (cmd === 'git' && args[0] === 'status') return { code: 0, stdout: '', stderr: '' };
+    if (cmd === 'git' && args.join(' ') === 'rev-parse --abbrev-ref HEAD') return { code: 0, stdout: 'main\n', stderr: '' };
+    if (cmd === 'git' && args[0] === 'rev-parse' && args[1] === '-q' && args[2] === '--verify') return { code: 1, stdout: '', stderr: '' };
+    return { code: 0, stdout: '', stderr: '' };
+  };
+  await runRelease({ version: '0.2.0', cwd: dir, runner, paths: {
+    packageJson: join(dir, 'package.json'),
+    tauriConf: join(dir, 'tauri.conf.json'),
+    cargoToml: join(dir, 'Cargo.toml'),
+  }});
+  // Find the indices of the key operations to assert ordering.
+  const addIdx = calls.findIndex(c => c.startsWith('git add'));
+  const commitIdx = calls.findIndex(c => c.startsWith('git commit'));
+  const tagIdx = calls.findIndex(c => c.startsWith('git tag'));
+  assert.ok(addIdx >= 0 && commitIdx > addIdx && tagIdx > commitIdx,
+    `expected add → commit → tag, got: ${calls.join('\n')}`);
+});
