@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { matchShortcut } from '@/lib/shortcuts';
 
 interface ShortcutHandlers {
   onSend?: () => void;
@@ -9,22 +10,22 @@ interface ShortcutHandlers {
 export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      const meta = e.metaKey || e.ctrlKey;
-
       // Cmd+Enter — Send request
-      if (meta && e.key === 'Enter') {
+      if (matchShortcut(e, 'Enter')) {
         e.preventDefault();
         handlers.onSend?.();
+        return;
       }
 
       // Cmd+E — Switch environment
-      if (meta && e.key === 'e') {
+      if (matchShortcut(e, 'KeyE', { shift: false })) {
         e.preventDefault();
         handlers.onSwitchEnv?.();
+        return;
       }
 
       // Cmd+Shift+F — Format JSON
-      if (meta && e.shiftKey && e.key === 'f') {
+      if (matchShortcut(e, 'KeyF', { shift: true })) {
         e.preventDefault();
         handlers.onFormatJson?.();
       }

@@ -14,6 +14,7 @@ import { useCollectionStore } from '@/stores/collection-store';
 import { useEnvStore } from '@/stores/env-store';
 import { watchCollection, loadCollection, loadFromManifest } from '@/lib/file-system';
 import { isPublished } from '@/lib/platform';
+import { matchShortcut } from '@/lib/shortcuts';
 import { useDocsStore } from '@/stores/docs-store';
 import { TOKENS } from '@/components/shared/primitives';
 
@@ -39,34 +40,39 @@ export function App() {
 
   const collectionPath = useCollectionStore((s) => s.collectionPath);
 
-  // Global keyboard shortcuts
+  // Global keyboard shortcuts.
+  //
+  // Uses matchShortcut() which keys on `e.code` (physical key) instead of
+  // `e.key` (character). This is critical for non-Latin keyboard layouts —
+  // a Cyrillic user pressing the K key gives `e.key = 'л'` but `e.code = 'KeyK'`,
+  // and the previous `e.key === 'k'` check missed all of them. matchShortcut
+  // also fixes the pre-existing ⌘⇧F bug where `e.key === 'f' && e.shiftKey`
+  // could never both be true (shift+F → `e.key === 'F'`).
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      const meta = e.metaKey || e.ctrlKey;
-
       // ⌘K — Command palette
-      if (meta && e.key === 'k') {
+      if (matchShortcut(e, 'KeyK', { shift: false })) {
         e.preventDefault();
         setCommandPaletteOpen(!commandPaletteOpen);
         return;
       }
 
       // ⌘Enter — Send request
-      if (meta && e.key === 'Enter') {
+      if (matchShortcut(e, 'Enter')) {
         e.preventDefault();
         window.dispatchEvent(new CustomEvent('invoker:send'));
         return;
       }
 
       // ⌘N — New request
-      if (meta && e.key === 'n') {
+      if (matchShortcut(e, 'KeyN', { shift: false })) {
         e.preventDefault();
         // TODO: create new request
         return;
       }
 
       // ⌘W — Close tab
-      if (meta && e.key === 'w') {
+      if (matchShortcut(e, 'KeyW', { shift: false })) {
         e.preventDefault();
         if (activeTabPath) {
           useEditorStore.getState().closeTab(activeTabPath);
@@ -75,7 +81,7 @@ export function App() {
       }
 
       // ⌘E — Switch environment
-      if (meta && e.key === 'e') {
+      if (matchShortcut(e, 'KeyE', { shift: false })) {
         e.preventDefault();
         const state = useEnvStore.getState();
         const envs = state.settings.environments;
@@ -87,14 +93,14 @@ export function App() {
       }
 
       // ⌘⇧F — Format JSON
-      if (meta && e.shiftKey && e.key === 'f') {
+      if (matchShortcut(e, 'KeyF', { shift: true })) {
         e.preventDefault();
         window.dispatchEvent(new CustomEvent('invoker:format-json'));
         return;
       }
 
       // ⌘\ — Toggle sidebar (placeholder)
-      if (meta && e.key === '\\') {
+      if (matchShortcut(e, 'Backslash', { shift: false })) {
         e.preventDefault();
         return;
       }
