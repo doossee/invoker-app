@@ -116,6 +116,7 @@ export function VariableToken({
           onChange={onChange}
           onEnter={show}
           onLeave={scheduleHide}
+          onClose={() => setOpen(false)}
         />
       )}
     </>
@@ -197,6 +198,7 @@ function VariablePopover({
   onChange,
   onEnter,
   onLeave,
+  onClose,
 }: {
   anchor: HTMLElement;
   name: string;
@@ -204,23 +206,42 @@ function VariablePopover({
   onChange: (value: string) => void;
   onEnter: () => void;
   onLeave: () => void;
+  onClose: () => void;
 }) {
-  // Position above the token. `position: fixed` + portal so we escape any
-  // overflow-hidden / stacking-context ancestor (inline-block card, tab
-  // content panels, etc.). Background/border/shadow match the CodeMirror
-  // `.cm-tooltip` theme rule in cm-ivk.ts.
+  // `position: fixed` + portal so we escape any overflow-hidden / stacking
+  // -context ancestor (inline-block card, tab content panels, URL bar
+  // overlay…). Background/border/shadow match the CodeMirror `.cm-tooltip`
+  // theme rule in cm-ivk.ts.
+  //
+  // Default placement is ABOVE the token. If there isn't enough room above
+  // (estimated popover height ~60px), flip BELOW so it doesn't render with
+  // a negative `top` and overlap the tab strip / breadcrumb above the URL
+  // bar — which was the user-visible bug.
   const rect = anchor.getBoundingClientRect();
+  const ESTIMATED_HEIGHT = 64;
+  const GAP = 8;
+  const flipBelow = rect.top < ESTIMATED_HEIGHT + GAP;
   const style: CSSProperties = {
     position: 'fixed',
     left: Math.max(8, rect.left),
-    top: rect.top - 8,
-    transform: 'translateY(-100%)',
+    top: flipBelow ? rect.bottom + GAP : rect.top - GAP,
+    transform: flipBelow ? undefined : 'translateY(-100%)',
     zIndex: 1000,
     background: '#191a1a',
     border: '1px solid #484848',
     borderRadius: 6,
     boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
   };
+
+  // Keyboard dismissal — hover-only close stranded keyboard users and
+  // anyone who'd already moved the cursor far away. Escape always works.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   return createPortal(
     <div style={style} onMouseEnter={onEnter} onMouseLeave={onLeave}>
