@@ -6,7 +6,6 @@ import {
   Keyboard,
   Sparkles,
   Database,
-  User,
 } from 'lucide-react';
 import { TOKENS, Kbd, Toggle, Select } from '@/components/shared/primitives';
 import { useTheme } from '@/themes/theme-provider';
@@ -16,15 +15,18 @@ interface Props {
   onClose: () => void;
 }
 
-type SettingsPage = 'general' | 'appearance' | 'keyboard' | 'ai' | 'data' | 'account';
+type SettingsPage = 'general' | 'appearance' | 'keyboard' | 'ai' | 'data';
 
+// Account intentionally omitted — Invoker is local-first ("no sign-in, no
+// sync, no cloud" per the Welcome page). The previous Account pane was a
+// design stub with a fake user and dead buttons. Add it back when (if) cloud
+// sync ships, with real backing data + working handlers.
 const PAGES: { id: SettingsPage; label: string; icon: React.ReactNode }[] = [
   { id: 'general', label: 'General', icon: <Sliders size={14} /> },
   { id: 'appearance', label: 'Appearance', icon: <Palette size={14} /> },
   { id: 'keyboard', label: 'Keyboard', icon: <Keyboard size={14} /> },
   { id: 'ai', label: 'AI', icon: <Sparkles size={14} /> },
   { id: 'data', label: 'Data & sync', icon: <Database size={14} /> },
-  { id: 'account', label: 'Account', icon: <User size={14} /> },
 ];
 
 export function SettingsModal({ onClose }: Props) {
@@ -160,7 +162,6 @@ export function SettingsModal({ onClose }: Props) {
             {activePage === 'keyboard' && <KeyboardPage />}
             {activePage === 'ai' && <AIPage />}
             {activePage === 'data' && <DataPage />}
-            {activePage === 'account' && <AccountPage />}
           </div>
         </div>
       </div>
@@ -375,92 +376,3 @@ function DataPage() {
   );
 }
 
-function AccountPage() {
-  return (
-    <>
-      <PageTitle>Account</PageTitle>
-      {/* Profile card */}
-      <div
-        style={{
-          padding: 14,
-          borderRadius: 10,
-          background: TOKENS.s3,
-          boxShadow: `inset 0 0 0 1px ${TOKENS.strokeSoft}`,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          marginBottom: 18,
-        }}
-      >
-        <div
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: '50%',
-            background: `linear-gradient(135deg, ${TOKENS.amber}, ${TOKENS.red})`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#0a0a0a',
-            fontWeight: 700,
-            fontSize: 14,
-            flexShrink: 0,
-          }}
-        >
-          d
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: TOKENS.fg1 }}>doossee</div>
-          <div style={{ fontSize: 11, color: TOKENS.fg3 }}>ovidevtool@outlook.com · Personal plan</div>
-        </div>
-        <button
-          style={{
-            padding: '5px 10px',
-            background: TOKENS.s3,
-            border: 'none',
-            borderRadius: 6,
-            boxShadow: `inset 0 0 0 1px ${TOKENS.stroke}`,
-            color: TOKENS.fg2,
-            fontSize: 11,
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-          }}
-        >
-          Manage
-        </button>
-      </div>
-      <Row label="Team workspace">
-        <button
-          style={{
-            padding: '5px 10px',
-            background: TOKENS.s3,
-            border: 'none',
-            borderRadius: 6,
-            boxShadow: `inset 0 0 0 1px ${TOKENS.stroke}`,
-            color: TOKENS.fg2,
-            fontSize: 11,
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-          }}
-        >
-          Create...
-        </button>
-      </Row>
-      <Row label="Sign out">
-        <button
-          style={{
-            padding: '5px 10px',
-            background: 'transparent',
-            border: 'none',
-            color: TOKENS.red,
-            fontSize: 12,
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-          }}
-        >
-          Sign out
-        </button>
-      </Row>
-    </>
-  );
-}
