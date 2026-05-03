@@ -9,6 +9,7 @@ import {
   Globe,
   FolderOpen,
   Sparkles,
+  PanelLeftClose,
 } from 'lucide-react';
 import { InvokerMark, Kbd, TOKENS } from '@/components/shared/primitives';
 import { useEditorStore } from '@/stores/editor-store';
@@ -161,6 +162,7 @@ function CollectionHeader() {
   const files = useCollectionStore((s) => s.files);
   const docs = useDocsStore((s) => s.docs);
   const collectionPath = useCollectionStore((s) => s.collectionPath);
+  const setSidebarCollapsed = useEditorStore((s) => s.setSidebarCollapsed);
   const [menuOpen, setMenuOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
@@ -248,6 +250,38 @@ function CollectionHeader() {
             transition: 'transform 0.15s',
           }}
         />
+      </button>
+
+      {/* Collapse-sidebar button. Sits in the same row visually but as a
+          sibling so its click doesn't bubble into the switcher button.
+          Pairs with the existing PanelLeft restore button in App.tsx that
+          appears when the sidebar is collapsed. */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setSidebarCollapsed(true);
+        }}
+        title="Hide sidebar (⌘\\)"
+        aria-label="Hide sidebar"
+        style={{
+          position: 'absolute',
+          top: 14,
+          right: 14,
+          width: 22,
+          height: 22,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'transparent',
+          border: 'none',
+          borderRadius: 5,
+          color: TOKENS.fg3,
+          cursor: 'pointer',
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.background = TOKENS.s3)}
+        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+      >
+        <PanelLeftClose size={13} />
       </button>
 
       {menuOpen && <CollectionDropdown onClose={() => setMenuOpen(false)} />}
