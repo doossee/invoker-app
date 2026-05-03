@@ -23,7 +23,12 @@ interface Props {
   filePath: string;
 }
 
-const REQUEST_TABS = ['Body', 'Headers', 'Auth', 'Scripts', 'Vars', 'Params'] as const;
+// "Meta" was historically labeled "Params" — that name implied URL query
+// parameters (Postman/Insomnia mental model) but the tab actually edits
+// `@directives` (request metadata: name, description, tag, auth-mode, …).
+// Renamed to remove the mismatch. If we later add real URL-param editing,
+// it gets its own tab.
+const REQUEST_TABS = ['Body', 'Headers', 'Auth', 'Scripts', 'Vars', 'Meta'] as const;
 type RequestTabName = (typeof REQUEST_TABS)[number];
 
 /* ================================================================== */
@@ -262,7 +267,7 @@ export function RequestEditor({ filePath }: Props) {
             {requestTab === 'Auth' && <AuthTab auth={request.directives.auth} onChange={handleAuthChange} />}
             {requestTab === 'Scripts' && <ScriptsTab scripts={request.scripts} onChange={handleScriptsChange} />}
             {requestTab === 'Vars' && <VarsTab request={request} />}
-            {requestTab === 'Params' && <ParamsTab directives={request.directives} onChange={handleDirectivesChange} />}
+            {requestTab === 'Meta' && <ParamsTab directives={request.directives} onChange={handleDirectivesChange} />}
           </div>
         </Panel>
 
