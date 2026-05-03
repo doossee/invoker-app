@@ -22,17 +22,6 @@ A living list of known bugs and missing behavior. Each entry below maps to a TDD
 
 ### 🔴 Critical
 
-#### `Send` button → `ERR 5ms 0B` instead of response (Tauri build)
-- **Where**: Any request, observed on `Ovi/invoker/information-service/competition/get-all-standings.ivk`
-- **Action**: Click Send (with valid POST request and resolved `{{hostUrl}}`) in the Tauri desktop build
-- **Expected**: HTTP response in Response panel
-- **Actual**: `ERR` indicator, `5ms`, `0B`. Response body shows `1` (empty/placeholder). Browser-mode Send works correctly with the same sample collection — bug is Tauri-specific.
-- **Suspect**:
-  - `TauriTransport` itself errors (CORS-bypassed `@tauri-apps/plugin-http` path)
-  - Variable resolution differs between transports
-  - Active env mismatch (request expects `dev` env but something else loaded)
-- **Test**: E2E `e2e/send-request.spec.ts` (browser-mode covers the happy path; Tauri-mode needs a mocked-tauri integration test)
-
 #### `⌘S` → request not persisted to disk (Tauri build)
 - **Where**: Any request edit
 - **Action**: Edit a request, ⌘S
@@ -112,6 +101,7 @@ A living list of known bugs and missing behavior. Each entry below maps to a TDD
 | ✅ | General → Open last collection on launch had no backing | PR #41 — auto-open effect on App mount: re-loads `(sample)` (browser-demo) or re-`loadCollection()` (Tauri) of the most-recent path, with stale-path defensive clear |
 | ✅ | Response Body pill: hardcoded "application/json" label + decorative Copy/Search buttons | PR #42 — content-type label reads from response.headers; Copy now wired to `clipboard.writeText`; Search dropped (would need real find-in-body editor surface) |
 | ✅ | System-preference theme (auto-follow `prefers-color-scheme`) | PR #44 — `Follow system theme` toggle in Appearance subscribes to `matchMedia('(prefers-color-scheme: light)')` and re-picks `invoker-light` / `invoker-dark` on `change`. Picking an explicit theme via swatch turns it off (VSCode/GitHub/Linear convention). |
+| ✅ | `Send → ERR 5ms 0B` showed nothing about WHY (was reported as Tauri-only Critical, but reproduces in browser-mode too) | PR #46 — when `response.status === 0`, render the transport's `error` in a red tile in the Body view with a short explanation listing common causes (DNS / CORS / malformed URL / offline / Tauri plugin perms). Whatever Tauri-side issue caused the original report is now diagnosable from the UI instead of mysterious. |
 
 ---
 
