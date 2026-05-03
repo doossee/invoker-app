@@ -81,8 +81,13 @@ export function AuthTab({ auth, onChange }: Props) {
           </div>
           <div>
             <label className="text-xs text-on-surface-variant mb-1 block">Password</label>
+            {/* `type="password"` so the browser masks the value with
+                dots — rendering it in plaintext was a real privacy/UX
+                bug. Bearer token field above stays as `type="text"`
+                so users can verify `{{token}}` placeholders before
+                send (matches Postman / Insomnia / Bruno convention). */}
             <input
-              type="text"
+              type="password"
               value={pass}
               onChange={(e) => setPass(e.target.value)}
               placeholder="password"
