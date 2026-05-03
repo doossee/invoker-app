@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { CollectionFile } from '@/data/sample-collection';
+import { isTauri } from '@/lib/platform';
 
 interface CollectionState {
   files: CollectionFile[];
@@ -99,10 +100,16 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
       files: state.files.map((f) => (f.path === path ? { ...f, content } : f)),
     }));
     // Tauri desktop mode with a real folder → write through to disk.
+    // Use the shared `isTauri()` detector — the inline `'__TAURI__' in
+    // window` check that used to live here only matched Tauri 1; Tauri 2
+    // sets `window.isTauri` and `window.__TAURI_INTERNALS__` instead, so
+    // the desktop build silently fell through to the no-write branch and
+    // ⌘S did nothing on disk. (Same root cause as the "Open folder"
+    // bug fixed in PR #4 — the platform-flags drift hits every spot
+    // that hand-rolls Tauri detection.)
     const collectionPath = get().collectionPath;
     const virtual = !collectionPath || collectionPath === '(sample)' || collectionPath === '(published)';
-    const tauri = typeof window !== 'undefined' && '__TAURI__' in window;
-    if (tauri && !virtual) {
+    if (isTauri() && !virtual) {
       const { writeTextFile } = await import('@tauri-apps/plugin-fs');
       const sep = collectionPath!.endsWith('/') ? '' : '/';
       await writeTextFile(`${collectionPath}${sep}${path}`, content);
