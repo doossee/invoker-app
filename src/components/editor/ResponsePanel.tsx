@@ -774,33 +774,75 @@ export function ResponsePanel({ result, loading }: Props) {
         <>
           {responseTab === 'Body' && (
             <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-              <ViewModePill
-                value={bodyViewMode}
-                onChange={(v) => setBodyViewMode(v as 'pretty' | 'raw' | 'table')}
-                contentType={response.headers['content-type']}
-                bodyText={formatBody(response.body)}
-              />
-              {bodyViewMode === 'pretty' && <JsonLines text={formatBody(response.body)} />}
-              {bodyViewMode === 'raw' && (
+              {/* Transport-level errors (status === 0): the request never
+                  produced a real HTTP response — DNS fail, CORS, invalid
+                  URL, network down, Tauri plugin error, etc. Surface the
+                  message instead of leaving the user staring at an empty
+                  body and a "1" line-number gutter wondering what happened. */}
+              {response.error ? (
                 <div
                   style={{
                     flex: 1,
-                    paddingLeft: 14,
-                    paddingRight: 14,
-                    paddingTop: 12,
-                    wordBreak: 'break-all',
-                    whiteSpace: 'pre-wrap',
-                    color: TOKENS.fg1,
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: 13,
-                    lineHeight: 1.6,
+                    padding: '14px 16px',
                     overflow: 'auto',
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 12.5,
+                    lineHeight: 1.6,
+                    color: TOKENS.fg1,
                   }}
                 >
-                  {rawBody(response.body)}
+                  <div
+                    style={{
+                      padding: '12px 14px',
+                      borderRadius: 8,
+                      background: 'rgba(229, 88, 88, 0.08)',
+                      boxShadow: 'inset 0 0 0 1px rgba(229, 88, 88, 0.35)',
+                    }}
+                  >
+                    <div style={{ color: '#e58484', fontWeight: 600, marginBottom: 6 }}>
+                      Request failed
+                    </div>
+                    <div style={{ color: TOKENS.fg2, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                      {response.error}
+                    </div>
+                    <div style={{ color: TOKENS.fg3, fontSize: 11, marginTop: 10 }}>
+                      The transport returned no HTTP response. Common causes:
+                      malformed URL, DNS failure, CORS rejection, network
+                      offline, or (in Tauri builds) a plugin permission issue.
+                    </div>
+                  </div>
                 </div>
+              ) : (
+                <>
+                  <ViewModePill
+                    value={bodyViewMode}
+                    onChange={(v) => setBodyViewMode(v as 'pretty' | 'raw' | 'table')}
+                    contentType={response.headers['content-type']}
+                    bodyText={formatBody(response.body)}
+                  />
+                  {bodyViewMode === 'pretty' && <JsonLines text={formatBody(response.body)} />}
+                  {bodyViewMode === 'raw' && (
+                    <div
+                      style={{
+                        flex: 1,
+                        paddingLeft: 14,
+                        paddingRight: 14,
+                        paddingTop: 12,
+                        wordBreak: 'break-all',
+                        whiteSpace: 'pre-wrap',
+                        color: TOKENS.fg1,
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: 13,
+                        lineHeight: 1.6,
+                        overflow: 'auto',
+                      }}
+                    >
+                      {rawBody(response.body)}
+                    </div>
+                  )}
+                  {bodyViewMode === 'table' && <TableView data={response.body} />}
+                </>
               )}
-              {bodyViewMode === 'table' && <TableView data={response.body} />}
             </div>
           )}
 
