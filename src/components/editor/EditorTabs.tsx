@@ -1,4 +1,4 @@
-import { Plus, X, BookOpen, Search, Clock } from 'lucide-react';
+import { Plus, X, BookOpen, Search } from 'lucide-react';
 import { useEditorStore, type TabData } from '@/stores/editor-store';
 import { TOKENS, MethodBadge, SplitToggle, IconBtn } from '@/components/shared/primitives';
 
@@ -69,9 +69,9 @@ export function EditorTabs() {
           <IconBtn tip="Command palette (⌘K)" onClick={() => setCommandPaletteOpen(true)}>
             <Search size={14} />
           </IconBtn>
-          <IconBtn tip="History">
-            <Clock size={14} />
-          </IconBtn>
+          {/* History button removed — was decorative (no onClick). Add back
+              when a real history panel ships (recent requests + responses
+              with retention policy + per-collection scoping). */}
         </div>
       )}
     </div>
