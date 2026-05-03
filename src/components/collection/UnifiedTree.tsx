@@ -151,13 +151,22 @@ function ContextMenu({ state, onClose }: { state: CtxMenuState; onClose: () => v
 
   if (!state) return null;
 
-  const handleRename = () => {
+  const handleRename = async () => {
     onClose();
     const current = state.path.split('/').pop()?.replace('.ivk', '') ?? state.path;
     // eslint-disable-next-line no-alert
     const next = window.prompt(`Rename "${current}" to:`, current);
     if (!next || next.trim() === '' || next === current) return;
-    const newPath = renameFile(state.path, next.trim());
+    let newPath: string | null;
+    try {
+      newPath = await renameFile(state.path, next.trim());
+    } catch (err) {
+      // Disk-side failure (Tauri only — browser path can't throw). Surface
+      // the message so the user knows why the rename didn't take.
+      // eslint-disable-next-line no-alert
+      window.alert(`Rename failed: ${err instanceof Error ? err.message : String(err)}`);
+      return;
+    }
     if (newPath === null) {
       // eslint-disable-next-line no-alert
       window.alert(`Cannot rename — a file at "${next.trim()}.ivk" already exists.`);
@@ -175,15 +184,21 @@ function ContextMenu({ state, onClose }: { state: CtxMenuState; onClose: () => v
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!state) return;
     const path = state.path;
     onClose();
     const name = path.split('/').pop() ?? path;
     // eslint-disable-next-line no-alert
-    if (!window.confirm(`Delete "${name}"? This cannot be undone in browser-demo mode.`)) return;
+    if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return;
     closeTab(path);
-    deleteFile(path);
+    try {
+      await deleteFile(path);
+    } catch (err) {
+      // Disk-side failure (Tauri only). Surface the message.
+      // eslint-disable-next-line no-alert
+      window.alert(`Delete failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
   };
 
   // Keep the menu inside the viewport in case the click landed near an edge.
