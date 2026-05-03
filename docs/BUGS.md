@@ -41,17 +41,17 @@ A living list of known bugs and missing behavior. Each entry below maps to a TDD
   move N child files; doc rename has to decide whether `title` follows
   or stays.
 
-#### General settings rows (redirects/SSL/save history/check-for-updates) still cosmetic
+#### General settings rows (redirects/SSL) still cosmetic
 - **Where**: `src/components/modals/SettingsModal.tsx` → `GeneralPage`
 - Already wired through to behaviour:
   - Default request method (PR #35) — drives `createInlineTab()`
   - Request timeout (PR #40) — injected as `@timeout` directive when the request didn't declare one
   - Open last collection on launch (PR #41) — auto-opens sample/Tauri folder on next launch
-- Still cosmetic — render `<Toggle on />` / static `<Select>` with no state:
+- Still cosmetic — render `<Toggle on />` with no state:
   - Follow redirects — needs a transport pass-through (fetch's `redirect: 'manual'` opt-out)
   - Verify SSL certificates — Tauri-only (browser fetch can't disable)
-  - Save history — depends on the (not-yet-existent) history feature
-  - Check for updates — Tauri-only (updater plugin)
+- (Save history / Check for updates were dropped in PR #55 — no feature
+  to wire to.)
 
 ---
 
@@ -95,6 +95,9 @@ A living list of known bugs and missing behavior. Each entry below maps to a TDD
 | ✅ | Sidebar tree right-click did nothing (no context menu) | PR #48 — right-click on a request opens a small Rename / Delete menu near the cursor. Browser-mode in-memory only; Tauri disk integration tracked as a follow-up Missing entry. |
 | ✅ | `⌘S` → request not persisted to disk (Tauri build) **AND** `⌘S` → save .md doc to disk (Tauri build) | PR #49 — root cause was Tauri 1-only detection (`'__TAURI__' in window`) in both `saveRequest` and `saveDoc`; Tauri 2 sets `window.isTauri` + `window.__TAURI_INTERNALS__` instead. Replaced both inline checks with the shared `isTauri()` helper (same fix pattern as PR #4 / "Open folder"). 10 tests mock `@tauri-apps/plugin-fs.writeTextFile` and toggle each window flag in turn. |
 | ✅ | Sidebar Rename / Delete didn't move/remove the underlying `.ivk` on disk in Tauri builds (PR #48 was browser-only) | PR #51 — `renameFile` / `deleteFile` are now async and `await` `@tauri-apps/plugin-fs.rename` / `.remove` BEFORE the in-memory mutation, so a fs error aborts before the store diverges from disk. 16 tests pin the Tauri 1+2 detection, virtual-path opt-out, trailing-slash path joining, fs-throws-aborts, and inline files staying off disk. |
+| ✅ | Welcome page "Recent" tile was hardcoded fake content (`OVI Internal / Stripe Playbook / Acme Webhooks`) — title attribute admitted "wiring pending" | PR #53 — tile dropped; bottom-row Palette tile widened to span 3 cols so the bento grid stays balanced (3+3 / 6). |
+| ✅ | Settings → Appearance → "Reduce motion" was a decorative `<Toggle />` (no state, no handler) sitting next to the working "Follow system theme" toggle | PR #54 — row dropped; would need to gate every CSS transition on `prefers-reduced-motion` to do real. |
+| ✅ | Settings → General → "Save history" + "Check for updates" were both decorative (no history feature, no Tauri updater) | PR #55 — both rows dropped. "Follow redirects" / "Verify SSL certificates" still tracked separately as cosmetic-but-wireable in BUGS.md. |
 
 ---
 

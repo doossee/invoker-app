@@ -238,13 +238,16 @@ function GeneralPage() {
       </Row>
       <Row label="Follow redirects"><Toggle on /></Row>
       <Row label="Verify SSL certificates"><Toggle on /></Row>
-      <Row label="Save history" hint="Keep a log of sent requests"><Toggle on /></Row>
       <Row label="Open last collection on launch" hint="Auto-load the most-recent folder (or sample) on next start">
         <Toggle on={openLastOnLaunch} onChange={setOpenLastOnLaunch} />
       </Row>
-      <Row label="Check for updates">
-        <Select value="Weekly" options={['Daily', 'Weekly', 'Monthly', 'Never']} />
-      </Row>
+      {/* "Save history" + "Check for updates" were both decorative rows
+          backed by features that don't exist (no history feature at all,
+          no Tauri updater wired). Same precedent as Account (PR #23),
+          AI / Data & sync (PR #34), Recent (PR #53), Reduce motion
+          (PR #54) — drop until the features actually ship.
+          "Follow redirects" + "Verify SSL certificates" stay (still
+          tracked in BUGS.md) — they have plausible near-term wiring. */}
     </>
   );
 }
