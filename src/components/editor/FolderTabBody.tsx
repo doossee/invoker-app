@@ -220,7 +220,6 @@ function InlineIvkBlock({ content }: { content: string }) {
   const openTab = useEditorStore((s) => s.openTab);
   const collectionFiles = useCollectionStore((s) => s.files);
   const { get: resolveVar, setVariable } = useEnv();
-  const [showResponse, setShowResponse] = useState(false);
   const [viewTab, setViewTab] = useState<'request' | 'response'>('request');
 
   // Two block forms are valid:
@@ -230,22 +229,37 @@ function InlineIvkBlock({ content }: { content: string }) {
   // rendered "GET / No body" with an empty URL.
   const resolved = resolveInlineIvk(content, collectionFiles);
 
-  let method = 'GET';
-  let url = '';
-  let body: string | null = null;
-  let resolveError: string | null = null;
-  if (resolved.ok) {
+  const parsed = useMemo(() => {
+    if (!resolved.ok) return { error: resolved.error };
     try {
-      const parsed = parseIvk(resolved.content);
-      method = parsed.method;
-      url = parsed.url;
-      body = parsed.body;
+      return { request: parseIvk(resolved.content) };
     } catch (e) {
-      resolveError = (e as Error)?.message ?? 'failed to parse .ivk source';
+      return { error: (e as Error)?.message ?? 'failed to parse .ivk source' };
     }
-  } else {
-    resolveError = resolved.error;
-  }
+  }, [resolved]);
+
+  const method = parsed.request?.method ?? 'GET';
+  const url = parsed.request?.url ?? '';
+  const body = parsed.request?.body ?? null;
+  const resolveError = parsed.error ?? null;
+
+  // Cache key: route the response cache by the inline source so repeated
+  // clicks on the same block reuse the last response across re-renders.
+  // For path-reference blocks we share the slot with the standalone tab
+  // (so opening the file later sees the inline run's response). Direct
+  // content uses the literal source so it's stable across re-renders —
+  // openTabSpecForInline mints a fresh `inline-${Date.now()}` every call,
+  // which would invalidate the cache on every render.
+  const cacheKey = resolved.ok
+    ? (resolved.sourcePath ?? `inline:${content}`)
+    : null;
+  const { run, loading, result } = useRequest(cacheKey);
+
+  const handleRun = () => {
+    if (!parsed.request || loading) return;
+    setViewTab('response');
+    void run(parsed.request);
+  };
 
   // Path-reference blocks → use the real collection path so RequestEditor
   // can actually load the file. Direct-content blocks have no backing file
@@ -336,7 +350,8 @@ function InlineIvkBlock({ content }: { content: string }) {
           </button>
         )}
         <button
-          onClick={() => setShowResponse(true)}
+          onClick={handleRun}
+          disabled={loading || !parsed.request}
           style={{
             background: TOKENS.amber,
             color: '#3a2807',
@@ -345,7 +360,8 @@ function InlineIvkBlock({ content }: { content: string }) {
             border: 'none',
             fontSize: 11,
             fontWeight: 600,
-            cursor: 'pointer',
+            cursor: loading ? 'wait' : 'pointer',
+            opacity: loading || !parsed.request ? 0.6 : 1,
             display: 'flex',
             alignItems: 'center',
             gap: 4,
@@ -353,7 +369,7 @@ function InlineIvkBlock({ content }: { content: string }) {
           }}
         >
           <Play size={9} />
-          Run
+          {loading ? 'Running…' : 'Run'}
         </button>
       </div>
 
@@ -419,9 +435,48 @@ function InlineIvkBlock({ content }: { content: string }) {
           No body
         </div>
       )}
-      {viewTab === 'response' && (
+      {viewTab === 'response' && !result && !loading && (
         <div style={{ padding: '12px 14px', fontSize: 12, color: TOKENS.fg3, fontStyle: 'italic' }}>
           Press Run to see the response.
+        </div>
+      )}
+      {viewTab === 'response' && loading && (
+        <div style={{ padding: '12px 14px', fontSize: 12, color: TOKENS.fg3, fontStyle: 'italic' }}>
+          Running…
+        </div>
+      )}
+      {viewTab === 'response' && result && (
+        <div style={{ padding: '12px 14px', fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>
+          <div style={{ marginBottom: 8, color: TOKENS.fg2, display: 'flex', gap: 10 }}>
+            <span style={{ color: result.response.error ? '#e58484' : TOKENS.amber, fontWeight: 600 }}>
+              {result.response.error ? 'ERR' : `${result.response.status} OK`}
+            </span>
+            <span>{Math.round(result.response.time)} ms</span>
+            <span>{result.response.size} B</span>
+          </div>
+          <pre
+            style={{
+              margin: 0,
+              fontSize: 11.5,
+              color: TOKENS.fg1,
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              maxHeight: 280,
+              overflow: 'auto',
+              lineHeight: 1.5,
+            }}
+          >
+            {(() => {
+              if (result.response.error) return result.response.error;
+              const b = result.response.body;
+              if (typeof b === 'string') return b;
+              try {
+                return JSON.stringify(b, null, 2);
+              } catch {
+                return String(b);
+              }
+            })()}
+          </pre>
         </div>
       )}
     </div>
