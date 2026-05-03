@@ -319,7 +319,11 @@ function AppearancePage() {
       >
         <Toggle on={followSystem} onChange={setFollowSystem} />
       </Row>
-      <Row label="Reduce motion"><Toggle /></Row>
+      {/* "Reduce motion" was a decorative `<Toggle />` (no state, no
+          handler, didn't disable any transitions). Same precedent as
+          PR #23 / #34 / #53 — drop until a real implementation lands
+          (would need to swap CSS transitions on every surface, gate on
+          `prefers-reduced-motion`). */}
     </>
   );
 }
