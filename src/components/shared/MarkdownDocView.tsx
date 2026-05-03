@@ -424,13 +424,31 @@ export function useMarkdownDoc({
 
   // ⌘S routing — listens on the same global event channel that RequestEditor
   // uses, so the existing keyboard shortcut works for whichever tab is mounted.
+  // The await + try/catch matters: previously the handler called
+  // `void onSave(...)` and then `markDirty(false)` synchronously — clearing
+  // the dirty flag before the disk write completed (and silently swallowing
+  // any rejection). When the write actually failed (Tauri permission /
+  // disk-full), the UI showed "saved" while the file on disk was unchanged.
+  // Same pattern PR #65 fixed for RequestEditor's request save.
   useEffect(() => {
-    const handler = () => {
-      void onSave(draft);
-      markDirty(path, false);
+    const handler = async () => {
+      try {
+        await onSave(draft);
+        markDirty(path, false);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error('Doc save failed:', e);
+        // eslint-disable-next-line no-alert
+        window.alert(
+          `Save failed: ${msg}\n\nYour edits are still in memory. Try again or open DevTools for details.`,
+        );
+      }
     };
-    window.addEventListener('invoker:save', handler);
-    return () => window.removeEventListener('invoker:save', handler);
+    const onSaveEvent = () => {
+      void handler();
+    };
+    window.addEventListener('invoker:save', onSaveEvent);
+    return () => window.removeEventListener('invoker:save', onSaveEvent);
   }, [draft, path, onSave, markDirty]);
 
   function setDraftAndDirty(next: string) {
