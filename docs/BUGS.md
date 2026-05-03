@@ -43,30 +43,11 @@ A living list of known bugs and missing behavior. Each entry below maps to a TDD
 
 ### 🟠 Major
 
-#### Settings → Account section is decorative; contradicts "no sign-in" promise
-- **Where**: `src/components/modals/SettingsModal.tsx` (Account pane)
-- **Action**: Open Settings (cog) → Account
-- **Expected**: Either nothing (Invoker is local-first, "no sign-in") or real account flow if cloud sync ever lands.
-- **Actual**: Shows a fake user (`doossee` / `ovidevtool@outlook.com` / `Personal plan`), with `Manage`, `Sign out`, and `Create…` (Team workspace) buttons that do nothing on click. Welcome screen tagline is `no sign-in, no sync, no cloud` — directly contradicted by this pane.
-- **Suspect**: Stub UI from a design exploration left in.
-- **Test**: Unit `SettingsModal.test.tsx` — assert the Account category is not rendered (or, if kept, that buttons have explicit handlers and the rendered email matches a real source, not `import.meta.env` placeholder).
-
-#### URL bar placeholder advertises "paste cURL…" but no cURL parser exists
-- **Where**: `src/components/editor/UrlBar.tsx` line 87 — `placeholder="Enter URL or paste cURL..."`
-- **Action**: Paste a curl command (e.g. `curl -X POST https://httpbin.org/post -H "X-Test: yes" -d '{"hello":"world"}'`) into the URL field
-- **Expected**: Method switches to POST, URL becomes `https://httpbin.org/post`, header `X-Test: yes` lands on the Headers tab, body lands on Body tab
-- **Actual**: The literal curl string sits in the URL field. Method stays GET. Headers + body untouched. No parser is wired anywhere — `grep -r curl src/` only finds the placeholder string.
-- **Fix**: Either (a) implement a cURL parser (handles `-X`, `-H`, `-d`/`--data`, `--data-raw`, `-u`, escaping) and dispatch to method/url/headers/body on paste, or (b) drop the misleading text from the placeholder until the parser lands.
-- **Test**: Unit on the parser function (option a) or assert placeholder doesn't mention cURL (option b).
+*(none open — see Recently fixed)*
 
 ### 🟡 Minor
 
-#### `⌘W` closes a dirty tab without confirmation (silent data loss)
-- **Where**: `src/App.tsx` keyboard shortcut wiring → `closeTab`
-- **Action**: Edit a request (e.g. switch Auth from None → Bearer Token), then ⌘W
-- **Expected**: Either save-prompt dialog OR keep the tab open until explicit close-anyway
-- **Actual**: Tab closes, edit is gone with no warning
-- **Test**: E2E `e2e/close-dirty-tab.spec.ts` — open a request, edit it, ⌘W, expect a confirm dialog OR the tab to remain.
+*(none open — see Recently fixed)*
 
 ### 🔵 Missing features
 
@@ -74,9 +55,18 @@ A living list of known bugs and missing behavior. Each entry below maps to a TDD
 - Same gap as Save Request, but for markdown docs in Live mode
 - UI dispatches `invoker:save-doc` → `docs-store.saveDoc` returns `Promise<boolean>` but does not call writeTextFile
 
-#### Real cURL → request import
-- See "URL bar placeholder advertises paste cURL…" above for the full surface.
-- A first cut should cover the 80% case: method via `-X`, headers via `-H`, body via `-d`/`--data`/`--data-raw`, basic auth via `-u`. File uploads (`--form` / `-F`) and binary streams can be follow-up.
+#### Inline ivk codeblock in standalone .md docs (not folder READMEs) renders as plain text
+- **Where**: Welcome.md, tutorial.md, etc. — any standalone markdown doc that uses ` ```ivk ` fenced blocks
+- **Action**: Open the Welcome doc → Live mode
+- **Expected**: ivk-fenced codeblocks render as runnable cards (the same way they do in folder READMEs)
+- **Actual**: Plain monospace `pre` block with no Run button or interaction
+- **Suspect**: `MarkdownLivePreview` (or whichever renderer the standalone doc path uses) doesn't have the same `ivk` codeblock substitution that `FolderTabBody` applies. Easy unification target — extract the ivk-rendering branch into a shared component used by both surfaces.
+
+#### Sidebar collapse / expand
+- The store already exposes `toggleSidebar` and `sidebarCollapsed` (with localStorage persistence), but no UI surface — no button, no shortcut wiring. Add a chevron to the sidebar header + an Editor → ⌘\ shortcut.
+
+#### Light theme (or system-preference theme)
+- All four themes that ship are dark variants (Invoker Dark / Catppuccin Mocha / Tokyo Night / GitHub Dark). Some users want to follow `prefers-color-scheme: light` or pick a daylight palette explicitly. The theme-provider plumbing supports any token set; just need a light preset + Appearance UI to choose it.
 
 ---
 
@@ -97,6 +87,11 @@ A living list of known bugs and missing behavior. Each entry below maps to a TDD
 | ✅ | Editor-store close+reopen left dirty marker stale (regression coverage) | PR #18 — `editor-store.test.ts` pins the contract |
 | ✅ | ivkjs `> pre` script `ivk.env.set` didn't apply to current request | ivkjs PR #2 (released 0.1.2) + invoker-app PR #20 (dep bump). Now `{{nowIso}}` set by pre resolves in body. |
 | ✅ | InlineIvkBlock Run button was a no-op (no HTTP request fired, response placeholder forever) | PR #19 — wired `useRequest` with stable cache key, response renders status + body |
+| ✅ | URL bar placeholder advertised "paste cURL…" but no parser existed | PR #22 (placeholder dropped) → PR #24 (real parser ships, placeholder restored honestly) |
+| ✅ | Settings → Account section was decorative (fake user, dead Sign-out / Manage / Create) | PR #23 — entire pane removed |
+| ✅ | `⌘W` closed a dirty tab without confirmation (silent data loss) | PR #25 — native `window.confirm` prompt; cancel keeps tab open |
+| ✅ | Real cURL → request import (Missing → Done) | PR #24 — `parseCurl()` + paste-detect on URL bar; supports `-X` / `-H` / `-d`/`--data*` / `-u`; auto-promotes to POST when `-d` is present |
+| ✅ | Editor-tabs row shipped a decorative History clock button (no onClick) | PR #26 — button removed; e2e locks the absence in until a real history surface ships |
 
 ---
 
