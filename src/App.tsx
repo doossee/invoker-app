@@ -83,10 +83,21 @@ export function App() {
         return;
       }
 
-      // ⌘W — Close tab
+      // ⌘W — Close tab. Confirm before discarding unsaved edits — the
+      // tab's `dirty` flag is set by every field-change handler (see
+      // RequestEditor.touch) and cleared by Save. We use the native
+      // window.confirm to avoid building a custom modal for a single
+      // edge case; the prompt is short enough that users won't fight it.
       if (matchShortcut(e, 'KeyW', { shift: false })) {
         e.preventDefault();
         if (activeTabPath) {
+          const tab = useEditorStore.getState().tabs.find((t) => t.path === activeTabPath);
+          if (tab?.dirty) {
+            const ok = window.confirm(
+              `${tab.name} has unsaved changes. Close anyway?`,
+            );
+            if (!ok) return;
+          }
           useEditorStore.getState().closeTab(activeTabPath);
         }
         return;
