@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Plus, Trash2, ChevronDown, ChevronRight, Copy, RotateCcw, Palette, Check } from 'lucide-react';
+import { X, Plus, Trash2, ChevronDown, ChevronRight, Copy, RotateCcw } from 'lucide-react';
 import { useEnvStore } from '@/stores/env-store';
 import { KeyValueTable } from '@/components/shared/KeyValueTable';
 import { isPublished } from '@/lib/platform';
-import { useTheme } from '@/themes/theme-provider';
 import type { IvkEnvironment } from 'ivkjs';
 
 interface Props {
@@ -27,8 +26,6 @@ export function EnvSettings({ onClose }: Props) {
   const resetToDefaults = useEnvStore((s) => s.resetToDefaults);
   const authorDefaults = useEnvStore((s) => s.authorDefaults);
   const hasDefaults = isPublished() && Object.keys(authorDefaults).length > 0;
-
-  const { theme: activeTheme, setTheme: setActiveTheme, themes: availableThemes } = useTheme();
 
   const envs: IvkEnvironment[] = settings.environments;
 
@@ -146,35 +143,9 @@ export function EnvSettings({ onClose }: Props) {
           </button>
         </div>
 
-        {/* Theme picker */}
-        <div className="px-4 py-3 ghost-border-b flex-shrink-0">
-          <div className="flex items-center gap-1.5 mb-2">
-            <Palette size={14} className="text-outline" />
-            <span className="text-xs font-semibold text-on-surface">Theme</span>
-          </div>
-          <div className="grid grid-cols-2 gap-1.5">
-            {availableThemes.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setActiveTheme(t.id)}
-                className={`flex items-center gap-2 px-2.5 py-2 rounded-md text-xs transition-colors text-left ${
-                  activeTheme.id === t.id
-                    ? 'bg-primary/10 text-primary ring-1 ring-primary/30'
-                    : 'bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-high'
-                }`}
-              >
-                {/* Color preview dots */}
-                <div className="flex gap-0.5 flex-shrink-0">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: t.colors.surfaceLowest }} />
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: t.colors.primary }} />
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: t.colors.success }} />
-                </div>
-                <span className="flex-1 truncate">{t.name}</span>
-                {activeTheme.id === t.id && <Check size={12} className="flex-shrink-0" />}
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* Theme picker intentionally omitted — Settings → Appearance is
+            the canonical home (see PR #30 for the latest a11y +
+            data-theme-id wiring). This modal is for environments. */}
 
         {/* Environments section header */}
         <div className="px-4 pt-3 pb-1 flex-shrink-0">

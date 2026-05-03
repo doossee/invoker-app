@@ -409,6 +409,8 @@ function EnvFooter({
     >
       <button
         onClick={() => setMenuOpen(!menuOpen)}
+        title={`Active environment: ${envName}. Click to switch or manage.`}
+        aria-label={`Switch environment (current: ${envName})`}
         style={{
           display: 'flex',
           alignItems: 'center',
