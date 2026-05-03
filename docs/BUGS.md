@@ -34,14 +34,12 @@ A living list of known bugs and missing behavior. Each entry below maps to a TDD
 
 ### 🔵 Missing features
 
-#### Sidebar tree context menu — Tauri disk integration
-- PR #48 shipped Rename + Delete in browser-mode (in-memory). The Tauri
-  build still needs `@tauri-apps/plugin-fs.rename` / `.remove` calls in
-  `collection-store.renameFile` / `deleteFile` — same pattern as
-  `saveRequest` after PR #49.
-- Folder + .md doc context menus also still pending — folder rename
-  needs to move N child files; doc rename has to decide whether `title`
-  follows or stays.
+#### Sidebar tree context menu — folder + .md doc support
+- File-level (.ivk) Rename + Delete now work in both browser-mode
+  in-memory (PR #48) and Tauri on disk (PR #51).
+- Folder + .md doc context menus still pending — folder rename has to
+  move N child files; doc rename has to decide whether `title` follows
+  or stays.
 
 #### General settings rows (redirects/SSL/save history/check-for-updates) still cosmetic
 - **Where**: `src/components/modals/SettingsModal.tsx` → `GeneralPage`
@@ -96,6 +94,7 @@ A living list of known bugs and missing behavior. Each entry below maps to a TDD
 | ✅ | `Send → ERR 5ms 0B` showed nothing about WHY (was reported as Tauri-only Critical, but reproduces in browser-mode too) | PR #46 — when `response.status === 0`, render the transport's `error` in a red tile in the Body view with a short explanation listing common causes (DNS / CORS / malformed URL / offline / Tauri plugin perms). Whatever Tauri-side issue caused the original report is now diagnosable from the UI instead of mysterious. |
 | ✅ | Sidebar tree right-click did nothing (no context menu) | PR #48 — right-click on a request opens a small Rename / Delete menu near the cursor. Browser-mode in-memory only; Tauri disk integration tracked as a follow-up Missing entry. |
 | ✅ | `⌘S` → request not persisted to disk (Tauri build) **AND** `⌘S` → save .md doc to disk (Tauri build) | PR #49 — root cause was Tauri 1-only detection (`'__TAURI__' in window`) in both `saveRequest` and `saveDoc`; Tauri 2 sets `window.isTauri` + `window.__TAURI_INTERNALS__` instead. Replaced both inline checks with the shared `isTauri()` helper (same fix pattern as PR #4 / "Open folder"). 10 tests mock `@tauri-apps/plugin-fs.writeTextFile` and toggle each window flag in turn. |
+| ✅ | Sidebar Rename / Delete didn't move/remove the underlying `.ivk` on disk in Tauri builds (PR #48 was browser-only) | PR #51 — `renameFile` / `deleteFile` are now async and `await` `@tauri-apps/plugin-fs.rename` / `.remove` BEFORE the in-memory mutation, so a fs error aborts before the store diverges from disk. 16 tests pin the Tauri 1+2 detection, virtual-path opt-out, trailing-slash path joining, fs-throws-aborts, and inline files staying off disk. |
 
 ---
 
