@@ -1,4 +1,5 @@
-import { Loader2, Check, X, Cookie, Copy, Search } from 'lucide-react';
+import { useState } from 'react';
+import { Loader2, Check, X, Cookie, Copy } from 'lucide-react';
 import type { RunResult } from 'ivkjs';
 import { useEditorStore } from '@/stores/editor-store';
 import { TOKENS, TabBar } from '@/components/shared/primitives';
@@ -77,7 +78,27 @@ function ResponseMeta({ status, time, size }: { status: number; time: number; si
 /* ------------------------------------------------------------------ */
 /*  ViewModePill                                                       */
 /* ------------------------------------------------------------------ */
-function ViewModePill({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function ViewModePill({
+  value,
+  onChange,
+  contentType,
+  bodyText,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  /** Actual response Content-Type — was hardcoded "application/json". */
+  contentType?: string;
+  /** Body to copy to clipboard when the user hits the copy icon. */
+  bodyText?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    if (!bodyText) return;
+    navigator.clipboard.writeText(bodyText).then(() => {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    });
+  };
   return (
     <div
       style={{
@@ -120,15 +141,40 @@ function ViewModePill({ value, onChange }: { value: string; onChange: (v: string
         ))}
       </div>
       <div style={{ flex: 1 }} />
-      <span style={{ fontSize: 10, color: TOKENS.fg3, fontFamily: "'JetBrains Mono', monospace" }}>
-        application/json
-      </span>
-      <button style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: TOKENS.fg3, display: 'flex' }}>
-        <Copy size={12} />
+      {contentType && (
+        <span
+          title={contentType}
+          style={{
+            fontSize: 10,
+            color: TOKENS.fg3,
+            fontFamily: "'JetBrains Mono', monospace",
+            maxWidth: 220,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {/* Strip the charset suffix for compactness; full value in tooltip. */}
+          {contentType.split(';')[0]}
+        </span>
+      )}
+      <button
+        onClick={handleCopy}
+        title={copied ? 'Copied!' : 'Copy response body'}
+        disabled={!bodyText}
+        style={{
+          background: 'transparent',
+          border: 'none',
+          cursor: bodyText ? 'pointer' : 'default',
+          color: copied ? TOKENS.green : TOKENS.fg3,
+          display: 'flex',
+          opacity: bodyText ? 1 : 0.4,
+        }}
+      >
+        {copied ? <Check size={12} /> : <Copy size={12} />}
       </button>
-      <button style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: TOKENS.fg3, display: 'flex' }}>
-        <Search size={12} />
-      </button>
+      {/* Search-in-response icon removed until a real find-in-body
+          surface ships (would need editor integration + a search bar). */}
     </div>
   );
 }
@@ -728,7 +774,12 @@ export function ResponsePanel({ result, loading }: Props) {
         <>
           {responseTab === 'Body' && (
             <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-              <ViewModePill value={bodyViewMode} onChange={(v) => setBodyViewMode(v as 'pretty' | 'raw' | 'table')} />
+              <ViewModePill
+                value={bodyViewMode}
+                onChange={(v) => setBodyViewMode(v as 'pretty' | 'raw' | 'table')}
+                contentType={response.headers['content-type']}
+                bodyText={formatBody(response.body)}
+              />
               {bodyViewMode === 'pretty' && <JsonLines text={formatBody(response.body)} />}
               {bodyViewMode === 'raw' && (
                 <div
