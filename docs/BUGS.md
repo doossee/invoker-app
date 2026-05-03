@@ -74,9 +74,6 @@ A living list of known bugs and missing behavior. Each entry below maps to a TDD
   - Save history — depends on the (not-yet-existent) history feature
   - Check for updates — Tauri-only (updater plugin)
 
-#### System-preference theme (auto-follow `prefers-color-scheme`)
-- A daylight palette ships now (Invoker Light, PR #30) but the app doesn't auto-follow `prefers-color-scheme`. Add a third "Auto" choice in Appearance that picks a sensible dark/light preset based on the OS preference and re-evaluates on `change`.
-
 ---
 
 ## Recently fixed (regression coverage in tests)
@@ -114,6 +111,7 @@ A living list of known bugs and missing behavior. Each entry below maps to a TDD
 | ✅ | General → Request timeout had no backing | PR #40 — `defaultTimeoutSec` in editor-store with localStorage + clamp; useRequest injects `@timeout` directive when the request didn't set one. Per-request directive still wins. |
 | ✅ | General → Open last collection on launch had no backing | PR #41 — auto-open effect on App mount: re-loads `(sample)` (browser-demo) or re-`loadCollection()` (Tauri) of the most-recent path, with stale-path defensive clear |
 | ✅ | Response Body pill: hardcoded "application/json" label + decorative Copy/Search buttons | PR #42 — content-type label reads from response.headers; Copy now wired to `clipboard.writeText`; Search dropped (would need real find-in-body editor surface) |
+| ✅ | System-preference theme (auto-follow `prefers-color-scheme`) | PR #44 — `Follow system theme` toggle in Appearance subscribes to `matchMedia('(prefers-color-scheme: light)')` and re-picks `invoker-light` / `invoker-dark` on `change`. Picking an explicit theme via swatch turns it off (VSCode/GitHub/Linear convention). |
 
 ---
 
