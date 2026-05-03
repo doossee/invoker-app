@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { ChevronRight, ChevronDown, FileText, Folder, FolderOpen, BookOpen, Sparkles } from 'lucide-react';
+import { useEffect, useMemo, useState, createContext, useContext } from 'react';
+import { ChevronRight, ChevronDown, FileText, Folder, FolderOpen, BookOpen, Sparkles, Pencil, Trash2 } from 'lucide-react';
 import { parseIvk, type HttpMethod } from 'ivkjs';
 import { useCollectionStore } from '@/stores/collection-store';
 import { useDocsStore } from '@/stores/docs-store';
@@ -107,6 +107,160 @@ function buildUnifiedTree(
 function countFiles(node: TreeNode): number {
   if (node.type !== 'folder') return 1;
   return node.children.reduce((c, n) => c + countFiles(n), 0);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Context menu — right-click on a tree item                          */
+/*                                                                      */
+/*  Browser-mode in-memory only. Tauri integration (rename/delete on    */
+/*  disk via @tauri-apps/plugin-fs) is a follow-up.                     */
+/* ------------------------------------------------------------------ */
+type CtxMenuState = { x: number; y: number; path: string; isIvk: boolean } | null;
+const CtxMenuContext = createContext<{ open: (s: CtxMenuState) => void } | null>(null);
+
+function ContextMenu({ state, onClose }: { state: CtxMenuState; onClose: () => void }) {
+  const closeTab = useEditorStore((s) => s.closeTab);
+  const tabs = useEditorStore((s) => s.tabs);
+  const renameFile = useCollectionStore((s) => s.renameFile);
+  const deleteFile = useCollectionStore((s) => s.deleteFile);
+
+  // Click-outside / Escape to dismiss.
+  useEffect(() => {
+    if (!state) return;
+    const onClickOutside = (e: MouseEvent) => {
+      // Use `click` (not `mousedown`) so the right-click that OPENED
+      // the menu (which fires its own mousedown) doesn't immediately
+      // dismiss it. The follow-up click on a menuitem stops propagation
+      // via React's onClick handler — and a click anywhere else on the
+      // page closes the menu.
+      const target = e.target as Node;
+      const menuRoot = (e.currentTarget as Document).querySelector('[data-ctx-menu-root]');
+      if (menuRoot && menuRoot.contains(target)) return;
+      onClose();
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('click', onClickOutside);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('click', onClickOutside);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [state, onClose]);
+
+  if (!state) return null;
+
+  const handleRename = () => {
+    onClose();
+    const current = state.path.split('/').pop()?.replace('.ivk', '') ?? state.path;
+    // eslint-disable-next-line no-alert
+    const next = window.prompt(`Rename "${current}" to:`, current);
+    if (!next || next.trim() === '' || next === current) return;
+    const newPath = renameFile(state.path, next.trim());
+    if (newPath === null) {
+      // eslint-disable-next-line no-alert
+      window.alert(`Cannot rename — a file at "${next.trim()}.ivk" already exists.`);
+      return;
+    }
+    // Patch any open tab referencing the old path so the editor doesn't
+    // lose its mount.
+    const openTab = tabs.find((t) => t.path === state.path);
+    if (openTab) {
+      // The tab record's path is what RequestEditor reads from
+      // getFileByPath; closing + re-opening is the simplest way to
+      // refresh without adding a renameTab action.
+      closeTab(state.path);
+      useEditorStore.getState().openTab({ ...openTab, path: newPath });
+    }
+  };
+
+  const handleDelete = () => {
+    if (!state) return;
+    const path = state.path;
+    onClose();
+    const name = path.split('/').pop() ?? path;
+    // eslint-disable-next-line no-alert
+    if (!window.confirm(`Delete "${name}"? This cannot be undone in browser-demo mode.`)) return;
+    closeTab(path);
+    deleteFile(path);
+  };
+
+  // Keep the menu inside the viewport in case the click landed near an edge.
+  const x = Math.min(state.x, window.innerWidth - 180);
+  const y = Math.min(state.y, window.innerHeight - 80);
+
+  return (
+    <div
+      role="menu"
+      aria-label="File actions"
+      data-ctx-menu-root="true"
+      style={{
+        position: 'fixed',
+        left: x,
+        top: y,
+        zIndex: 1000,
+        minWidth: 160,
+        background: TOKENS.s2,
+        borderRadius: 8,
+        boxShadow: `inset 0 0 0 1px ${TOKENS.stroke}, 0 8px 24px rgba(0,0,0,0.4)`,
+        padding: 4,
+        fontFamily: 'inherit',
+        fontSize: 12,
+      }}
+    >
+      <button
+        role="menuitem"
+        onClick={handleRename}
+        disabled={!state.isIvk}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          width: '100%',
+          padding: '6px 10px',
+          background: 'transparent',
+          border: 'none',
+          color: state.isIvk ? TOKENS.fg1 : TOKENS.fg4,
+          cursor: state.isIvk ? 'pointer' : 'not-allowed',
+          fontFamily: 'inherit',
+          fontSize: 12,
+          textAlign: 'left' as const,
+          borderRadius: 4,
+        }}
+        onMouseEnter={(e) => state.isIvk && (e.currentTarget.style.background = TOKENS.s3)}
+        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+      >
+        <Pencil size={11} />
+        Rename
+      </button>
+      <button
+        role="menuitem"
+        onClick={handleDelete}
+        disabled={!state.isIvk}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          width: '100%',
+          padding: '6px 10px',
+          background: 'transparent',
+          border: 'none',
+          color: state.isIvk ? '#e58484' : TOKENS.fg4,
+          cursor: state.isIvk ? 'pointer' : 'not-allowed',
+          fontFamily: 'inherit',
+          fontSize: 12,
+          textAlign: 'left' as const,
+          borderRadius: 4,
+        }}
+        onMouseEnter={(e) => state.isIvk && (e.currentTarget.style.background = 'rgba(229,88,88,0.10)')}
+        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+      >
+        <Trash2 size={11} />
+        Delete
+      </button>
+    </div>
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -230,9 +384,19 @@ function TreeItem({ node, depth = 0, searchQuery }: { node: TreeNode; depth?: nu
     }
   };
 
+  const ctxMenu = useContext(CtxMenuContext);
+
   return (
     <button
       onClick={handleClick}
+      onContextMenu={(e) => {
+        // Right-click — only opens the menu for ivk files. Folders + .md
+        // docs aren't supported by the in-memory rename/delete actions
+        // yet (tracked in BUGS.md as a follow-up).
+        if (!isIvk || !ctxMenu) return;
+        e.preventDefault();
+        ctxMenu.open({ x: e.clientX, y: e.clientY, path: node.path, isIvk: true });
+      }}
       style={{
         width: '100%',
         display: 'flex',
@@ -353,6 +517,7 @@ export function UnifiedTree({ searchQuery }: UnifiedTreeProps) {
   const ivkFiles = useCollectionStore((s) => s.files);
   const mdFiles = useDocsStore((s) => s.docs);
   const tree = useMemo(() => buildUnifiedTree(ivkFiles, mdFiles), [ivkFiles, mdFiles]);
+  const [ctxMenu, setCtxMenu] = useState<CtxMenuState>(null);
 
   // Filter tree based on search
   const filteredTree = useMemo(() => {
@@ -382,10 +547,13 @@ export function UnifiedTree({ searchQuery }: UnifiedTreeProps) {
   }
 
   return (
-    <div style={{ paddingTop: 4, paddingBottom: 4 }}>
-      {filteredTree.map((node) => (
-        <TreeItem key={node.path} node={node} searchQuery={searchQuery} />
-      ))}
-    </div>
+    <CtxMenuContext.Provider value={{ open: setCtxMenu }}>
+      <div style={{ paddingTop: 4, paddingBottom: 4 }}>
+        {filteredTree.map((node) => (
+          <TreeItem key={node.path} node={node} searchQuery={searchQuery} />
+        ))}
+      </div>
+      <ContextMenu state={ctxMenu} onClose={() => setCtxMenu(null)} />
+    </CtxMenuContext.Provider>
   );
 }

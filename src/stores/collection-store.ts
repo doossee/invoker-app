@@ -23,6 +23,15 @@ interface CollectionState {
    * collection folder. Returns true if the write reached disk.
    */
   saveRequest: (path: string, content: string) => Promise<boolean>;
+  /**
+   * Rename a file in the in-memory collection. Returns the new path on
+   * success, null on conflict (target already exists). Tauri disk
+   * rename is a follow-up — for now this is browser-mode only.
+   */
+  renameFile: (oldPath: string, newName: string) => string | null;
+  /** Remove a file from the in-memory collection. Returns true if a file
+      was actually removed. Tauri disk delete is a follow-up. */
+  deleteFile: (path: string) => boolean;
 }
 
 export const useCollectionStore = create<CollectionState>((set, get) => ({
@@ -109,5 +118,56 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
       return true;
     }
     return false;
+  },
+
+  renameFile: (oldPath, newName) => {
+    // newName is just the file name (without folder); preserve the folder
+    // and append `.ivk` if the user didn't.
+    const parts = oldPath.split('/');
+    const folder = parts.length > 1 ? parts.slice(0, -1).join('/') + '/' : '';
+    const cleaned = newName.endsWith('.ivk') ? newName : `${newName}.ivk`;
+    const newPath = `${folder}${cleaned}`;
+    if (newPath === oldPath) return oldPath;
+    // Conflict check across both real and inline files.
+    const state = get();
+    if (state.files.some((f) => f.path === newPath) || state.inlineFiles[newPath]) {
+      return null;
+    }
+    if (state.inlineFiles[oldPath]) {
+      const existing = state.inlineFiles[oldPath]!;
+      const { [oldPath]: _drop, ...rest } = state.inlineFiles;
+      const renamedName = cleaned.replace('.ivk', '');
+      set({
+        inlineFiles: {
+          ...rest,
+          [newPath]: { ...existing, path: newPath, name: renamedName },
+        },
+      });
+    } else {
+      set({
+        files: state.files.map((f) =>
+          f.path === oldPath
+            ? { ...f, path: newPath, name: cleaned.replace('.ivk', '') }
+            : f,
+        ),
+      });
+    }
+    if (state.activeFilePath === oldPath) set({ activeFilePath: newPath });
+    return newPath;
+  },
+
+  deleteFile: (path) => {
+    const state = get();
+    if (state.inlineFiles[path]) {
+      const { [path]: _drop, ...rest } = state.inlineFiles;
+      set({ inlineFiles: rest });
+      if (state.activeFilePath === path) set({ activeFilePath: null });
+      return true;
+    }
+    const next = state.files.filter((f) => f.path !== path);
+    if (next.length === state.files.length) return false;
+    set({ files: next });
+    if (state.activeFilePath === path) set({ activeFilePath: null });
+    return true;
   },
 }));
