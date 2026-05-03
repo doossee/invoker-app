@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { EditorView, keymap } from '@codemirror/view';
-import { EditorState } from '@codemirror/state';
+import { Compartment, EditorState } from '@codemirror/state';
 import { javascript } from '@codemirror/lang-javascript';
 import { defaultKeymap, indentWithTab } from '@codemirror/commands';
+import { vim } from '@replit/codemirror-vim';
 import { createIvkExtensions } from '@/lib/cm-ivk';
 import { useEnvStore } from '@/stores/env-store';
+import { useEditorStore } from '@/stores/editor-store';
 
 interface Props {
   scripts: { pre: string; post: string; test: string };
@@ -20,18 +22,24 @@ interface ScriptEditorProps {
 function ScriptEditor({ label, value, onChange }: ScriptEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
+  const vimCompartmentRef = useRef<Compartment | null>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
   const envManager = useEnvStore((s) => s.envManager);
+  const vimMode = useEditorStore((s) => s.vimMode);
 
   useEffect(() => {
     if (!containerRef.current) return;
+
+    const vimCompartment = new Compartment();
+    vimCompartmentRef.current = vimCompartment;
 
     const view = new EditorView({
       state: EditorState.create({
         doc: value,
         extensions: [
+          vimCompartment.of(vimMode ? vim() : []),
           keymap.of([...defaultKeymap, indentWithTab]),
           javascript(),
           ...createIvkExtensions(envManager),
@@ -50,9 +58,18 @@ function ScriptEditor({ label, value, onChange }: ScriptEditorProps) {
     return () => {
       view.destroy();
       viewRef.current = null;
+      vimCompartmentRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [envManager]);
+
+  // Hot-swap vim on toggle.
+  useEffect(() => {
+    const view = viewRef.current;
+    const compartment = vimCompartmentRef.current;
+    if (!view || !compartment) return;
+    view.dispatch({ effects: compartment.reconfigure(vimMode ? vim() : []) });
+  }, [vimMode]);
 
   useEffect(() => {
     const view = viewRef.current;

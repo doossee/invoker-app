@@ -163,10 +163,20 @@ function JsonLines({ text }: { text: string }) {
           <div key={i}>{i + 1}</div>
         ))}
       </div>
-      <div style={{ flex: 1, lineHeight: 1.6, paddingRight: 16 }}>
+      {/* `white-space: pre` is required: CodeLine renders each character/token
+          as a separate <span>, and adjacent spaces between spans get collapsed
+          by the browser's default normalization — flattening the indentation. */}
+      <div
+        style={{
+          flex: 1,
+          lineHeight: 1.6,
+          paddingRight: 16,
+          whiteSpace: 'pre',
+        }}
+      >
         {lines.map((line, i) => (
           <div key={i}>
-            <CodeLine text={line} />
+            {line.length === 0 ? '\u00a0' : <CodeLine text={line} />}
           </div>
         ))}
       </div>
@@ -528,7 +538,9 @@ function TestsView({ tests }: { tests: Array<{ name: string; passed: boolean; er
 /*  Timeline Tab                                                       */
 /* ------------------------------------------------------------------ */
 function TimelineView({ time }: { time: number }) {
-  // Generate mock phases based on total time
+  // Browser `fetch()` only exposes total round-trip time — it does NOT expose
+  // DNS/TCP/TLS granularity. The phase breakdown below is a visual estimate
+  // based on typical HTTPS proportions, not a real measurement.
   const phases = [
     { label: 'DNS lookup', pct: 4, color: '#60a5fa' },
     { label: 'TCP connect', pct: 12, color: '#7dd3fc' },
@@ -548,7 +560,24 @@ function TimelineView({ time }: { time: number }) {
         fontSize: 11,
       }}
     >
-      <div style={{ color: TOKENS.fg3, marginBottom: 14 }}>Total {time} ms</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+        <span style={{ color: TOKENS.fg3 }}>Total {time} ms</span>
+        <span
+          title="Phase breakdown is estimated — browser fetch() does not expose DNS/TCP/TLS timing"
+          style={{
+            fontSize: 9,
+            color: TOKENS.fg3,
+            padding: '1px 5px',
+            borderRadius: 3,
+            background: TOKENS.s3,
+            boxShadow: `inset 0 0 0 1px ${TOKENS.strokeSoft}`,
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+          }}
+        >
+          estimate
+        </span>
+      </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {phases.map((phase) => {
           const ms = Math.round((phase.pct / 100) * time);

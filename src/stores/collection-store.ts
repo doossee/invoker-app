@@ -1,8 +1,10 @@
 import { create } from 'zustand';
-import { sampleCollection, type CollectionFile } from '@/data/sample-collection';
+import type { CollectionFile } from '@/data/sample-collection';
 
 interface CollectionState {
   files: CollectionFile[];
+  /** Ephemeral requests created via "New Request" — not persisted to disk. */
+  inlineFiles: Record<string, CollectionFile>;
   expandedFolders: Set<string>;
   activeFilePath: string | null;
   collectionPath: string | null;
@@ -13,10 +15,19 @@ interface CollectionState {
   getFolders: () => string[];
   loadCollection: (data: { ivkFiles: CollectionFile[]; basePath: string }) => void;
   setCollectionPath: (path: string | null) => void;
+  addInlineFile: (path: string, content: string) => void;
+  updateInlineFile: (path: string, content: string) => void;
+  /**
+   * Persist a file's serialized content. Updates in-memory state for every
+   * mode, and also writes to disk when running in Tauri with a real
+   * collection folder. Returns true if the write reached disk.
+   */
+  saveRequest: (path: string, content: string) => Promise<boolean>;
 }
 
 export const useCollectionStore = create<CollectionState>((set, get) => ({
-  files: sampleCollection,
+  files: [],
+  inlineFiles: {},
   expandedFolders: new Set<string>(),
   activeFilePath: null,
   collectionPath: null,
@@ -32,7 +43,11 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
       return { expandedFolders: next };
     }),
 
-  getFileByPath: (path) => get().files.find((f) => f.path === path),
+  getFileByPath: (path) => {
+    const inline = get().inlineFiles[path];
+    if (inline) return inline;
+    return get().files.find((f) => f.path === path);
+  },
 
   getFolders: () => {
     const folders = new Set<string>();
@@ -49,4 +64,50 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     set({ files: ivkFiles, collectionPath: basePath, isLoading: false }),
 
   setCollectionPath: (path) => set({ collectionPath: path }),
+
+  addInlineFile: (path, content) => {
+    const name = path.split('/').pop()?.replace('.ivk', '') ?? path;
+    set((state) => ({
+      inlineFiles: { ...state.inlineFiles, [path]: { path, name, content } },
+    }));
+  },
+
+  updateInlineFile: (path, content) => {
+    set((state) => {
+      const existing = state.inlineFiles[path];
+      if (!existing) return state;
+      return {
+        inlineFiles: { ...state.inlineFiles, [path]: { ...existing, content } },
+      };
+    });
+  },
+
+  saveRequest: async (path, content) => {
+    // Inline files never touch disk — update the in-memory map and return.
+    if (get().inlineFiles[path]) {
+      set((state) => ({
+        inlineFiles: {
+          ...state.inlineFiles,
+          [path]: { ...state.inlineFiles[path], content },
+        },
+      }));
+      return false;
+    }
+    // Regular file: always update the in-memory collection so the UI
+    // reflects the save immediately regardless of which mode we're in.
+    set((state) => ({
+      files: state.files.map((f) => (f.path === path ? { ...f, content } : f)),
+    }));
+    // Tauri desktop mode with a real folder → write through to disk.
+    const collectionPath = get().collectionPath;
+    const virtual = !collectionPath || collectionPath === '(sample)' || collectionPath === '(published)';
+    const tauri = typeof window !== 'undefined' && '__TAURI__' in window;
+    if (tauri && !virtual) {
+      const { writeTextFile } = await import('@tauri-apps/plugin-fs');
+      const sep = collectionPath!.endsWith('/') ? '' : '/';
+      await writeTextFile(`${collectionPath}${sep}${path}`, content);
+      return true;
+    }
+    return false;
+  },
 }));

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   FolderOpen,
   BookOpen,
@@ -8,9 +9,9 @@ import {
   Terminal,
   FileText,
   Link,
-  Copy,
+  Sparkles,
 } from 'lucide-react';
-import { isTauri } from '@/lib/platform';
+import type { HttpMethod } from 'ivkjs';
 import { useOpenCollection } from '@/hooks/useOpenCollection';
 import { useEditorStore } from '@/stores/editor-store';
 import {
@@ -25,10 +26,39 @@ import {
   LearnCard,
 } from '@/components/shared/primitives';
 
+const METHOD_COLOR: Record<HttpMethod, string> = {
+  GET: 'var(--ivk-method-get)',
+  POST: 'var(--ivk-method-post)',
+  PUT: 'var(--ivk-method-put)',
+  PATCH: 'var(--ivk-method-patch)',
+  DELETE: 'var(--ivk-method-delete)',
+};
+
 export function WelcomePage() {
-  const { openCollection, loading } = useOpenCollection();
-  const tauriApp = isTauri();
+  const { openCollection, loadSample, loading, canOpenFolder, isTauriApp, hasBrowserApi } = useOpenCollection();
   const setCommandPaletteOpen = useEditorStore((s) => s.setCommandPaletteOpen);
+  const createInlineTab = useEditorStore((s) => s.createInlineTab);
+
+  const [quickMethod, setQuickMethod] = useState<HttpMethod>('GET');
+  const [quickUrl, setQuickUrl] = useState('');
+
+  const handleQuickSend = () => {
+    const url = quickUrl.trim();
+    createInlineTab({ method: quickMethod, url: url || undefined });
+    setQuickUrl('');
+  };
+
+  const folderButtonLabel = isTauriApp
+    ? 'Choose folder...'
+    : hasBrowserApi
+      ? 'Choose folder...'
+      : 'Folder picker unavailable';
+
+  const folderButtonTitle = isTauriApp
+    ? 'Open a folder of .ivk and .md files'
+    : hasBrowserApi
+      ? 'Open a folder via the File System Access API'
+      : 'Your browser does not support window.showDirectoryPicker — try Chrome or Edge, or use "Try sample" below';
 
   return (
     <div
@@ -80,13 +110,13 @@ export function WelcomePage() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-            <GhostBtn>
+            <GhostBtn onClick={() => setCommandPaletteOpen(true)}>
               <BookOpen size={13} />
               Docs
             </GhostBtn>
-            <PrimaryBtn>
+            <PrimaryBtn onClick={() => createInlineTab()}>
               <Plus size={13} />
-              New collection
+              New request
             </PrimaryBtn>
           </div>
         </div>
@@ -121,13 +151,13 @@ export function WelcomePage() {
               Everything stays on your disk. No sign-in, no sync, no cloud.
             </div>
             <div style={{ marginTop: 22, display: 'flex', gap: 8 }}>
-              <PrimaryBtn onClick={tauriApp ? openCollection : undefined} disabled={loading || !tauriApp}>
+              <PrimaryBtn onClick={openCollection} disabled={loading || !canOpenFolder} title={folderButtonTitle}>
                 <FolderOpen size={13} />
-                Choose folder...
+                {folderButtonLabel}
               </PrimaryBtn>
-              <GhostBtn>
-                <Copy size={13} />
-                Clone from Git
+              <GhostBtn onClick={loadSample} title="Load a built-in sample collection so you can explore Invoker without a real folder">
+                <Sparkles size={13} />
+                Try sample
               </GhostBtn>
             </div>
             <div style={{ flex: 1 }} />
@@ -169,22 +199,53 @@ export function WelcomePage() {
                   overflow: 'hidden',
                 }}
               >
-                <span
+                <select
+                  value={quickMethod}
+                  onChange={(e) => setQuickMethod(e.target.value as HttpMethod)}
                   style={{
-                    padding: '0 10px',
+                    padding: '0 18px 0 10px',
                     fontWeight: 700,
-                    color: TOKENS.green,
+                    color: METHOD_COLOR[quickMethod],
                     borderRight: `1px solid ${TOKENS.strokeSoft}`,
                     height: '100%',
                     display: 'flex',
                     alignItems: 'center',
+                    background: 'transparent',
+                    border: 'none',
+                    appearance: 'none',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    fontSize: 11,
+                    outline: 'none',
                   }}
                 >
-                  GET
-                </span>
-                <span style={{ padding: '0 10px', opacity: 0.7, color: TOKENS.fg2 }}>https://...</span>
+                  {(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as HttpMethod[]).map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  value={quickUrl}
+                  onChange={(e) => setQuickUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleQuickSend();
+                  }}
+                  placeholder="https://..."
+                  style={{
+                    flex: 1,
+                    padding: '0 10px',
+                    background: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    color: TOKENS.fg1,
+                    fontFamily: 'inherit',
+                    fontSize: 11,
+                  }}
+                />
               </div>
-              <PrimaryBtn>
+              <PrimaryBtn onClick={handleQuickSend}>
                 <ArrowRight size={13} />
               </PrimaryBtn>
             </div>
@@ -199,25 +260,24 @@ export function WelcomePage() {
                 { n: 'Stripe Playbook', s: '127 reqs' },
                 { n: 'Acme Webhooks', s: '14 reqs' },
               ].map((r) => (
-                <button
+                <div
                   key={r.n}
+                  title="Recent collections — wiring pending"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: 8,
                     padding: '6px 8px',
                     borderRadius: 6,
-                    border: 'none',
-                    background: 'transparent',
-                    cursor: 'pointer',
-                    color: TOKENS.fg1,
+                    opacity: 0.55,
+                    color: TOKENS.fg2,
                     fontFamily: 'inherit',
                   }}
                 >
                   <InvokerMark size={11} color={TOKENS.fg3} />
                   <span style={{ flex: 1, textAlign: 'left', fontSize: 12 }}>{r.n}</span>
                   <span style={{ fontSize: 10, color: TOKENS.fg3 }}>{r.s}</span>
-                </button>
+                </div>
               ))}
             </div>
           </Tile>

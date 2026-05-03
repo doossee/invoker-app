@@ -153,3 +153,86 @@ body {
 .invoker-prose th { background: var(--ivk-surface-container); font-weight: 600; text-align: left; padding: 8px 12px; border: 1px solid var(--ivk-outline-variant); font-size: 0.875rem; color: var(--ivk-on-surface); }
 .invoker-prose td { padding: 8px 12px; border: 1px solid var(--ivk-outline-variant); font-size: 0.875rem; color: var(--ivk-on-surface-variant); }
 .invoker-prose hr { border: none; border-top: 1px solid var(--ivk-outline-variant); margin: 2rem 0; }
+
+/* CodeMirror markdown live-style: heading lines render at proper sizes
+ * (HighlightStyle's font-size on inline tags only resizes the marker
+ * characters; we tag the whole line via a Decoration plugin so CSS can
+ * scale it). Bold/italic/code/link styling is via HighlightStyle. */
+.cm-md-heading-1 { font-size: 1.6em; line-height: 1.3; }
+.cm-md-heading-2 { font-size: 1.4em; line-height: 1.3; }
+.cm-md-heading-3 { font-size: 1.2em; line-height: 1.35; }
+.cm-md-heading-4 { font-size: 1.1em; line-height: 1.4; }
+.cm-md-heading-5,
+.cm-md-heading-6 { font-size: 1.05em; line-height: 1.4; }
+
+/* Active line in markdown live-preview — gives the user a clear visual
+ * cue for "this is the source line, others are rendered". Subtle so it
+ * doesn't fight the syntax highlighting. */
+.cm-editor .cm-activeLine {
+  background: rgba(230, 193, 136, 0.045);
+}
+
+/* Per-line live-preview blocks: each rendered line is its own ReactMarkdown
+ * tree, but visually they should flow like Preview. Restore Preview's
+ * vertical rhythm for headings/paragraphs/blockquotes, but TIGHTEN list
+ * wrappers — every list item is its own per-line block, so default <ol>/
+ * <ul> margins would stack as gaps between consecutive items.
+ *
+ * Block-level constructs (fenced code, tables) stay as a single block, not
+ * split per-line, so they keep their natural spacing. */
+.cm-md-rendered-block > h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 1.5rem 0 0.5rem;
+  color: var(--ivk-on-surface);
+}
+.cm-md-rendered-block > h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 1.25rem 0 0.4rem;
+  color: var(--ivk-on-surface);
+  border-bottom: none; /* per-line: divider would repeat under every line */
+  padding-bottom: 0;
+}
+.cm-md-rendered-block > h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 1rem 0 0.35rem;
+  color: var(--ivk-on-surface);
+}
+.cm-md-rendered-block > p {
+  margin: 0.5rem 0;
+}
+.cm-md-rendered-block > blockquote {
+  margin: 0.5rem 0;
+}
+/* Each line of a list gets wrapped in its own <ol>/<ul>; remove margins so
+ * consecutive items stack tightly like a single list. */
+.cm-md-rendered-block > ul,
+.cm-md-rendered-block > ol {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+.cm-md-rendered-block > ul > li,
+.cm-md-rendered-block > ol > li {
+  margin: 0;
+}
+
+/* Live preview widgets */
+.cm-md-task {
+  /* Render the GFM task marker as a real checkbox. Sized to sit on the
+   * baseline next to surrounding text. */
+  width: 13px;
+  height: 13px;
+  margin: 0 4px 0 0;
+  vertical-align: -2px;
+  cursor: pointer;
+  accent-color: var(--ivk-primary);
+}
+.cm-md-image {
+  display: block;
+  max-width: 100%;
+  margin: 8px 0;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px var(--ivk-outline-variant);
+}

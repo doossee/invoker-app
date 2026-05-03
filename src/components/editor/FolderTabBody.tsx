@@ -1,14 +1,21 @@
 import { useState, useMemo } from 'react';
 import { Folder, BookOpen, ExternalLink, FolderOpen, Play } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { parseIvk } from 'ivkjs';
 import { resolveInlineIvk } from '@/lib/inline-ivk';
 import { useCollectionStore } from '@/stores/collection-store';
 import { useDocsStore } from '@/stores/docs-store';
 import { useEditorStore, type TabData } from '@/stores/editor-store';
 import { useRequest } from '@/hooks/useRequest';
-import { TOKENS, TabBar, Panel, MethodBadge, METHOD_PALETTE } from '@/components/shared/primitives';
+import { useEnv } from '@/hooks/useEnv';
+import { TOKENS, TabBar, Panel, MethodBadge } from '@/components/shared/primitives';
+import { HighlightedText } from '@/components/shared/VariableTokens';
+import {
+  MarkdownEditor,
+  MarkdownPreview,
+  ModeBar,
+  useMarkdownDoc,
+} from '@/components/shared/MarkdownDocView';
+import { MarkdownLivePreview } from '@/components/shared/MarkdownLivePreview';
 
 interface Props {
   folderPath: string;
@@ -49,83 +56,160 @@ export function FolderTabBody({ folderPath }: Props) {
       />
 
       {/* Content */}
-      <div style={{ flex: 1, overflow: 'auto', padding: '28px 40px 60px' }}>
-        <div style={{ maxWidth: 680, margin: '0 auto' }}>
-          {innerTab === 'README.md' && (
-            <>
-              {/* File path line */}
-              <div
-                style={{
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: 11,
-                  color: TOKENS.fg3,
-                  marginBottom: 14,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                }}
-              >
-                <Folder size={12} style={{ color: TOKENS.yellow }} />
-                <span>my-collection</span>
-                <span style={{ color: TOKENS.fg4 }}>/</span>
-                <span>{folderPath.split('/').pop()}</span>
-                <span style={{ color: TOKENS.fg4 }}>/</span>
-                <BookOpen size={10} />
-                <span style={{ color: TOKENS.fg2 }}>README.md</span>
-              </div>
-
-              {/* Markdown content */}
-              {readmeDoc ? (
-                <div className="invoker-prose">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      code({ className, children, ...props }) {
-                        const match = /language-ivk/.exec(className ?? '');
-                        if (match) {
-                          const content = String(children).trim();
-                          return <InlineIvkBlock content={content} />;
-                        }
-                        // Inline code
-                        if (!className) {
-                          return (
-                            <code
-                              style={{
-                                fontFamily: "'JetBrains Mono', monospace",
-                                fontSize: 12.5,
-                                background: TOKENS.s3,
-                                padding: '1px 6px',
-                                borderRadius: 4,
-                                color: TOKENS.amber,
-                                boxShadow: `inset 0 0 0 1px ${TOKENS.strokeSoft}`,
-                              }}
-                              {...props}
-                            >
-                              {children}
-                            </code>
-                          );
-                        }
-                        return <code className={className} {...props}>{children}</code>;
-                      },
-                    }}
-                  >
-                    {readmeDoc.content}
-                  </ReactMarkdown>
-                </div>
-              ) : (
-                <div style={{ color: TOKENS.fg3, fontSize: 13 }}>
-                  No README.md found in this folder.
-                </div>
-              )}
-            </>
-          )}
-
-          {innerTab === 'Files' && (
-            <FolderFiles folderPath={folderPath} />
-          )}
-        </div>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+        {innerTab === 'README.md' && <ReadmeView folderPath={folderPath} readmeDoc={readmeDoc} />}
+        {innerTab === 'Files' && (
+          <div style={{ flex: 1, overflow: 'auto', padding: '28px 40px 60px' }}>
+            <div style={{ maxWidth: 680, margin: '0 auto' }}>
+              <FolderFiles folderPath={folderPath} />
+            </div>
+          </div>
+        )}
       </div>
     </Panel>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  README view — Preview / Edit toggle                                */
+/* ------------------------------------------------------------------ */
+function ReadmeView({
+  folderPath,
+  readmeDoc,
+}: {
+  folderPath: string;
+  readmeDoc: { path: string; content: string } | undefined;
+}) {
+  const saveDoc = useDocsStore((s) => s.saveDoc);
+  const collectionPath = useCollectionStore((s) => s.collectionPath);
+  const markDirty = useEditorStore((s) => s.markDirty);
+
+  // README path: use the doc's actual path if found; otherwise default to
+  // `<folder>/README.md` so a save creates the file at the conventional spot.
+  const readmePath = readmeDoc?.path ?? `${folderPath}/README.md`;
+  const initialContent = readmeDoc?.content ?? '';
+
+  const { mode, setMode, draft, setDraft, dirty } = useMarkdownDoc({
+    // Dirty/save scoped to the FOLDER tab (the open tab is the folder, not
+    // the README itself), so the folder's tab dot reflects unsaved README
+    // edits. ⌘S still routes to whichever tab is mounted.
+    path: folderPath,
+    initialContent,
+    onSave: (content) => saveDoc(readmePath, content, collectionPath),
+    markDirty,
+  });
+
+  return (
+    <>
+      <ModeBar
+        mode={mode}
+        setMode={setMode}
+        dirty={dirty}
+        left={
+          <div
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 11,
+              color: TOKENS.fg3,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <Folder size={12} style={{ color: TOKENS.yellow }} />
+            <span>{folderPath.split('/').pop()}</span>
+            <span style={{ color: TOKENS.fg4 }}>/</span>
+            <BookOpen size={10} />
+            <span style={{ color: TOKENS.fg2 }}>README.md</span>
+          </div>
+        }
+      />
+      {mode === 'preview' && (
+        <div style={{ flex: 1, overflow: 'auto', padding: '28px 40px 60px' }}>
+          <div style={{ maxWidth: 680, margin: '0 auto' }}>
+            {readmeDoc || draft ? (
+              <MarkdownPreview
+                content={draft || readmeDoc?.content || ''}
+                components={{
+                  code({ className, children, ...props }) {
+                    const match = /language-ivk/.exec(className ?? '');
+                    if (match) {
+                      const content = String(children).trim();
+                      return <InlineIvkBlock content={content} />;
+                    }
+                    // Inline code
+                    if (!className) {
+                      return (
+                        <code
+                          style={{
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontSize: 12.5,
+                            background: TOKENS.s3,
+                            padding: '1px 6px',
+                            borderRadius: 4,
+                            color: TOKENS.amber,
+                            boxShadow: `inset 0 0 0 1px ${TOKENS.strokeSoft}`,
+                          }}
+                          {...props}
+                        >
+                          {children}
+                        </code>
+                      );
+                    }
+                    return <code className={className} {...props}>{children}</code>;
+                  },
+                }}
+              />
+            ) : (
+              <div style={{ color: TOKENS.fg3, fontSize: 13 }}>
+                No README.md in this folder yet — switch to Edit and start typing to create one.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {mode === 'edit' && (
+        <div style={{ flex: 1, overflow: 'auto' }}>
+          <MarkdownEditor value={draft} onChange={setDraft} />
+        </div>
+      )}
+      {mode === 'live' && (
+        <div style={{ flex: 1, overflow: 'auto' }}>
+          <MarkdownLivePreview
+            value={draft}
+            onChange={setDraft}
+            components={{
+              code({ className, children, ...props }) {
+                const match = /language-ivk/.exec(className ?? '');
+                if (match) {
+                  const content = String(children).trim();
+                  return <InlineIvkBlock content={content} />;
+                }
+                if (!className) {
+                  return (
+                    <code
+                      style={{
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: 12.5,
+                        background: TOKENS.s3,
+                        padding: '1px 6px',
+                        borderRadius: 4,
+                        color: TOKENS.amber,
+                        boxShadow: `inset 0 0 0 1px ${TOKENS.strokeSoft}`,
+                      }}
+                      {...props}
+                    >
+                      {children}
+                    </code>
+                  );
+                }
+                return <code className={className} {...props}>{children}</code>;
+              },
+            }}
+          />
+        </div>
+      )}
+    </>
   );
 }
 
@@ -135,6 +219,7 @@ export function FolderTabBody({ folderPath }: Props) {
 function InlineIvkBlock({ content }: { content: string }) {
   const openTab = useEditorStore((s) => s.openTab);
   const collectionFiles = useCollectionStore((s) => s.files);
+  const { get: resolveVar, setVariable } = useEnv();
   const [showResponse, setShowResponse] = useState(false);
   const [viewTab, setViewTab] = useState<'request' | 'response'>('request');
 
@@ -161,8 +246,6 @@ function InlineIvkBlock({ content }: { content: string }) {
   } else {
     resolveError = resolved.error;
   }
-
-  const mc = METHOD_PALETTE[method] ?? { c: TOKENS.fg3, bg: 'rgba(118,117,117,0.14)' };
 
   const handleOpen = () => {
     const name = url.split('/').pop() ?? 'request';
@@ -199,7 +282,7 @@ function InlineIvkBlock({ content }: { content: string }) {
         borderRadius: 10,
         overflow: 'hidden',
         background: TOKENS.s2,
-        boxShadow: `inset 0 0 0 1px ${TOKENS.strokeSoft}`,
+        boxShadow: `inset 0 0 0 1px ${TOKENS.stroke}`,
       }}
     >
       {/* Header */}
@@ -209,21 +292,10 @@ function InlineIvkBlock({ content }: { content: string }) {
           alignItems: 'center',
           gap: 8,
           padding: '8px 10px',
-          borderBottom: `1px solid ${TOKENS.strokeSoft}`,
+          borderBottom: `1px solid ${TOKENS.stroke}`,
         }}
       >
-        <span
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 10,
-            fontWeight: 700,
-            color: mc.c,
-            letterSpacing: '0.05em',
-            minWidth: 34,
-          }}
-        >
-          {method}
-        </span>
+        <MethodBadge method={method} />
         <span
           style={{
             flex: 1,
@@ -235,7 +307,7 @@ function InlineIvkBlock({ content }: { content: string }) {
             whiteSpace: 'nowrap',
           }}
         >
-          {url}
+          <HighlightedText text={url} resolver={resolveVar} onChangeVar={setVariable} />
         </span>
         <button
           onClick={handleOpen}
@@ -280,39 +352,47 @@ function InlineIvkBlock({ content }: { content: string }) {
         </button>
       </div>
 
-      {/* Request/Response tabs */}
+      {/* Request/Response tabs — underline-on-active pattern so the row
+          reads as a sub-header of the card, not a floating button group. */}
       <div
         style={{
           display: 'flex',
-          alignItems: 'center',
-          gap: 2,
-          padding: '4px 8px',
+          alignItems: 'stretch',
+          gap: 0,
+          padding: '0 10px',
           borderBottom: `1px solid ${TOKENS.strokeSoft}`,
-          background: TOKENS.s2,
         }}
       >
-        {(['request', 'response'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setViewTab(tab)}
-            style={{
-              padding: '4px 10px',
-              borderRadius: 4,
-              border: 'none',
-              background: viewTab === tab ? TOKENS.s4 : 'transparent',
-              color: viewTab === tab ? TOKENS.fg1 : TOKENS.fg3,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              fontSize: 11,
-              textTransform: 'capitalize',
-            }}
-          >
-            {tab}
-          </button>
-        ))}
+        {(['request', 'response'] as const).map((tab) => {
+          const isActive = viewTab === tab;
+          return (
+            <button
+              key={tab}
+              onClick={() => setViewTab(tab)}
+              style={{
+                padding: '7px 10px',
+                border: 'none',
+                background: 'transparent',
+                color: isActive ? TOKENS.fg1 : TOKENS.fg3,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: 11,
+                fontWeight: isActive ? 600 : 500,
+                textTransform: 'capitalize',
+                borderBottom: isActive ? `1.5px solid ${TOKENS.amber}` : '1.5px solid transparent',
+                // Overlap the container's bottom border so the active underline
+                // visually sits ON the divider line, not above it.
+                marginBottom: -1,
+              }}
+            >
+              {tab}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Body */}
+      {/* Body — {{variables}} are highlighted and open a floating popover
+          on hover for inspection + inline editing. */}
       {viewTab === 'request' && body && (
         <pre
           style={{
@@ -323,9 +403,10 @@ function InlineIvkBlock({ content }: { content: string }) {
             color: TOKENS.fg1,
             lineHeight: 1.6,
             background: 'transparent',
+            whiteSpace: 'pre-wrap',
           }}
         >
-          {body}
+          <HighlightedText text={body} resolver={resolveVar} onChangeVar={setVariable} />
         </pre>
       )}
       {viewTab === 'request' && !body && (

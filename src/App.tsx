@@ -1,10 +1,13 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { PanelLeft } from 'lucide-react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { ResizablePanel } from '@/components/layout/ResizablePanel';
 import { UnifiedTree } from '@/components/collection/UnifiedTree';
 import { WelcomePage } from '@/components/welcome/WelcomePage';
+import { CollectionDashboard } from '@/components/welcome/CollectionDashboard';
 import { RequestEditor } from '@/components/editor/RequestEditor';
 import { FolderTabBody } from '@/components/editor/FolderTabBody';
+import { DocTabBody } from '@/components/editor/DocTabBody';
 import { EditorTabs } from '@/components/editor/EditorTabs';
 import { EnvSettings } from '@/components/env/EnvSettings';
 import { CommandPalette } from '@/components/modals/CommandPalette';
@@ -23,6 +26,10 @@ export function App() {
 
   const sidebarWidth = useEditorStore((s) => s.sidebarWidth);
   const setSidebarWidth = useEditorStore((s) => s.setSidebarWidth);
+  const sidebarCollapsed = useEditorStore((s) => s.sidebarCollapsed);
+  const setSidebarCollapsed = useEditorStore((s) => s.setSidebarCollapsed);
+  const toggleSidebar = useEditorStore((s) => s.toggleSidebar);
+  const createInlineTab = useEditorStore((s) => s.createInlineTab);
   const setSiteConfig = useEditorStore((s) => s.setSiteConfig);
 
   // Tab state
@@ -39,6 +46,11 @@ export function App() {
   const setCommandPaletteOpen = useEditorStore((s) => s.setCommandPaletteOpen);
 
   const collectionPath = useCollectionStore((s) => s.collectionPath);
+  const collectionFiles = useCollectionStore((s) => s.files);
+  const collectionDocs = useDocsStore((s) => s.docs);
+  // A collection is considered loaded once any request OR doc has arrived
+  // (via Tauri / FSA / manifest / sample). Empty arrays mean first-run state.
+  const collectionLoaded = collectionFiles.length > 0 || collectionDocs.length > 0;
 
   // Global keyboard shortcuts.
   //
@@ -64,10 +76,10 @@ export function App() {
         return;
       }
 
-      // ⌘N — New request
+      // ⌘N — New request (create an untitled inline request tab)
       if (matchShortcut(e, 'KeyN', { shift: false })) {
         e.preventDefault();
-        // TODO: create new request
+        createInlineTab();
         return;
       }
 
@@ -77,6 +89,14 @@ export function App() {
         if (activeTabPath) {
           useEditorStore.getState().closeTab(activeTabPath);
         }
+        return;
+      }
+
+      // ⌘S — Save active request. RequestEditor listens for this event and
+      // serializes+persists its current state via collection-store.saveRequest.
+      if (matchShortcut(e, 'KeyS', { shift: false })) {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('invoker:save'));
         return;
       }
 
@@ -99,16 +119,38 @@ export function App() {
         return;
       }
 
-      // ⌘\ — Toggle sidebar (placeholder)
+      // ⌘\ — Toggle sidebar
       if (matchShortcut(e, 'Backslash', { shift: false })) {
         e.preventDefault();
+        toggleSidebar();
         return;
       }
     };
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [activeTabPath, commandPaletteOpen, setCommandPaletteOpen]);
+  }, [activeTabPath, commandPaletteOpen, setCommandPaletteOpen, createInlineTab, toggleSidebar]);
+
+  // Auto-collapse sidebar on narrow viewports (mobile-responsive fallback).
+  // Also restores it when viewport widens again, but only if the user hasn't
+  // manually collapsed it — we track that via a width threshold.
+  useEffect(() => {
+    const MOBILE_BREAKPOINT = 720;
+    let userCollapsed = false;
+    const onResize = () => {
+      const narrow = window.innerWidth < MOBILE_BREAKPOINT;
+      const current = useEditorStore.getState().sidebarCollapsed;
+      if (narrow && !current) {
+        userCollapsed = false; // reset: this was auto
+        setSidebarCollapsed(true);
+      } else if (!narrow && current && !userCollapsed) {
+        setSidebarCollapsed(false);
+      }
+    };
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [setSidebarCollapsed]);
 
   // Published mode: load manifest at startup
   useEffect(() => {
@@ -143,6 +185,7 @@ export function App() {
   const hasActiveTab = !!activeTab;
   const showIvk = activeTab?.kind === 'ivk';
   const showFolder = activeTab?.kind === 'folder';
+  const showDoc = activeTab?.kind === 'doc';
 
   // Sync activeFilePath with collection store for backward compat
   useEffect(() => {
@@ -168,17 +211,19 @@ export function App() {
       }}
     >
       {/* Sidebar */}
-      <div style={{ flexShrink: 0, height: '100%' }}>
-        <ResizablePanel width={sidebarWidth} onWidthChange={setSidebarWidth}>
-          <Sidebar
-            onOpenSettings={() => setSettingsOpen(true)}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-          >
-            <UnifiedTree searchQuery={searchQuery} />
-          </Sidebar>
-        </ResizablePanel>
-      </div>
+      {!sidebarCollapsed && (
+        <div style={{ flexShrink: 0, height: '100%' }}>
+          <ResizablePanel width={sidebarWidth} onWidthChange={setSidebarWidth}>
+            <Sidebar
+              onOpenSettings={() => setSettingsOpen(true)}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+            >
+              <UnifiedTree searchQuery={searchQuery} />
+            </Sidebar>
+          </ResizablePanel>
+        </div>
+      )}
 
       {/* Main content area */}
       <div
@@ -188,15 +233,45 @@ export function App() {
           flexDirection: 'column',
           minWidth: 0,
           gap: 10,
+          position: 'relative',
         }}
       >
+        {/* Sidebar re-open button when collapsed */}
+        {sidebarCollapsed && (
+          <button
+            onClick={() => setSidebarCollapsed(false)}
+            title="Show sidebar (⌘\\)"
+            style={{
+              position: 'absolute',
+              top: 8,
+              left: 8,
+              zIndex: 10,
+              width: 30,
+              height: 30,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: TOKENS.s2,
+              border: 'none',
+              borderRadius: 7,
+              color: TOKENS.fg2,
+              cursor: 'pointer',
+              boxShadow: `inset 0 0 0 1px ${TOKENS.stroke}`,
+            }}
+          >
+            <PanelLeft size={14} />
+          </button>
+        )}
+
         {/* Editor tabs row — always visible when tabs exist */}
         {tabs.length > 0 && <EditorTabs />}
 
         {/* Content body */}
-        {!hasActiveTab && <WelcomePage />}
+        {!hasActiveTab && !collectionLoaded && <WelcomePage />}
+        {!hasActiveTab && collectionLoaded && <CollectionDashboard />}
         {showIvk && activeTab && <RequestEditor filePath={activeTab.path} />}
         {showFolder && activeTab && <FolderTabBody folderPath={activeTab.path} />}
+        {showDoc && activeTab && <DocTabBody docPath={activeTab.path} />}
       </div>
 
       {/* Modals */}
