@@ -207,11 +207,22 @@ function PageTitle({ children, note }: { children: React.ReactNode; note?: strin
 /*  Pages                                                              */
 /* ------------------------------------------------------------------ */
 function GeneralPage() {
+  // Default request method is the first General row to be wired through
+  // to actual behaviour: createInlineTab() reads this when ⌘N or + opens
+  // an untitled request. The rest of the rows below are still visual
+  // (timeout, redirects, ...) — they'll get wired one PR at a time.
+  const defaultMethod = useEditorStore((s) => s.defaultRequestMethod);
+  const setDefaultMethod = useEditorStore((s) => s.setDefaultRequestMethod);
+
   return (
     <>
       <PageTitle note="Configure default behavior for requests and app preferences.">General</PageTitle>
       <Row label="Default request method" hint="Method used when creating new requests">
-        <Select value="GET" options={['GET', 'POST', 'PUT', 'PATCH', 'DELETE']} />
+        <Select
+          value={defaultMethod}
+          options={['GET', 'POST', 'PUT', 'PATCH', 'DELETE']}
+          onChange={(v) => setDefaultMethod(v as 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE')}
+        />
       </Row>
       <Row label="Request timeout" hint="Maximum time to wait for a response">
         <Select value="30s" options={['10s', '30s', '60s', '120s']} />

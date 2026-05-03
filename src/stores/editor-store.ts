@@ -27,6 +27,8 @@ interface EditorState {
 
   // Editor preferences
   vimMode: boolean;
+  /** Method picked when creating a new untitled request via ⌘N or +. */
+  defaultRequestMethod: HttpMethod;
 
   // Request editor state
   requestTab: string;
@@ -61,6 +63,7 @@ interface EditorState {
 
   // Editor preference actions
   setVimMode: (on: boolean) => void;
+  setDefaultRequestMethod: (method: HttpMethod) => void;
 
   // Inline request creation
   createInlineTab: (opts?: { method?: HttpMethod; url?: string }) => string;
@@ -92,6 +95,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   responseHeight: Number(localStorage.getItem('invoker:response-height')) || 300,
   splitDirection: (localStorage.getItem('invoker:split-direction') as SplitDirection) || 'horizontal',
   vimMode: localStorage.getItem('invoker:vim-mode') === '1',
+  defaultRequestMethod: (localStorage.getItem('invoker:default-request-method') as HttpMethod) || 'GET',
 
   requestTab: 'Body',
   responseTab: 'Body',
@@ -168,11 +172,20 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     localStorage.setItem('invoker:vim-mode', on ? '1' : '0');
   },
 
+  setDefaultRequestMethod: (method) => {
+    set({ defaultRequestMethod: method });
+    localStorage.setItem('invoker:default-request-method', method);
+  },
+
   createInlineTab: (opts) => {
     const ts = Date.now().toString(36);
     const path = `inline/Untitled-${ts}.ivk`;
-    const method = opts?.method ?? 'GET';
-    const url = opts?.url ?? '';
+    const method = opts?.method ?? get().defaultRequestMethod;
+    // parseIvk needs both a method AND a URL on the request line — a
+    // bare "${method} \n" round-trips as GET (no URL → fallback). Seed
+    // a `https://` prefix so the chosen method survives the parse and
+    // the user has a useful starting point to extend.
+    const url = opts?.url ?? 'https://';
     const content = `${method} ${url}\n`;
     // Register inline file content BEFORE opening the tab so RequestEditor's
     // first render finds it via getFileByPath.
