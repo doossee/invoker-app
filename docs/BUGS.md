@@ -62,16 +62,17 @@ A living list of known bugs and missing behavior. Each entry below maps to a TDD
 - **Actual**: The contextmenu event falls through to the row's onClick, so the file just opens. There's no menu, no rename flow, no delete confirm.
 - **Notes**: At minimum: Rename + Delete + Duplicate. Reveal-in-Finder is Tauri-only.
 
-#### General settings rows (timeout/redirects/SSL/save history/...) still cosmetic
+#### General settings rows (redirects/SSL/save history/check-for-updates) still cosmetic
 - **Where**: `src/components/modals/SettingsModal.tsx` → `GeneralPage`
-- The `Default request method` row was wired in PR #35 — it actually drives `createInlineTab()`. The remaining rows still render `<Toggle on />` / static `<Select>` with no state binding:
-  - Request timeout — should drive a default `@timeout` for sent requests (ivkjs already supports per-request `@timeout` directive)
-  - Follow redirects — needs a transport pass-through
-  - Verify SSL certificates — needs a transport pass-through
+- Already wired through to behaviour:
+  - Default request method (PR #35) — drives `createInlineTab()`
+  - Request timeout (PR #40) — injected as `@timeout` directive when the request didn't declare one
+  - Open last collection on launch (PR #41) — auto-opens sample/Tauri folder on next launch
+- Still cosmetic — render `<Toggle on />` / static `<Select>` with no state:
+  - Follow redirects — needs a transport pass-through (fetch's `redirect: 'manual'` opt-out)
+  - Verify SSL certificates — Tauri-only (browser fetch can't disable)
   - Save history — depends on the (not-yet-existent) history feature
-  - Open last collection on launch — Tauri-only
   - Check for updates — Tauri-only (updater plugin)
-- Wire one row per follow-up PR.
 
 #### System-preference theme (auto-follow `prefers-color-scheme`)
 - A daylight palette ships now (Invoker Light, PR #30) but the app doesn't auto-follow `prefers-color-scheme`. Add a third "Auto" choice in Appearance that picks a sensible dark/light preset based on the OS preference and re-evaluates on `change`.
@@ -110,6 +111,9 @@ A living list of known bugs and missing behavior. Each entry below maps to a TDD
 | ✅ | Theme picker duplicated between Settings → Appearance and the env-switcher modal | PR #37 — dropped from EnvSettings; Settings → Appearance is the canonical home. Bonus a11y: env-switcher button now has `title` + `aria-label` |
 | ✅ | "Export to clipboard" feedback claim was incorrect — `setCopyDone(true)` already toggles the button text to "Copied!" for 2s; the bug was a false read of the screenshot timing during dogfooding. Removed from Open. | n/a — retracted |
 | ✅ | Command palette searched docs by path-basename ("README") not user-facing title ("Welcome") | PR #38 — prefer `d.title` over the basename so users can search by what they see in the dashboard / sidebar |
+| ✅ | General → Request timeout had no backing | PR #40 — `defaultTimeoutSec` in editor-store with localStorage + clamp; useRequest injects `@timeout` directive when the request didn't set one. Per-request directive still wins. |
+| ✅ | General → Open last collection on launch had no backing | PR #41 — auto-open effect on App mount: re-loads `(sample)` (browser-demo) or re-`loadCollection()` (Tauri) of the most-recent path, with stale-path defensive clear |
+| ✅ | Response Body pill: hardcoded "application/json" label + decorative Copy/Search buttons | PR #42 — content-type label reads from response.headers; Copy now wired to `clipboard.writeText`; Search dropped (would need real find-in-body editor surface) |
 
 ---
 
