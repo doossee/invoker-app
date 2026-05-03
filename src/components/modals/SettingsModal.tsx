@@ -248,6 +248,12 @@ function AppearancePage() {
           <button
             key={swatch.id}
             onClick={() => setTheme(swatch.id)}
+            // Accessible name + machine-readable id so screen readers can
+            // distinguish the visually-identical gradient cards and tests
+            // can target a specific theme without depending on grid order.
+            aria-label={swatch.label}
+            aria-pressed={currentTheme.id === swatch.id}
+            data-theme-id={swatch.id}
             style={{
               height: 72,
               borderRadius: 8,
