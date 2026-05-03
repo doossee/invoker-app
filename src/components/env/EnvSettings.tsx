@@ -132,9 +132,13 @@ export function EnvSettings({ onClose }: Props) {
       className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 pt-20"
     >
       <div className="bg-surface border border-outline-variant rounded-lg shadow-2xl w-[600px] max-h-[80vh] flex flex-col">
-        {/* Header */}
+        {/* Header — title matches the env-switcher's "Manage
+            environments" trigger label so users land somewhere they
+            recognise. (Was "Settings" until #58 — misleading because
+            the theme picker moved to Settings → Appearance in PR #37
+            and this modal has been env-only since.) */}
         <div className="flex items-center justify-between px-4 py-3 ghost-border-b flex-shrink-0">
-          <h2 className="text-sm font-semibold text-on-surface">Settings</h2>
+          <h2 className="text-sm font-semibold text-on-surface">Environments</h2>
           <button
             onClick={onClose}
             className="p-1 rounded-md hover:bg-surface-container text-outline hover:text-on-surface transition-colors"
@@ -143,16 +147,8 @@ export function EnvSettings({ onClose }: Props) {
           </button>
         </div>
 
-        {/* Theme picker intentionally omitted — Settings → Appearance is
-            the canonical home (see PR #30 for the latest a11y +
-            data-theme-id wiring). This modal is for environments. */}
-
-        {/* Environments section header */}
-        <div className="px-4 pt-3 pb-1 flex-shrink-0">
-          <span className="text-xs font-semibold text-on-surface">Environments</span>
-        </div>
-
-        {/* Env list */}
+        {/* Env list (no separate section header — the modal title
+            already says what this is) */}
         <div className="flex-1 overflow-y-auto">
           {envs.map((env, index) => (
             <div key={index} className="border-b border-outline-variant last:border-0">
