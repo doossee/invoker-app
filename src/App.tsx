@@ -20,6 +20,7 @@ import { isPublished, isTauri } from '@/lib/platform';
 import { sampleCollection } from '@/data/sample-collection';
 import { sampleDocs } from '@/data/sample-docs';
 import { matchShortcut } from '@/lib/shortcuts';
+import { nextTabPath } from '@/lib/cycle-tab';
 import { useDocsStore } from '@/stores/docs-store';
 import { TOKENS } from '@/components/shared/primitives';
 
@@ -142,6 +143,25 @@ export function App() {
       if (matchShortcut(e, 'Backslash', { shift: false })) {
         e.preventDefault();
         toggleSidebar();
+        return;
+      }
+
+      // ⌃Tab / ⌃⇧Tab — Cycle editor tabs. Explicitly checks `ctrlKey
+      // && !metaKey` (NOT matchShortcut, which treats Cmd/Ctrl as
+      // equivalent) — on macOS Cmd+Tab is the system app switcher and
+      // we don't want to intercept it. Matches the tab-cycling
+      // convention used by every IDE / browser. Settings → Keyboard
+      // listed this as `⌃Tab "Next tab"` for a while but no handler
+      // was wired (#61 fixes that).
+      if (e.code === 'Tab' && e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        const state = useEditorStore.getState();
+        const next = nextTabPath({
+          tabs: state.tabs,
+          currentPath: state.activeTabPath,
+          shift: e.shiftKey,
+        });
+        if (next) state.setActiveTab(next);
         return;
       }
     };
