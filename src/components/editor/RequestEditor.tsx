@@ -152,6 +152,28 @@ export function RequestEditor({ filePath }: Props) {
     touch();
   }, [touch]);
 
+  // Paste-curl import: replace the current request's method/url/headers/body
+  // with whatever the cURL parser extracts. We don't merge — pasting a curl
+  // command means "I want THIS request now," not "extend the current one."
+  const handleCurlParsed = useCallback(
+    (parsed: { method: string; url: string; headers: Record<string, string>; body: string }) => {
+      setRequest((prev) =>
+        prev
+          ? {
+              ...prev,
+              method: parsed.method as HttpMethod,
+              url: parsed.url,
+              headers: parsed.headers,
+              body: parsed.body,
+            }
+          : prev,
+      );
+      updateTab(filePath, { method: parsed.method });
+      touch();
+    },
+    [touch, updateTab, filePath],
+  );
+
   const handleAuthChange = useCallback((auth: string) => {
     setRequest((prev) =>
       prev ? { ...prev, directives: { ...prev.directives, auth } } : prev,
@@ -239,6 +261,7 @@ export function RequestEditor({ filePath }: Props) {
           url={request.url}
           onMethodChange={handleMethodChange}
           onUrlChange={handleUrlChange}
+          onCurlParsed={handleCurlParsed}
           onSend={handleSend}
           loading={loading}
         />
