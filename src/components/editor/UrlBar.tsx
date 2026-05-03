@@ -84,7 +84,9 @@ export function UrlBar({ method, url, onMethodChange, onUrlChange, onSend, loadi
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !loading) onSend();
           }}
-          placeholder="Enter URL or paste cURL..."
+          // Don't advertise "paste cURL" until a parser ships — see
+          // docs/BUGS.md → Missing features → "Real cURL → request import".
+          placeholder="Enter request URL"
           className="flex-1 bg-transparent text-[13px] font-mono px-3 focus:outline-none min-w-0"
           style={{
             // Hide the input's own text glyphs while not focused so the
