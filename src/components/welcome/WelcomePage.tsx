@@ -5,7 +5,6 @@ import {
   Plus,
   Send,
   ArrowRight,
-  Clock,
   Terminal,
   FileText,
   Link,
@@ -251,40 +250,16 @@ export function WelcomePage() {
             </div>
           </Tile>
 
-          {/* TILE 3 — Recent */}
-          <Tile style={{ gridColumn: 'span 2', padding: 18 }}>
-            <TileHeader icon={<Clock size={13} />} label="Recent" />
-            <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {[
-                { n: 'OVI Internal', s: '460 reqs' },
-                { n: 'Stripe Playbook', s: '127 reqs' },
-                { n: 'Acme Webhooks', s: '14 reqs' },
-              ].map((r) => (
-                <div
-                  key={r.n}
-                  title="Recent collections — wiring pending"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '6px 8px',
-                    borderRadius: 6,
-                    opacity: 0.55,
-                    color: TOKENS.fg2,
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  <InvokerMark size={11} color={TOKENS.fg3} />
-                  <span style={{ flex: 1, textAlign: 'left', fontSize: 12 }}>{r.n}</span>
-                  <span style={{ fontSize: 10, color: TOKENS.fg3 }}>{r.s}</span>
-                </div>
-              ))}
-            </div>
-          </Tile>
-
-          {/* TILE 4 — Command Palette */}
+          {/* TILE 3 — Command Palette
+              (Was: Recent (span 2) + Palette (span 1). The Recent tile was
+              hardcoded fake content — `OVI Internal / Stripe Playbook /
+              Acme Webhooks` with title="…wiring pending" — and no recent-
+              collections store ever shipped. Following the precedent of
+              PR #34 / #23, drop until a real feature exists; widen
+              Palette to fill the freed columns so the bento grid stays
+              balanced.) */}
           <Tile
-            style={{ gridColumn: 'span 1', padding: 18, alignItems: 'flex-start', cursor: 'pointer' }}
+            style={{ gridColumn: 'span 3', padding: 18, alignItems: 'flex-start', cursor: 'pointer' }}
           >
             <div onClick={() => setCommandPaletteOpen(true)} style={{ width: '100%' }}>
               <TileHeader icon={<Terminal size={13} />} label="Palette" />
