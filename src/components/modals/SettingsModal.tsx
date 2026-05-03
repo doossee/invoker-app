@@ -299,7 +299,8 @@ function KeyboardPage() {
     { action: 'Jump to env', keys: ['⌘', 'E'] },
     { action: 'Toggle sidebar', keys: ['⌘', '\\'] },
     { action: 'Format JSON', keys: ['⌘', '⇧', 'F'] },
-    { action: 'Run test suite', keys: ['⌘', '⇧', 'T'] },
+    // "Run test suite" was listed but never wired. Removed until the
+    // collection-wide test runner ships.
   ];
 
   return (
