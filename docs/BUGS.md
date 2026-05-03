@@ -55,18 +55,22 @@ A living list of known bugs and missing behavior. Each entry below maps to a TDD
 - Same gap as Save Request, but for markdown docs in Live mode
 - UI dispatches `invoker:save-doc` → `docs-store.saveDoc` returns `Promise<boolean>` but does not call writeTextFile
 
-#### Inline ivk codeblock in standalone .md docs (not folder READMEs) renders as plain text
-- **Where**: Welcome.md, tutorial.md, etc. — any standalone markdown doc that uses ` ```ivk ` fenced blocks
-- **Action**: Open the Welcome doc → Live mode
-- **Expected**: ivk-fenced codeblocks render as runnable cards (the same way they do in folder READMEs)
-- **Actual**: Plain monospace `pre` block with no Run button or interaction
-- **Suspect**: `MarkdownLivePreview` (or whichever renderer the standalone doc path uses) doesn't have the same `ivk` codeblock substitution that `FolderTabBody` applies. Easy unification target — extract the ivk-rendering branch into a shared component used by both surfaces.
+#### Sidebar tree right-click does nothing (no context menu)
+- **Where**: `src/components/collection/UnifiedTree.tsx`
+- **Action**: Right-click any request or folder in the sidebar
+- **Expected**: A context menu with `Rename / Delete / Duplicate / Open in External / Reveal in Finder` (Tauri) — the standard file-tree affordances.
+- **Actual**: The contextmenu event falls through to the row's onClick, so the file just opens. There's no menu, no rename flow, no delete confirm.
+- **Notes**: At minimum: Rename + Delete + Duplicate. Reveal-in-Finder is Tauri-only.
 
-#### Sidebar collapse / expand
-- The store already exposes `toggleSidebar` and `sidebarCollapsed` (with localStorage persistence), but no UI surface — no button, no shortcut wiring. Add a chevron to the sidebar header + an Editor → ⌘\ shortcut.
+#### Response → Table view shows JSON-as-string for object cells; "1 rows" grammar
+- **Where**: `src/components/editor/ResponsePanel.tsx` → Table view branch
+- **Action**: Send any request, switch the Response body to "Table" view
+- **Expected**: Cells with object/array values either flatten with dot-notation (`headers.Accept`) or render as a clickable expander.
+- **Actual**: Each row's HEADERS cell prints the entire `JSON.stringify(headers)` as one wide string. Row footer reads `1 rows` (should be `1 row`).
+- **Fix**: Either (a) flatten one level deep, (b) collapse object cells with a `{…}` chip + click-to-expand, or (c) drop the Table view for non-flat shapes and fall back to Pretty.
 
-#### Light theme (or system-preference theme)
-- All four themes that ship are dark variants (Invoker Dark / Catppuccin Mocha / Tokyo Night / GitHub Dark). Some users want to follow `prefers-color-scheme: light` or pick a daylight palette explicitly. The theme-provider plumbing supports any token set; just need a light preset + Appearance UI to choose it.
+#### System-preference theme (auto-follow `prefers-color-scheme`)
+- A daylight palette ships now (Invoker Light, PR #30) but the app doesn't auto-follow `prefers-color-scheme`. Add a third "Auto" choice in Appearance that picks a sensible dark/light preset based on the OS preference and re-evaluates on `change`.
 
 ---
 
@@ -92,6 +96,10 @@ A living list of known bugs and missing behavior. Each entry below maps to a TDD
 | ✅ | `⌘W` closed a dirty tab without confirmation (silent data loss) | PR #25 — native `window.confirm` prompt; cancel keeps tab open |
 | ✅ | Real cURL → request import (Missing → Done) | PR #24 — `parseCurl()` + paste-detect on URL bar; supports `-X` / `-H` / `-d`/`--data*` / `-u`; auto-promotes to POST when `-d` is present |
 | ✅ | Editor-tabs row shipped a decorative History clock button (no onClick) | PR #26 — button removed; e2e locks the absence in until a real history surface ships |
+| ✅ | Inline ivk codeblock in standalone .md docs (not folder READMEs) rendered as plain text | PR #28 — extracted `InlineIvkBlock` to `@/components/shared`; `MarkdownPreview` + `MarkdownLivePreview` default to `ivkCodeBlockRenderer` so every consumer gets runnable cards |
+| ✅ | Sidebar collapse / expand had no UI surface (only the ⌘\ shortcut) | PR #29 — `PanelLeftClose` button in collection-header; pairs with the existing restore button when collapsed |
+| ✅ | Light theme: only dark variants shipped | PR #30 — Invoker Light preset + a11y on theme cards (`aria-label`, `aria-pressed`, `data-theme-id`) |
+| ✅ | Settings → Keyboard listed `⌘P "Jump to request"` and `⌘⇧T "Run test suite"` but neither was wired | PR #31 — ⌘P aliases to command palette (VSCode/Cursor convention); ⌘⇧T row removed until a collection-wide test runner ships |
 
 ---
 
