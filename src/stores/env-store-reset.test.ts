@@ -78,3 +78,41 @@ describe('env-store.resetToDefaults — immutable update contract', () => {
     expect(() => useEnvStore.getState().resetToDefaults()).not.toThrow();
   });
 });
+
+describe('env-store.setVariable — immutable update contract', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useEnvStore.setState({
+      settings: {
+        environments: [
+          { name: 'dev', variables: { existing: 'old' } },
+          { name: 'stage', variables: {} },
+        ],
+        activeEnvironmentIndex: 0,
+        timeout: 30000,
+      },
+    });
+  });
+
+  it('produces a new variables-object reference when setting a var', () => {
+    const before = useEnvStore.getState().settings.environments[0]?.variables;
+    useEnvStore.getState().setVariable('newKey', 'value');
+    const after = useEnvStore.getState().settings.environments[0]?.variables;
+    expect(after).not.toBe(before);
+    expect(after).toEqual({ existing: 'old', newKey: 'value' });
+  });
+
+  it('produces a new env-at-active-index reference', () => {
+    const before = useEnvStore.getState().settings.environments[0];
+    useEnvStore.getState().setVariable('newKey', 'value');
+    const after = useEnvStore.getState().settings.environments[0];
+    expect(after).not.toBe(before);
+  });
+
+  it('preserves non-active env references', () => {
+    const stageBefore = useEnvStore.getState().settings.environments[1];
+    useEnvStore.getState().setVariable('newKey', 'value');
+    const stageAfter = useEnvStore.getState().settings.environments[1];
+    expect(stageAfter).toBe(stageBefore);
+  });
+});

@@ -70,8 +70,24 @@ export const useEnvStore = create<EnvState>((set, get) => {
     },
 
     setVariable: (name, value) => {
+      // Delegate to ivkjs's EnvManager so script-side `ivk.env.set()`
+      // and React-side calls share one runtimeVars / variables map.
+      // EnvManager.set mutates the active env's `variables` in place
+      // (so the request runner sees the new value immediately) — but
+      // that mutation alone doesn't change any references zustand
+      // selectors compare against. Rebuild the environments array
+      // immutably so deep selectors re-render. (Same root cause as
+      // the resetToDefaults / setAuthorDefaults fixes above.)
       get().envManager.set(name, value);
-      set((state) => ({ settings: { ...state.settings } })); // trigger re-render
+      set((state) => {
+        const idx = state.settings.activeEnvironmentIndex;
+        const target = state.settings.environments[idx];
+        if (!target) return { settings: { ...state.settings } };
+        const nextEnvs = state.settings.environments.map((e, i) =>
+          i === idx ? { ...e, variables: { ...e.variables } } : e,
+        );
+        return { settings: { ...state.settings, environments: nextEnvs } };
+      });
     },
 
     addEnvironment: (name) => {
