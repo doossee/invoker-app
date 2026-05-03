@@ -12,10 +12,10 @@ import { useCollectionStore } from './collection-store';
  * NOT try to import @tauri-apps/plugin-fs.
  */
 
-const writeTextFile = vi.fn(async () => undefined);
+const writeTextFile = vi.fn(async (_path: string, _content: string) => undefined);
 
 vi.mock('@tauri-apps/plugin-fs', () => ({
-  writeTextFile: (...args: unknown[]) => writeTextFile(...args),
+  writeTextFile: (path: string, content: string) => writeTextFile(path, content),
 }));
 
 describe('collection-store.saveRequest — Tauri detection', () => {
