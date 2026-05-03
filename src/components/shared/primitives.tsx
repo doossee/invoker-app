@@ -447,24 +447,68 @@ export function Toggle({ on, onChange }: { on?: boolean; onChange?: (v: boolean)
 /* ------------------------------------------------------------------ */
 /*  Select                                                             */
 /* ------------------------------------------------------------------ */
-export function Select({ value, options }: { value: string; options?: string[] }) {
+export function Select({
+  value,
+  options,
+  onChange,
+}: {
+  value: string;
+  options?: string[];
+  /** When provided, the control renders a native <select> so it actually
+      mutates state. When omitted (legacy), it renders a decorative
+      static button — keeps existing display-only callsites working. */
+  onChange?: (value: string) => void;
+}) {
+  // Wrapper styling stays consistent for both the interactive and
+  // decorative variants so settings rows line up visually.
+  const wrapperStyle: CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
+    padding: '5px 8px 5px 10px',
+    background: TOKENS.s3,
+    border: 'none',
+    borderRadius: 6,
+    boxShadow: `inset 0 0 0 1px ${TOKENS.stroke}`,
+    color: TOKENS.fg1,
+    fontSize: 12,
+    fontFamily: 'inherit',
+    cursor: 'pointer',
+    position: 'relative' as const,
+  };
+
+  if (onChange && options) {
+    return (
+      <label style={wrapperStyle}>
+        <span>{value}</span>
+        <ChevronDown size={10} style={{ color: TOKENS.fg3 }} />
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          // Stretch the native <select> over the styled wrapper so clicks
+          // anywhere on the chip open the menu. opacity:0 keeps the
+          // styled label visible.
+          style={{
+            position: 'absolute',
+            inset: 0,
+            opacity: 0,
+            cursor: 'pointer',
+            border: 'none',
+            background: 'transparent',
+          }}
+        >
+          {options.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+      </label>
+    );
+  }
+
   return (
-    <button
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 6,
-        padding: '5px 8px 5px 10px',
-        background: TOKENS.s3,
-        border: 'none',
-        borderRadius: 6,
-        boxShadow: `inset 0 0 0 1px ${TOKENS.stroke}`,
-        color: TOKENS.fg1,
-        fontSize: 12,
-        fontFamily: 'inherit',
-        cursor: 'pointer',
-      }}
-    >
+    <button style={wrapperStyle}>
       {value}
       <ChevronDown size={10} style={{ color: TOKENS.fg3 }} />
     </button>
