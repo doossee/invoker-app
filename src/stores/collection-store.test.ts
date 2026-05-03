@@ -2,9 +2,12 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { useCollectionStore } from './collection-store';
 
 /**
- * Unit coverage for the new renameFile / deleteFile actions added for
- * the sidebar tree right-click context menu (browser-mode in-memory
- * implementation; Tauri disk integration is a follow-up).
+ * Unit coverage for the renameFile / deleteFile actions added for the
+ * sidebar tree right-click context menu. Originally browser-mode in-memory
+ * only (PR #48); now both actions are async and write through to disk via
+ * `@tauri-apps/plugin-fs.rename` / `.remove` when running in Tauri with a
+ * real collection folder. Tauri-side coverage lives in
+ * `collection-store-tauri-rename-delete.test.ts`.
  */
 describe('collection-store rename / delete', () => {
   beforeEach(() => {
@@ -19,8 +22,8 @@ describe('collection-store rename / delete', () => {
     });
   });
 
-  it('renameFile moves the file in the in-memory map and updates name', () => {
-    const next = useCollectionStore.getState().renameFile(
+  it('renameFile moves the file in the in-memory map and updates name', async () => {
+    const next = await useCollectionStore.getState().renameFile(
       'playground/01-hello-world.ivk',
       'hello',
     );
@@ -30,16 +33,16 @@ describe('collection-store rename / delete', () => {
     expect(files.find((f) => f.path === 'playground/01-hello-world.ivk')).toBeUndefined();
   });
 
-  it('renameFile appends `.ivk` if the user omits it', () => {
-    const next = useCollectionStore.getState().renameFile(
+  it('renameFile appends `.ivk` if the user omits it', async () => {
+    const next = await useCollectionStore.getState().renameFile(
       'playground/01-hello-world.ivk',
       'greetings',
     );
     expect(next).toBe('playground/greetings.ivk');
   });
 
-  it('renameFile returns null on conflict (target already exists)', () => {
-    const next = useCollectionStore.getState().renameFile(
+  it('renameFile returns null on conflict (target already exists)', async () => {
+    const next = await useCollectionStore.getState().renameFile(
       'playground/01-hello-world.ivk',
       '02-with-headers',
     );
@@ -50,15 +53,15 @@ describe('collection-store rename / delete', () => {
     expect(paths).toContain('playground/02-with-headers.ivk');
   });
 
-  it('renameFile updates activeFilePath when the renamed file was active', () => {
+  it('renameFile updates activeFilePath when the renamed file was active', async () => {
     useCollectionStore.setState({ activeFilePath: 'playground/01-hello-world.ivk' });
-    useCollectionStore.getState().renameFile('playground/01-hello-world.ivk', 'hi');
+    await useCollectionStore.getState().renameFile('playground/01-hello-world.ivk', 'hi');
     expect(useCollectionStore.getState().activeFilePath).toBe('playground/hi.ivk');
   });
 
-  it('deleteFile removes a real file and clears activeFilePath if it was active', () => {
+  it('deleteFile removes a real file and clears activeFilePath if it was active', async () => {
     useCollectionStore.setState({ activeFilePath: 'playground/01-hello-world.ivk' });
-    const ok = useCollectionStore.getState().deleteFile('playground/01-hello-world.ivk');
+    const ok = await useCollectionStore.getState().deleteFile('playground/01-hello-world.ivk');
     expect(ok).toBe(true);
     expect(
       useCollectionStore.getState().files.find((f) => f.path === 'playground/01-hello-world.ivk'),
@@ -66,12 +69,12 @@ describe('collection-store rename / delete', () => {
     expect(useCollectionStore.getState().activeFilePath).toBeNull();
   });
 
-  it('deleteFile returns false when the path is not in the store', () => {
-    const ok = useCollectionStore.getState().deleteFile('does/not-exist.ivk');
+  it('deleteFile returns false when the path is not in the store', async () => {
+    const ok = await useCollectionStore.getState().deleteFile('does/not-exist.ivk');
     expect(ok).toBe(false);
   });
 
-  it('deleteFile removes inline files', () => {
+  it('deleteFile removes inline files', async () => {
     useCollectionStore.setState({
       inlineFiles: {
         'inline/Untitled-x.ivk': {
@@ -81,7 +84,7 @@ describe('collection-store rename / delete', () => {
         },
       },
     });
-    const ok = useCollectionStore.getState().deleteFile('inline/Untitled-x.ivk');
+    const ok = await useCollectionStore.getState().deleteFile('inline/Untitled-x.ivk');
     expect(ok).toBe(true);
     expect(useCollectionStore.getState().inlineFiles['inline/Untitled-x.ivk']).toBeUndefined();
   });

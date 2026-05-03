@@ -25,14 +25,19 @@ interface CollectionState {
    */
   saveRequest: (path: string, content: string) => Promise<boolean>;
   /**
-   * Rename a file in the in-memory collection. Returns the new path on
-   * success, null on conflict (target already exists). Tauri disk
-   * rename is a follow-up — for now this is browser-mode only.
+   * Rename a file in the collection. Updates the in-memory map, and in
+   * Tauri with a real folder also calls `@tauri-apps/plugin-fs.rename`
+   * to move the file on disk. Returns the new path on success, null on
+   * conflict (target already exists).
    */
-  renameFile: (oldPath: string, newName: string) => string | null;
-  /** Remove a file from the in-memory collection. Returns true if a file
-      was actually removed. Tauri disk delete is a follow-up. */
-  deleteFile: (path: string) => boolean;
+  renameFile: (oldPath: string, newName: string) => Promise<string | null>;
+  /**
+   * Remove a file from the collection. Updates the in-memory map, and
+   * in Tauri with a real folder also calls
+   * `@tauri-apps/plugin-fs.remove` to delete the file on disk. Returns
+   * true if a file was actually removed (regardless of mode).
+   */
+  deleteFile: (path: string) => Promise<boolean>;
 }
 
 export const useCollectionStore = create<CollectionState>((set, get) => ({
@@ -127,7 +132,7 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     return false;
   },
 
-  renameFile: (oldPath, newName) => {
+  renameFile: async (oldPath, newName) => {
     // newName is just the file name (without folder); preserve the folder
     // and append `.ivk` if the user didn't.
     const parts = oldPath.split('/');
@@ -140,7 +145,22 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     if (state.files.some((f) => f.path === newPath) || state.inlineFiles[newPath]) {
       return null;
     }
-    if (state.inlineFiles[oldPath]) {
+    const isInline = !!state.inlineFiles[oldPath];
+
+    // For real files in a real Tauri folder, do the disk rename FIRST
+    // so a fs error aborts before the in-memory state diverges. Inline
+    // files never touch disk.
+    if (!isInline) {
+      const collectionPath = get().collectionPath;
+      const virtual = !collectionPath || collectionPath === '(sample)' || collectionPath === '(published)';
+      if (isTauri() && !virtual) {
+        const { rename } = await import('@tauri-apps/plugin-fs');
+        const sep = collectionPath!.endsWith('/') ? '' : '/';
+        await rename(`${collectionPath}${sep}${oldPath}`, `${collectionPath}${sep}${newPath}`);
+      }
+    }
+
+    if (isInline) {
       const existing = state.inlineFiles[oldPath]!;
       const { [oldPath]: _drop, ...rest } = state.inlineFiles;
       const renamedName = cleaned.replace('.ivk', '');
@@ -163,7 +183,7 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     return newPath;
   },
 
-  deleteFile: (path) => {
+  deleteFile: async (path) => {
     const state = get();
     if (state.inlineFiles[path]) {
       const { [path]: _drop, ...rest } = state.inlineFiles;
@@ -171,9 +191,18 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
       if (state.activeFilePath === path) set({ activeFilePath: null });
       return true;
     }
-    const next = state.files.filter((f) => f.path !== path);
-    if (next.length === state.files.length) return false;
-    set({ files: next });
+    if (!state.files.some((f) => f.path === path)) return false;
+
+    // Disk delete first — fail fast before in-memory diverges.
+    const collectionPath = get().collectionPath;
+    const virtual = !collectionPath || collectionPath === '(sample)' || collectionPath === '(published)';
+    if (isTauri() && !virtual) {
+      const { remove } = await import('@tauri-apps/plugin-fs');
+      const sep = collectionPath!.endsWith('/') ? '' : '/';
+      await remove(`${collectionPath}${sep}${path}`);
+    }
+
+    set({ files: state.files.filter((f) => f.path !== path) });
     if (state.activeFilePath === path) set({ activeFilePath: null });
     return true;
   },
