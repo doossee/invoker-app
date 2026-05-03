@@ -62,8 +62,14 @@ export function App() {
   // could never both be true (shift+F → `e.key === 'F'`).
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      // ⌘K — Command palette
-      if (matchShortcut(e, 'KeyK', { shift: false })) {
+      // ⌘K — Command palette. ⌘P is also bound here as a quick-open alias
+      // (VSCode/Cursor convention), since Settings → Keyboard advertises
+      // it as "Jump to request" and the palette already filters by request
+      // by default.
+      if (
+        matchShortcut(e, 'KeyK', { shift: false }) ||
+        matchShortcut(e, 'KeyP', { shift: false })
+      ) {
         e.preventDefault();
         setCommandPaletteOpen(!commandPaletteOpen);
         return;
