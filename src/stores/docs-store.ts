@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { DocFile } from '@/data/sample-docs';
+import { isTauri } from '@/lib/platform';
 
 interface DocsState {
   activeDocPath: string | null;
@@ -40,8 +41,10 @@ export const useDocsStore = create<DocsState>((set) => ({
       docs: state.docs.map((d) => (d.path === path ? { ...d, content } : d)),
     }));
     const virtual = !collectionPath || collectionPath === '(sample)' || collectionPath === '(published)';
-    const tauri = typeof window !== 'undefined' && '__TAURI__' in window;
-    if (tauri && !virtual) {
+    // Same Tauri 1-vs-2 detection bug as collection-store.saveRequest —
+    // see that comment for the full story. Use the shared isTauri()
+    // helper which checks all three signals.
+    if (isTauri() && !virtual) {
       const { writeTextFile } = await import('@tauri-apps/plugin-fs');
       const sep = collectionPath!.endsWith('/') ? '' : '/';
       await writeTextFile(`${collectionPath}${sep}${path}`, content);
