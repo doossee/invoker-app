@@ -47,19 +47,7 @@ A living list of known bugs and missing behavior. Each entry below maps to a TDD
 
 ### 🟡 Minor
 
-#### Theme picker is duplicated between Settings → Appearance and the env-switcher modal
-- **Where**: `src/components/modals/SettingsModal.tsx` (Appearance pane) AND `src/components/env/EnvSettings.tsx`
-- **Action**: Click the env switcher in the bottom-left status bar → "Manage environments..." → modal opens with both a Theme section AND the Environments section.
-- **Expected**: One canonical place to switch themes (Settings → Appearance).
-- **Actual**: Two separate theme pickers — same store binding, but visual styling differs slightly between them, and "Manage environments..." has nothing to do with appearance.
-- **Suspect**: Older modal that mixed concerns. Drop the Theme section from EnvSettings — Settings → Appearance is the canonical home.
-
-#### "Export to clipboard" button has no visual feedback after click
-- **Where**: `src/components/env/EnvSettings.tsx` → "Export to clipboard" button
-- **Action**: Click "Export to clipboard" in the env-settings modal
-- **Expected**: Button briefly shows "Copied!" or a check-mark (same pattern as the variable-popover copy button — `setCopied(true); setTimeout(setCopied(false), 1500)`).
-- **Actual**: Click does nothing visible. The clipboard probably HAS the JSON, but the user can't tell.
-- **Fix**: Mirror the VariablePopoverContent copy-button pattern.
+*(none open — see Recently fixed)*
 
 ### 🔵 Missing features
 
@@ -119,6 +107,9 @@ A living list of known bugs and missing behavior. Each entry below maps to a TDD
 | ✅ | Response → Table view: object cells dumped full JSON.stringify; "1 rows" grammar | PR #33 — collapse object cells to `{N keys}` / `[N items]` chips with full JSON on hover; pluralise the row counter |
 | ✅ | Settings → AI / Data & sync panes were entirely decorative (no state, no handlers) | PR #34 — both panes removed; surviving panes (General/Appearance/Keyboard) cover the actual local-first surface |
 | ✅ | General → Default request method had no backing — it was a hardcoded `Select value="GET"` | PR #35 — `defaultRequestMethod` added to editor-store with localStorage persistence; `createInlineTab` reads it as the fallback. Knock-on fix: inline content now seeds `https://` so a method-only request line doesn't fall back to GET on parse |
+| ✅ | Theme picker duplicated between Settings → Appearance and the env-switcher modal | PR #37 — dropped from EnvSettings; Settings → Appearance is the canonical home. Bonus a11y: env-switcher button now has `title` + `aria-label` |
+| ✅ | "Export to clipboard" feedback claim was incorrect — `setCopyDone(true)` already toggles the button text to "Copied!" for 2s; the bug was a false read of the screenshot timing during dogfooding. Removed from Open. | n/a — retracted |
+| ✅ | Command palette searched docs by path-basename ("README") not user-facing title ("Welcome") | PR #38 — prefer `d.title` over the basename so users can search by what they see in the dashboard / sidebar |
 
 ---
 
