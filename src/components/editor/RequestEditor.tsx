@@ -95,9 +95,19 @@ export function RequestEditor({ filePath }: Props) {
       setJustSaved(true);
       window.setTimeout(() => setJustSaved(false), 1500);
     } catch (e) {
-      // Surface a minimal error so the user knows the disk write failed.
-      // We keep the in-memory state so their edits aren't lost.
+      // Disk write failed (Tauri path — browser/sample modes can't
+      // throw). Previously this only logged to console — the UI made
+      // it look like the save succeeded (Save button reverted to its
+      // idle state) when in fact the file on disk was unchanged.
+      // Same UX gap PR #46 closed for transport errors and PR #51
+      // closed for sidebar rename/delete. Surface via window.alert
+      // matching that precedent. The dirty marker stays lit because
+      // we deliberately skip `markDirty(false)` on the error path —
+      // the in-memory edits are preserved so the user can retry.
+      const msg = e instanceof Error ? e.message : String(e);
       console.error('Save failed:', e);
+      // eslint-disable-next-line no-alert
+      window.alert(`Save failed: ${msg}\n\nYour edits are still in memory. Try again or open DevTools for details.`);
     }
   }, [request, filePath, saveRequest, markDirty]);
 
