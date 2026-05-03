@@ -27,6 +27,7 @@ import { vim } from '@replit/codemirror-vim';
 // rendering covers all visual styling now.)
 import { useEditorStore } from '@/stores/editor-store';
 import { TOKENS } from '@/components/shared/primitives';
+import { ivkCodeBlockRenderer } from '@/components/shared/InlineIvkBlock';
 
 /* (HighlightStyle removed — block-level rendering covers everything now.) */
 
@@ -280,9 +281,17 @@ function livePreviewExtensions() {
 /*  Read-only preview                                                  */
 /* ------------------------------------------------------------------ */
 export function MarkdownPreview({ content, components }: { content: string; components?: React.ComponentProps<typeof ReactMarkdown>['components'] }) {
+  // Default to the shared `ivk` codeblock renderer so EVERY caller gets
+  // runnable inline ivk blocks (not just folder-README's FolderTabBody).
+  // Caller-provided `components` win on key collision so existing custom
+  // renderers in FolderTabBody continue to take precedence.
+  const merged: React.ComponentProps<typeof ReactMarkdown>['components'] = {
+    code: ivkCodeBlockRenderer,
+    ...(components ?? {}),
+  };
   return (
     <div className="invoker-prose">
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={merged}>
         {content}
       </ReactMarkdown>
     </div>

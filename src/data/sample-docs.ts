@@ -96,6 +96,15 @@ Run **\`auth/01-login.ivk\`** — it captures a fake token. Then **\`auth/02-aut
 
 Compare with **\`auth/03-bearer.ivk\`** which writes the same header by hand. They're equivalent.
 
+## Try it inline
+
+This very tutorial can run requests without leaving the doc. The fenced block
+below is live — click **Run** and the response shows up underneath.
+
+\`\`\`ivk
+GET https://httpbin.org/uuid
+\`\`\`
+
 ## What now?
 
 - **⌘N** — create a new untitled request. It lives in memory until you save.

@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { TOKENS } from '@/components/shared/primitives';
 import { useEditorStore } from '@/stores/editor-store';
+import { ivkCodeBlockRenderer } from '@/components/shared/InlineIvkBlock';
 
 /**
  * React-based "Live" markdown view.
@@ -102,6 +103,13 @@ interface Props {
 
 export function MarkdownLivePreview({ value, onChange, components }: Props) {
   const blocks = useMemo(() => parseBlocks(value), [value]);
+  // Default to the shared `ivk` codeblock renderer so EVERY caller (folder
+  // README + standalone .md tabs) gets runnable inline ivk blocks. Caller-
+  // provided `components` win on key collision.
+  const mergedComponents: typeof components = {
+    code: ivkCodeBlockRenderer,
+    ...(components ?? {}),
+  };
   const vimMode = useEditorStore((s) => s.vimMode);
   // Active block = the one currently being edited as raw markdown.
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
@@ -288,7 +296,7 @@ export function MarkdownLivePreview({ value, onChange, components }: Props) {
                 marginLeft: vimSelected ? -8 : 0,
               }}
             >
-              <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={mergedComponents}>
                 {block.text}
               </ReactMarkdown>
             </div>
