@@ -3,6 +3,8 @@ import { Loader2, Check, X, Cookie, Copy } from 'lucide-react';
 import type { RunResult } from 'ivkjs';
 import { useEditorStore } from '@/stores/editor-store';
 import { TOKENS, TabBar } from '@/components/shared/primitives';
+import { isTauri } from '@/lib/platform';
+import { parseSetCookie } from '@/lib/parse-cookies';
 
 interface Props {
   result: RunResult | null;
@@ -505,26 +507,115 @@ function HeadersView({ headers }: { headers: Record<string, string> }) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Cookies Tab (Empty State)                                          */
+/*  Cookies Tab                                                        */
+/*                                                                      */
+/*  Was always-empty before — `<CookiesView />` rendered without any    */
+/*  props, so the response's Set-Cookie headers (when present in        */
+/*  Tauri) were ignored. Now it parses Set-Cookie via                   */
+/*  `lib/parse-cookies` and renders one row per cookie with its         */
+/*  attributes. Browsers don't expose Set-Cookie to JS so the empty     */
+/*  state explains why it's absent there.                               */
 /* ------------------------------------------------------------------ */
-function CookiesView() {
+function CookiesView({
+  headers,
+  isBrowserMode,
+}: {
+  headers: Record<string, string>;
+  /** True when the running build is the browser-demo / static-site
+   *  variant (no Tauri) — used to surface an honest empty-state hint
+   *  instead of the misleading "no cookies set" the old hardcoded
+   *  view always showed. */
+  isBrowserMode: boolean;
+}) {
+  // Header keys are lowercased by `FetchTransport` and
+  // `@tauri-apps/plugin-http`; defend against either casing in case a
+  // custom transport ever skips that.
+  const raw =
+    headers['set-cookie'] ?? headers['Set-Cookie'] ?? headers['SET-COOKIE'] ?? '';
+  const cookies = parseSetCookie(raw);
+
+  if (cookies.length === 0) {
+    return (
+      <div
+        style={{
+          flex: 1,
+          padding: 24,
+          color: TOKENS.fg3,
+          fontSize: 12,
+          textAlign: 'center',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column' as const,
+        }}
+      >
+        <Cookie size={24} style={{ color: TOKENS.fg4, marginBottom: 10 }} />
+        <div style={{ fontSize: 13, color: TOKENS.fg2, marginBottom: 4 }}>
+          No cookies set
+        </div>
+        <div style={{ fontSize: 11, maxWidth: 320, lineHeight: 1.5 }}>
+          {isBrowserMode
+            ? 'Browsers don’t expose Set-Cookie to scripts — cookies are stored by your browser silently. Tauri builds will show them here.'
+            : 'This response did not set any cookies.'}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
         flex: 1,
-        padding: 24,
-        color: TOKENS.fg3,
+        overflow: 'auto',
+        padding: '12px 14px',
+        fontFamily: "'JetBrains Mono', monospace",
         fontSize: 12,
-        textAlign: 'center',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'column' as const,
       }}
     >
-      <Cookie size={24} style={{ color: TOKENS.fg4, marginBottom: 10 }} />
-      <div style={{ fontSize: 13, color: TOKENS.fg2, marginBottom: 4 }}>No cookies set</div>
-      <div style={{ fontSize: 11 }}>This response did not set any cookies.</div>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead>
+          <tr style={{ color: TOKENS.fg3, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <th style={{ textAlign: 'left', padding: '4px 8px', fontWeight: 600 }}>Name</th>
+            <th style={{ textAlign: 'left', padding: '4px 8px', fontWeight: 600 }}>Value</th>
+            <th style={{ textAlign: 'left', padding: '4px 8px', fontWeight: 600 }}>Path</th>
+            <th style={{ textAlign: 'left', padding: '4px 8px', fontWeight: 600 }}>Domain</th>
+            <th style={{ textAlign: 'left', padding: '4px 8px', fontWeight: 600 }}>Expires</th>
+            <th style={{ textAlign: 'left', padding: '4px 8px', fontWeight: 600 }}>Flags</th>
+          </tr>
+        </thead>
+        <tbody>
+          {cookies.map((c, i) => {
+            const flags: string[] = [];
+            if (c.httpOnly) flags.push('HttpOnly');
+            if (c.secure) flags.push('Secure');
+            if (c.sameSite) flags.push(`SameSite=${c.sameSite}`);
+            const expires =
+              c.expires ?? (c.maxAge != null ? `+${c.maxAge}s` : '—');
+            return (
+              <tr key={i} style={{ borderTop: `1px solid ${TOKENS.strokeSoft}` }}>
+                <td style={{ padding: '6px 8px', color: TOKENS.fg1, fontWeight: 600 }}>{c.name}</td>
+                <td
+                  style={{
+                    padding: '6px 8px',
+                    color: TOKENS.fg2,
+                    maxWidth: 240,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                  title={c.value}
+                >
+                  {c.value || '—'}
+                </td>
+                <td style={{ padding: '6px 8px', color: TOKENS.fg2 }}>{c.path ?? '—'}</td>
+                <td style={{ padding: '6px 8px', color: TOKENS.fg2 }}>{c.domain ?? '—'}</td>
+                <td style={{ padding: '6px 8px', color: TOKENS.fg2 }}>{expires}</td>
+                <td style={{ padding: '6px 8px', color: TOKENS.fg3 }}>{flags.length ? flags.join(', ') : '—'}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -850,7 +941,9 @@ export function ResponsePanel({ result, loading }: Props) {
             <HeadersView headers={response.headers ?? {}} />
           )}
 
-          {responseTab === 'Cookies' && <CookiesView />}
+          {responseTab === 'Cookies' && (
+            <CookiesView headers={response.headers ?? {}} isBrowserMode={!isTauri()} />
+          )}
 
           {responseTab === 'Tests' && <TestsView tests={testResults} />}
 
