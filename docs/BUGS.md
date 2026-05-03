@@ -44,7 +44,13 @@ A living list of known bugs and missing behavior. Each entry below maps to a TDD
 
 ### 🟠 Major
 
-*(populated by user / inspection)*
+#### `KeyValueTable` Add button drops rows under rapid/batched clicks
+- **Where**: `src/components/shared/KeyValueTable.tsx` → `addRow`
+- **Action**: Click Add 3 times rapidly (or programmatically dispatch 3 click events in the same task tick — what happens during keyboard mash, double-click misfire, automation, or React batched updates)
+- **Expected**: 3 new empty rows appear
+- **Actual**: Only 1 row appears (sometimes 2 depending on React's batching threshold)
+- **Suspect**: `addRow` reads `pairs` from the closure (`setPairs([...pairs, ...])`) instead of using the functional setter (`setPairs(prev => [...prev, ...])`). When React batches consecutive clicks before re-rendering, every queued update sees the stale captured `pairs` and the last write wins.
+- **Test**: Unit `KeyValueTable.test.tsx` — `fireEvent.click` 3× in sync, assert 3 rows in DOM. The existing `multiple Add clicks` test passes because it uses `await userEvent.click` which yields between clicks; this regression catches the synchronous-batched case.
 
 ### 🟡 Minor
 

@@ -86,8 +86,13 @@ export function KeyValueTable({
     // the persisted Record. Skip the onChange so we don't no-op the addition.
     // Once the user types a key into the row, updateKey → commit() will flush
     // it through onChange normally.
+    //
+    // Functional setState: rapid clicks (or any batched dispatches) all queue
+    // updates that read from the previous queued result, not the closure-time
+    // `pairs` snapshot. Closing over `pairs` here drops every-but-the-last
+    // append when React batches.
     selfUpdateRef.current = true;
-    setPairs([...pairs, { id: nextId(), key: '', value: '' }]);
+    setPairs((prev) => [...prev, { id: nextId(), key: '', value: '' }]);
   }
 
   return (
