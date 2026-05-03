@@ -250,7 +250,13 @@ function GeneralPage() {
 }
 
 function AppearancePage() {
-  const { theme: currentTheme, setTheme, themes: availableThemes } = useTheme();
+  const {
+    theme: currentTheme,
+    setTheme,
+    themes: availableThemes,
+    followSystem,
+    setFollowSystem,
+  } = useTheme();
 
   const themeSwatches = availableThemes.map((t) => ({
     id: t.id,
@@ -307,6 +313,12 @@ function AppearancePage() {
         ))}
       </div>
 
+      <Row
+        label="Follow system theme"
+        hint="Switch between Invoker Light and Invoker Dark based on your OS preference"
+      >
+        <Toggle on={followSystem} onChange={setFollowSystem} />
+      </Row>
       <Row label="Reduce motion"><Toggle /></Row>
     </>
   );
