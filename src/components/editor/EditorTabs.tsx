@@ -10,6 +10,7 @@ export function EditorTabs() {
   const splitDirection = useEditorStore((s) => s.splitDirection);
   const setSplitDirection = useEditorStore((s) => s.setSplitDirection);
   const setCommandPaletteOpen = useEditorStore((s) => s.setCommandPaletteOpen);
+  const createInlineTab = useEditorStore((s) => s.createInlineTab);
 
   const activeTab = tabs.find((t) => t.path === activeTabPath);
   const showActions = activeTab?.kind === 'ivk';
@@ -44,6 +45,11 @@ export function EditorTabs() {
         ))}
         <button
           title="New tab"
+          aria-label="New tab"
+          // Same `createInlineTab()` action that powers the welcome
+          // page's "+ New request" and the dashboard's "Create" button.
+          // Was a decorative button (no onClick) until #59.
+          onClick={() => createInlineTab()}
           style={{
             width: 28,
             height: 28,
