@@ -48,10 +48,12 @@ export function CommandPalette({ onClose }: Props) {
     items.push({ type: 'action', name: 'Manage Environments', icon: <Zap size={14} /> });
     items.push({ type: 'action', name: 'New Request', icon: <Zap size={14} /> });
 
-    // Docs
+    // Docs — prefer the explicit title (e.g. "Welcome" for README.md)
+    // over the path-derived basename so users can search by what they see
+    // in the sidebar / dashboard, not by the underlying filename.
     for (const d of docs) {
-      const name = d.path.split('/').pop()?.replace('.md', '') ?? d.path;
-      items.push({ type: 'doc', name, path: d.path });
+      const fallback = d.path.split('/').pop()?.replace('.md', '') ?? d.path;
+      items.push({ type: 'doc', name: d.title || fallback, path: d.path });
     }
 
     return items;
