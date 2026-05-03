@@ -216,6 +216,8 @@ function GeneralPage() {
   const setDefaultMethod = useEditorStore((s) => s.setDefaultRequestMethod);
   const defaultTimeoutSec = useEditorStore((s) => s.defaultTimeoutSec);
   const setDefaultTimeoutSec = useEditorStore((s) => s.setDefaultTimeoutSec);
+  const openLastOnLaunch = useEditorStore((s) => s.openLastOnLaunch);
+  const setOpenLastOnLaunch = useEditorStore((s) => s.setOpenLastOnLaunch);
 
   return (
     <>
@@ -237,7 +239,9 @@ function GeneralPage() {
       <Row label="Follow redirects"><Toggle on /></Row>
       <Row label="Verify SSL certificates"><Toggle on /></Row>
       <Row label="Save history" hint="Keep a log of sent requests"><Toggle on /></Row>
-      <Row label="Open last collection on launch"><Toggle on /></Row>
+      <Row label="Open last collection on launch" hint="Auto-load the most-recent folder (or sample) on next start">
+        <Toggle on={openLastOnLaunch} onChange={setOpenLastOnLaunch} />
+      </Row>
       <Row label="Check for updates">
         <Select value="Weekly" options={['Daily', 'Weekly', 'Monthly', 'Never']} />
       </Row>

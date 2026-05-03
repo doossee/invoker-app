@@ -32,6 +32,11 @@ interface EditorState {
   /** Default request timeout (seconds). Used when no `@timeout` directive
       is set on the request. Per-request `@timeout` always wins. */
   defaultTimeoutSec: number;
+  /** Auto-open the previously-loaded collection on next launch. Stores
+      both the boolean (this preference) AND the most-recent path
+      (`invoker:last-collection-path` in localStorage, set by
+      useOpenCollection). */
+  openLastOnLaunch: boolean;
 
   // Request editor state
   requestTab: string;
@@ -68,6 +73,7 @@ interface EditorState {
   setVimMode: (on: boolean) => void;
   setDefaultRequestMethod: (method: HttpMethod) => void;
   setDefaultTimeoutSec: (sec: number) => void;
+  setOpenLastOnLaunch: (on: boolean) => void;
 
   // Inline request creation
   createInlineTab: (opts?: { method?: HttpMethod; url?: string }) => string;
@@ -101,6 +107,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   vimMode: localStorage.getItem('invoker:vim-mode') === '1',
   defaultRequestMethod: (localStorage.getItem('invoker:default-request-method') as HttpMethod) || 'GET',
   defaultTimeoutSec: Number(localStorage.getItem('invoker:default-timeout-sec')) || 30,
+  // Default ON — most users want their workspace back on next launch.
+  // localStorage stores '0' to opt out so the default flips to ON without
+  // needing an explicit '1' write on first launch.
+  openLastOnLaunch: localStorage.getItem('invoker:open-last-on-launch') !== '0',
 
   requestTab: 'Body',
   responseTab: 'Body',
@@ -188,6 +198,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const clamped = Math.max(1, Math.min(600, Math.floor(sec)));
     set({ defaultTimeoutSec: clamped });
     localStorage.setItem('invoker:default-timeout-sec', String(clamped));
+  },
+
+  setOpenLastOnLaunch: (on) => {
+    set({ openLastOnLaunch: on });
+    localStorage.setItem('invoker:open-last-on-launch', on ? '1' : '0');
   },
 
   createInlineTab: (opts) => {

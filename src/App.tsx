@@ -16,7 +16,9 @@ import { useEditorStore } from '@/stores/editor-store';
 import { useCollectionStore } from '@/stores/collection-store';
 import { useEnvStore } from '@/stores/env-store';
 import { watchCollection, loadCollection, loadFromManifest } from '@/lib/file-system';
-import { isPublished } from '@/lib/platform';
+import { isPublished, isTauri } from '@/lib/platform';
+import { sampleCollection } from '@/data/sample-collection';
+import { sampleDocs } from '@/data/sample-docs';
 import { matchShortcut } from '@/lib/shortcuts';
 import { useDocsStore } from '@/stores/docs-store';
 import { TOKENS } from '@/components/shared/primitives';
@@ -186,6 +188,50 @@ export function App() {
       setSiteConfig(data.config ?? null);
     });
   }, [setSiteConfig]);
+
+  // Auto-open last collection at startup. Honors the General → "Open last
+  // collection on launch" toggle (default ON). Skips published mode (the
+  // manifest effect above already handles it). Skips if a collection is
+  // already loaded (Strict Mode double-mount or HMR re-run).
+  useEffect(() => {
+    if (isPublished()) return;
+    if (!useEditorStore.getState().openLastOnLaunch) return;
+    if (useCollectionStore.getState().files.length > 0) return;
+
+    const lastPath = localStorage.getItem('invoker:last-collection-path');
+    if (!lastPath) return;
+
+    if (lastPath === '(sample)') {
+      useCollectionStore.getState().loadCollection({
+        ivkFiles: sampleCollection,
+        basePath: '(sample)',
+      });
+      useCollectionStore.getState().setCollectionPath('(sample)');
+      useDocsStore.getState().loadDocs(sampleDocs);
+      return;
+    }
+
+    // Real folder path → only Tauri can re-open without a fresh user-
+    // gesture pick. The browser File System Access API requires
+    // re-prompting on every load.
+    if (!isTauri()) return;
+    loadCollection(lastPath)
+      .then((data) => {
+        useCollectionStore.getState().loadCollection({
+          ivkFiles: data.ivkFiles,
+          basePath: data.basePath,
+        });
+        useCollectionStore.getState().setCollectionPath(lastPath);
+        useDocsStore.getState().loadDocs(data.mdFiles);
+      })
+      .catch((e) => {
+        // Folder may have been moved/deleted since the last session — log
+        // and clear the stale path so the user gets the welcome screen
+        // instead of an error loop.
+        console.warn('[invoker] auto-open last collection failed:', e);
+        localStorage.removeItem('invoker:last-collection-path');
+      });
+  }, []);
 
   // Watch collection for changes
   useEffect(() => {
