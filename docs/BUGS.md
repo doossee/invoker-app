@@ -47,7 +47,19 @@ A living list of known bugs and missing behavior. Each entry below maps to a TDD
 
 ### 🟡 Minor
 
-*(none open — see Recently fixed)*
+#### Theme picker is duplicated between Settings → Appearance and the env-switcher modal
+- **Where**: `src/components/modals/SettingsModal.tsx` (Appearance pane) AND `src/components/env/EnvSettings.tsx`
+- **Action**: Click the env switcher in the bottom-left status bar → "Manage environments..." → modal opens with both a Theme section AND the Environments section.
+- **Expected**: One canonical place to switch themes (Settings → Appearance).
+- **Actual**: Two separate theme pickers — same store binding, but visual styling differs slightly between them, and "Manage environments..." has nothing to do with appearance.
+- **Suspect**: Older modal that mixed concerns. Drop the Theme section from EnvSettings — Settings → Appearance is the canonical home.
+
+#### "Export to clipboard" button has no visual feedback after click
+- **Where**: `src/components/env/EnvSettings.tsx` → "Export to clipboard" button
+- **Action**: Click "Export to clipboard" in the env-settings modal
+- **Expected**: Button briefly shows "Copied!" or a check-mark (same pattern as the variable-popover copy button — `setCopied(true); setTimeout(setCopied(false), 1500)`).
+- **Actual**: Click does nothing visible. The clipboard probably HAS the JSON, but the user can't tell.
+- **Fix**: Mirror the VariablePopoverContent copy-button pattern.
 
 ### 🔵 Missing features
 
@@ -62,12 +74,16 @@ A living list of known bugs and missing behavior. Each entry below maps to a TDD
 - **Actual**: The contextmenu event falls through to the row's onClick, so the file just opens. There's no menu, no rename flow, no delete confirm.
 - **Notes**: At minimum: Rename + Delete + Duplicate. Reveal-in-Finder is Tauri-only.
 
-#### Response → Table view shows JSON-as-string for object cells; "1 rows" grammar
-- **Where**: `src/components/editor/ResponsePanel.tsx` → Table view branch
-- **Action**: Send any request, switch the Response body to "Table" view
-- **Expected**: Cells with object/array values either flatten with dot-notation (`headers.Accept`) or render as a clickable expander.
-- **Actual**: Each row's HEADERS cell prints the entire `JSON.stringify(headers)` as one wide string. Row footer reads `1 rows` (should be `1 row`).
-- **Fix**: Either (a) flatten one level deep, (b) collapse object cells with a `{…}` chip + click-to-expand, or (c) drop the Table view for non-flat shapes and fall back to Pretty.
+#### General settings rows (timeout/redirects/SSL/save history/...) still cosmetic
+- **Where**: `src/components/modals/SettingsModal.tsx` → `GeneralPage`
+- The `Default request method` row was wired in PR #35 — it actually drives `createInlineTab()`. The remaining rows still render `<Toggle on />` / static `<Select>` with no state binding:
+  - Request timeout — should drive a default `@timeout` for sent requests (ivkjs already supports per-request `@timeout` directive)
+  - Follow redirects — needs a transport pass-through
+  - Verify SSL certificates — needs a transport pass-through
+  - Save history — depends on the (not-yet-existent) history feature
+  - Open last collection on launch — Tauri-only
+  - Check for updates — Tauri-only (updater plugin)
+- Wire one row per follow-up PR.
 
 #### System-preference theme (auto-follow `prefers-color-scheme`)
 - A daylight palette ships now (Invoker Light, PR #30) but the app doesn't auto-follow `prefers-color-scheme`. Add a third "Auto" choice in Appearance that picks a sensible dark/light preset based on the OS preference and re-evaluates on `change`.
@@ -100,6 +116,9 @@ A living list of known bugs and missing behavior. Each entry below maps to a TDD
 | ✅ | Sidebar collapse / expand had no UI surface (only the ⌘\ shortcut) | PR #29 — `PanelLeftClose` button in collection-header; pairs with the existing restore button when collapsed |
 | ✅ | Light theme: only dark variants shipped | PR #30 — Invoker Light preset + a11y on theme cards (`aria-label`, `aria-pressed`, `data-theme-id`) |
 | ✅ | Settings → Keyboard listed `⌘P "Jump to request"` and `⌘⇧T "Run test suite"` but neither was wired | PR #31 — ⌘P aliases to command palette (VSCode/Cursor convention); ⌘⇧T row removed until a collection-wide test runner ships |
+| ✅ | Response → Table view: object cells dumped full JSON.stringify; "1 rows" grammar | PR #33 — collapse object cells to `{N keys}` / `[N items]` chips with full JSON on hover; pluralise the row counter |
+| ✅ | Settings → AI / Data & sync panes were entirely decorative (no state, no handlers) | PR #34 — both panes removed; surviving panes (General/Appearance/Keyboard) cover the actual local-first surface |
+| ✅ | General → Default request method had no backing — it was a hardcoded `Select value="GET"` | PR #35 — `defaultRequestMethod` added to editor-store with localStorage persistence; `createInlineTab` reads it as the fallback. Knock-on fix: inline content now seeds `https://` so a method-only request line doesn't fall back to GET on parse |
 
 ---
 
