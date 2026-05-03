@@ -22,13 +22,7 @@ A living list of known bugs and missing behavior. Each entry below maps to a TDD
 
 ### 🔴 Critical
 
-#### `⌘S` → request not persisted to disk (Tauri build)
-- **Where**: Any request edit
-- **Action**: Edit a request, ⌘S
-- **Expected**: File on disk has new content; reopen reflects edit
-- **Actual**: UI dispatches `invoker:save` event; `collection-store.saveRequest` exists but `Tauri writeTextFile` not wired → file unchanged on disk
-- **Suspect**: Missing `writeTextFile` call in saveRequest path — known feature gap
-- **Test**: Integration test mocking `@tauri-apps/plugin-fs.writeTextFile`, asserting it's called with the expected path + content
+*(none open — see Recently fixed)*
 
 ### 🟠 Major
 
@@ -40,16 +34,14 @@ A living list of known bugs and missing behavior. Each entry below maps to a TDD
 
 ### 🔵 Missing features
 
-#### `⌘S` → save .md doc to disk (Tauri build)
-- Same gap as Save Request, but for markdown docs in Live mode
-- UI dispatches `invoker:save-doc` → `docs-store.saveDoc` returns `Promise<boolean>` but does not call writeTextFile
-
-#### Sidebar tree right-click does nothing (no context menu)
-- **Where**: `src/components/collection/UnifiedTree.tsx`
-- **Action**: Right-click any request or folder in the sidebar
-- **Expected**: A context menu with `Rename / Delete / Duplicate / Open in External / Reveal in Finder` (Tauri) — the standard file-tree affordances.
-- **Actual**: The contextmenu event falls through to the row's onClick, so the file just opens. There's no menu, no rename flow, no delete confirm.
-- **Notes**: At minimum: Rename + Delete + Duplicate. Reveal-in-Finder is Tauri-only.
+#### Sidebar tree context menu — Tauri disk integration
+- PR #48 shipped Rename + Delete in browser-mode (in-memory). The Tauri
+  build still needs `@tauri-apps/plugin-fs.rename` / `.remove` calls in
+  `collection-store.renameFile` / `deleteFile` — same pattern as
+  `saveRequest` after PR #49.
+- Folder + .md doc context menus also still pending — folder rename
+  needs to move N child files; doc rename has to decide whether `title`
+  follows or stays.
 
 #### General settings rows (redirects/SSL/save history/check-for-updates) still cosmetic
 - **Where**: `src/components/modals/SettingsModal.tsx` → `GeneralPage`
@@ -102,6 +94,8 @@ A living list of known bugs and missing behavior. Each entry below maps to a TDD
 | ✅ | Response Body pill: hardcoded "application/json" label + decorative Copy/Search buttons | PR #42 — content-type label reads from response.headers; Copy now wired to `clipboard.writeText`; Search dropped (would need real find-in-body editor surface) |
 | ✅ | System-preference theme (auto-follow `prefers-color-scheme`) | PR #44 — `Follow system theme` toggle in Appearance subscribes to `matchMedia('(prefers-color-scheme: light)')` and re-picks `invoker-light` / `invoker-dark` on `change`. Picking an explicit theme via swatch turns it off (VSCode/GitHub/Linear convention). |
 | ✅ | `Send → ERR 5ms 0B` showed nothing about WHY (was reported as Tauri-only Critical, but reproduces in browser-mode too) | PR #46 — when `response.status === 0`, render the transport's `error` in a red tile in the Body view with a short explanation listing common causes (DNS / CORS / malformed URL / offline / Tauri plugin perms). Whatever Tauri-side issue caused the original report is now diagnosable from the UI instead of mysterious. |
+| ✅ | Sidebar tree right-click did nothing (no context menu) | PR #48 — right-click on a request opens a small Rename / Delete menu near the cursor. Browser-mode in-memory only; Tauri disk integration tracked as a follow-up Missing entry. |
+| ✅ | `⌘S` → request not persisted to disk (Tauri build) **AND** `⌘S` → save .md doc to disk (Tauri build) | PR #49 — root cause was Tauri 1-only detection (`'__TAURI__' in window`) in both `saveRequest` and `saveDoc`; Tauri 2 sets `window.isTauri` + `window.__TAURI_INTERNALS__` instead. Replaced both inline checks with the shared `isTauri()` helper (same fix pattern as PR #4 / "Open folder"). 10 tests mock `@tauri-apps/plugin-fs.writeTextFile` and toggle each window flag in turn. |
 
 ---
 
