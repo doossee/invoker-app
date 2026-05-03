@@ -36,6 +36,11 @@ export function useOpenCollection() {
         loadCollectionToStore({ ivkFiles: data.ivkFiles, basePath: data.basePath });
         setCollectionPath(folderPath);
         loadDocsToStore(data.mdFiles);
+        // Persist for "Open last collection on launch" (PR #41). Was
+        // missing on this code path — only `loadSample` wrote the key,
+        // so opening a real folder via the picker silently broke the
+        // auto-open feature for every user except sample users.
+        localStorage.setItem('invoker:last-collection-path', folderPath);
         return;
       }
       if (hasBrowserApi) {
@@ -60,6 +65,14 @@ export function useOpenCollection() {
         loadCollectionToStore({ ivkFiles: data.ivkFiles, basePath: data.basePath });
         setCollectionPath(data.basePath);
         loadDocsToStore(data.mdFiles);
+        // Persist for "Open last collection on launch" (PR #41). NB:
+        // browser-mode auto-open will only restore the *path* — the
+        // File System Access API requires a fresh user-gesture pick
+        // each session, so App.tsx's auto-open effect skips real
+        // folders when !isTauri(). Still useful: future surfaces (e.g.
+        // a "Last opened: <name>" hint on the welcome screen) can read
+        // it without a separate store key.
+        localStorage.setItem('invoker:last-collection-path', data.basePath);
         return;
       }
       // Neither Tauri nor FSA — show a clear message rather than failing silently.
