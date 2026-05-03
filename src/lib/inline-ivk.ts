@@ -32,6 +32,19 @@ export type ResolveResult =
   | { ok: true; content: string; sourcePath?: string }
   | { ok: false; error: string };
 
+export interface InlineOpenSpec {
+  /** Path to use for the new tab. For path-references this is the real
+   *  collection path; for direct-content blocks it's an `inline-*` synthetic
+   *  path (which currently won't resolve to a real file — see openable). */
+  path: string;
+  /** Display name for the tab. */
+  name: string;
+  /** Whether the spec maps to a real file in the collection. The Open
+   *  button should only be shown when this is true; opening a synthetic
+   *  inline path lands the user on "Could not parse request file." */
+  openable: boolean;
+}
+
 const PATH_REF_RE = /^\s*path:\s*(\S+)\s*$/;
 
 /**
@@ -64,4 +77,29 @@ export function resolveInlineIvk(
 
   // Otherwise treat the block as a literal .ivk source.
   return { ok: true, content: blockContent };
+}
+
+/**
+ * Spec for the "Open" button on an inline ivk block — converts a resolved
+ * block plus its parsed URL into the tab arguments to feed openTab().
+ *
+ * Path-reference blocks → open the actual file (sourcePath, openable=true).
+ * Direct-content blocks → there is no real file in the collection to open,
+ *   so we mark openable=false and let the caller hide the Open button.
+ *   Returning a spec anyway (with a synthetic inline-* path) keeps the
+ *   helper total: callers can still use the name/path for fallback UI.
+ */
+export function openTabSpecForInline(
+  resolved: ResolveResult,
+  url: string,
+  now: () => number = Date.now,
+): InlineOpenSpec {
+  if (resolved.ok && resolved.sourcePath) {
+    const filename = resolved.sourcePath.split('/').pop() ?? 'request';
+    const name = filename.replace(/\.ivk$/, '');
+    return { path: resolved.sourcePath, name, openable: true };
+  }
+  // Direct content has no backing file; the caller should not render Open.
+  const name = url.split('/').pop() || 'request';
+  return { path: `inline-${now()}`, name, openable: false };
 }

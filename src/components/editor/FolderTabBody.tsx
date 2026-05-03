@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Folder, BookOpen, ExternalLink, FolderOpen, Play } from 'lucide-react';
 import { parseIvk } from 'ivkjs';
-import { resolveInlineIvk } from '@/lib/inline-ivk';
+import { resolveInlineIvk, openTabSpecForInline } from '@/lib/inline-ivk';
 import { useCollectionStore } from '@/stores/collection-store';
 import { useDocsStore } from '@/stores/docs-store';
 import { useEditorStore, type TabData } from '@/stores/editor-store';
@@ -247,9 +247,12 @@ function InlineIvkBlock({ content }: { content: string }) {
     resolveError = resolved.error;
   }
 
+  // Path-reference blocks → use the real collection path so RequestEditor
+  // can actually load the file. Direct-content blocks have no backing file
+  // and hide the Open button entirely (see `openSpec.openable` below).
+  const openSpec = openTabSpecForInline(resolved, url);
   const handleOpen = () => {
-    const name = url.split('/').pop() ?? 'request';
-    const tab: TabData = { kind: 'ivk', path: `inline-${Date.now()}`, name, method };
+    const tab: TabData = { kind: 'ivk', path: openSpec.path, name: openSpec.name, method };
     openTab(tab);
   };
 
@@ -309,27 +312,29 @@ function InlineIvkBlock({ content }: { content: string }) {
         >
           <HighlightedText text={url} resolver={resolveVar} onChangeVar={setVariable} />
         </span>
-        <button
-          onClick={handleOpen}
-          style={{
-            background: 'transparent',
-            color: TOKENS.fg2,
-            padding: '4px 9px',
-            borderRadius: 5,
-            boxShadow: `inset 0 0 0 1px ${TOKENS.stroke}`,
-            border: 'none',
-            fontSize: 11,
-            fontWeight: 500,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            fontFamily: 'inherit',
-          }}
-        >
-          <ExternalLink size={10} />
-          Open
-        </button>
+        {openSpec.openable && (
+          <button
+            onClick={handleOpen}
+            style={{
+              background: 'transparent',
+              color: TOKENS.fg2,
+              padding: '4px 9px',
+              borderRadius: 5,
+              boxShadow: `inset 0 0 0 1px ${TOKENS.stroke}`,
+              border: 'none',
+              fontSize: 11,
+              fontWeight: 500,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              fontFamily: 'inherit',
+            }}
+          >
+            <ExternalLink size={10} />
+            Open
+          </button>
+        )}
         <button
           onClick={() => setShowResponse(true)}
           style={{
