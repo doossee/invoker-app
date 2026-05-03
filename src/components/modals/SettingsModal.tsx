@@ -4,8 +4,6 @@ import {
   Sliders,
   Palette,
   Keyboard,
-  Sparkles,
-  Database,
 } from 'lucide-react';
 import { TOKENS, Kbd, Toggle, Select } from '@/components/shared/primitives';
 import { useTheme } from '@/themes/theme-provider';
@@ -15,18 +13,21 @@ interface Props {
   onClose: () => void;
 }
 
-type SettingsPage = 'general' | 'appearance' | 'keyboard' | 'ai' | 'data';
+type SettingsPage = 'general' | 'appearance' | 'keyboard';
 
-// Account intentionally omitted — Invoker is local-first ("no sign-in, no
-// sync, no cloud" per the Welcome page). The previous Account pane was a
-// design stub with a fake user and dead buttons. Add it back when (if) cloud
-// sync ships, with real backing data + working handlers.
+// Account / AI / Data & sync intentionally omitted — they were design
+// stubs with no state binding, no handlers, no underlying features.
+//   - Account: contradicted "no sign-in" promise (PR #23)
+//   - AI: nothing AI in the app
+//   - Data & sync: collections-path / history / git-sync are not wired;
+//     "Reveal" had no onClick, the toggles had no onChange, the selects
+//     showed hardcoded values
+// Add each pane back when its backing functionality ships, with real
+// store wiring and working handlers.
 const PAGES: { id: SettingsPage; label: string; icon: React.ReactNode }[] = [
   { id: 'general', label: 'General', icon: <Sliders size={14} /> },
   { id: 'appearance', label: 'Appearance', icon: <Palette size={14} /> },
   { id: 'keyboard', label: 'Keyboard', icon: <Keyboard size={14} /> },
-  { id: 'ai', label: 'AI', icon: <Sparkles size={14} /> },
-  { id: 'data', label: 'Data & sync', icon: <Database size={14} /> },
 ];
 
 export function SettingsModal({ onClose }: Props) {
@@ -160,8 +161,6 @@ export function SettingsModal({ onClose }: Props) {
             {activePage === 'general' && <GeneralPage />}
             {activePage === 'appearance' && <AppearancePage />}
             {activePage === 'keyboard' && <KeyboardPage />}
-            {activePage === 'ai' && <AIPage />}
-            {activePage === 'data' && <DataPage />}
           </div>
         </div>
       </div>
@@ -328,58 +327,4 @@ function KeyboardPage() {
   );
 }
 
-function AIPage() {
-  return (
-    <>
-      <PageTitle note="Configure AI-powered features.">AI</PageTitle>
-      <Row label="Enable AI features"><Toggle on /></Row>
-      <Row label="Provider"><Select value="Anthropic" /></Row>
-      <Row label="Model"><Select value="claude-haiku-4-5" /></Row>
-      <div
-        style={{
-          marginTop: 18,
-          padding: 12,
-          borderRadius: 8,
-          background: TOKENS.s3,
-          boxShadow: `inset 0 0 0 1px ${TOKENS.strokeSoft}`,
-          display: 'flex',
-          gap: 10,
-        }}
-      >
-        <Sparkles size={14} style={{ color: TOKENS.amber, flexShrink: 0, marginTop: 2 }} />
-        <span style={{ fontSize: 12, color: TOKENS.fg2, lineHeight: 1.5 }}>
-          AI features run locally and never send your API keys or request data to third-party services.
-        </span>
-      </div>
-    </>
-  );
-}
-
-function DataPage() {
-  return (
-    <>
-      <PageTitle note="Manage your data, history, and sync preferences.">Data & Sync</PageTitle>
-      <Row label="Collections path" hint="Where your .ivk files are stored">
-        <button
-          style={{
-            padding: '5px 10px',
-            background: TOKENS.s3,
-            border: 'none',
-            borderRadius: 6,
-            boxShadow: `inset 0 0 0 1px ${TOKENS.stroke}`,
-            color: TOKENS.fg2,
-            fontSize: 11,
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-          }}
-        >
-          Reveal...
-        </button>
-      </Row>
-      <Row label="Keep history for"><Select value="90 days" options={['30 days', '90 days', '1 year', 'Forever']} /></Row>
-      <Row label="Redact secrets from history"><Toggle on /></Row>
-      <Row label="Sync via Git"><Toggle on /></Row>
-    </>
-  );
-}
 
