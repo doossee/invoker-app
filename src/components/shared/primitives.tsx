@@ -447,20 +447,21 @@ export function Toggle({ on, onChange }: { on?: boolean; onChange?: (v: boolean)
 /* ------------------------------------------------------------------ */
 /*  Select                                                             */
 /* ------------------------------------------------------------------ */
+/**
+ * Native-styled `<select>` with the chip wrapper. The `onChange` +
+ * `options` props were optional once (decorative variant for stub
+ * settings rows that PR #34 / #55 dropped); now both callsites pass
+ * both props, so the type tightens and the dead branch is gone.
+ */
 export function Select({
   value,
   options,
   onChange,
 }: {
   value: string;
-  options?: string[];
-  /** When provided, the control renders a native <select> so it actually
-      mutates state. When omitted (legacy), it renders a decorative
-      static button — keeps existing display-only callsites working. */
-  onChange?: (value: string) => void;
+  options: string[];
+  onChange: (value: string) => void;
 }) {
-  // Wrapper styling stays consistent for both the interactive and
-  // decorative variants so settings rows line up visually.
   const wrapperStyle: CSSProperties = {
     display: 'inline-flex',
     alignItems: 'center',
@@ -477,41 +478,32 @@ export function Select({
     position: 'relative' as const,
   };
 
-  if (onChange && options) {
-    return (
-      <label style={wrapperStyle}>
-        <span>{value}</span>
-        <ChevronDown size={10} style={{ color: TOKENS.fg3 }} />
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          // Stretch the native <select> over the styled wrapper so clicks
-          // anywhere on the chip open the menu. opacity:0 keeps the
-          // styled label visible.
-          style={{
-            position: 'absolute',
-            inset: 0,
-            opacity: 0,
-            cursor: 'pointer',
-            border: 'none',
-            background: 'transparent',
-          }}
-        >
-          {options.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
-        </select>
-      </label>
-    );
-  }
-
   return (
-    <button style={wrapperStyle}>
-      {value}
+    <label style={wrapperStyle}>
+      <span>{value}</span>
       <ChevronDown size={10} style={{ color: TOKENS.fg3 }} />
-    </button>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        // Stretch the native <select> over the styled wrapper so clicks
+        // anywhere on the chip open the menu. opacity:0 keeps the
+        // styled label visible.
+        style={{
+          position: 'absolute',
+          inset: 0,
+          opacity: 0,
+          cursor: 'pointer',
+          border: 'none',
+          background: 'transparent',
+        }}
+      >
+        {options.map((opt) => (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 
