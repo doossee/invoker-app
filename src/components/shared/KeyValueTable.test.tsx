@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { KeyValueTable } from './KeyValueTable';
 
@@ -56,6 +56,35 @@ describe('KeyValueTable', () => {
     await userEvent.click(addBtn);
     await userEvent.click(addBtn);
     await userEvent.click(addBtn);
+
+    expect(screen.queryAllByPlaceholderText('Key')).toHaveLength(3);
+    expect(screen.queryAllByPlaceholderText('Value')).toHaveLength(3);
+  });
+
+  it('rapid synchronous Add clicks all land — does not drop batched updates (regression)', () => {
+    // Regression for the stale-closure bug: addRow used `setPairs([...pairs, …])`
+    // — `pairs` is captured from the closure of the current render. When
+    // multiple click events are dispatched inside a single React batch (rapid
+    // mash, automation that fires clicks back-to-back without yielding,
+    // dispatched MouseEvents from a script), every handler sees the same
+    // stale `pairs` snapshot and only the last write survives.
+    //
+    // The fix is functional setState: `setPairs(prev => [...prev, …])` so each
+    // queued update sees the result of the previous queued one, not the render
+    // snapshot.
+    //
+    // Implementation note: native `el.click()` calls inside a single `act()`
+    // simulate the real-world batched scenario — React 18 auto-batches the
+    // three handler invocations, captures the closed-over `pairs=[]` three
+    // times, and (with the bug) commits only the last write.
+    render(<KeyValueTable entries={{}} onChange={() => {}} />);
+
+    const addBtn = screen.getByRole('button', { name: /add/i });
+    act(() => {
+      addBtn.click();
+      addBtn.click();
+      addBtn.click();
+    });
 
     expect(screen.queryAllByPlaceholderText('Key')).toHaveLength(3);
     expect(screen.queryAllByPlaceholderText('Value')).toHaveLength(3);
