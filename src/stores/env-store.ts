@@ -102,26 +102,42 @@ export const useEnvStore = create<EnvState>((set, get) => {
     setAuthorDefaults: (defaults) => {
       set({ authorDefaults: defaults });
       const state = get();
-      const env = state.settings.environments[state.settings.activeEnvironmentIndex];
-      if (env) {
-        for (const [key, value] of Object.entries(defaults)) {
-          if (!env.variables[key]) {
-            env.variables[key] = value;
-          }
-        }
-        set({ settings: { ...state.settings } });
+      const idx = state.settings.activeEnvironmentIndex;
+      const target = state.settings.environments[idx];
+      if (!target) {
+        get().persist();
+        return;
       }
+      // Same immutability fix as resetToDefaults below — was mutating
+      // `env.variables[key]` in place, so zustand selectors deeper than
+      // `s.settings` skipped the re-render.
+      const mergedVars = { ...target.variables };
+      for (const [key, value] of Object.entries(defaults)) {
+        if (!mergedVars[key]) mergedVars[key] = value;
+      }
+      const nextEnvs = state.settings.environments.map((e, i) =>
+        i === idx ? { ...e, variables: mergedVars } : e,
+      );
+      set({ settings: { ...state.settings, environments: nextEnvs } });
       get().persist();
     },
 
     resetToDefaults: () => {
       const state = get();
       const defaults = state.authorDefaults;
-      const env = state.settings.environments[state.settings.activeEnvironmentIndex];
-      if (env) {
-        env.variables = { ...defaults };
-        set({ settings: { ...state.settings } });
-      }
+      const idx = state.settings.activeEnvironmentIndex;
+      const target = state.settings.environments[idx];
+      if (!target) return;
+      // Rebuild the environments array immutably so every reference
+      // along the path (environments → environments[idx] → .variables)
+      // changes. The previous implementation mutated `env.variables`
+      // in place and only shallow-cloned `settings`, so zustand
+      // selectors subscribing to deeper paths skipped the re-render
+      // (see `env-store-reset.test.ts` for the contract).
+      const nextEnvs = state.settings.environments.map((e, i) =>
+        i === idx ? { ...e, variables: { ...defaults } } : e,
+      );
+      set({ settings: { ...state.settings, environments: nextEnvs } });
       get().persist();
     },
   };
