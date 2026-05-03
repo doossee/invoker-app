@@ -29,6 +29,9 @@ interface EditorState {
   vimMode: boolean;
   /** Method picked when creating a new untitled request via ⌘N or +. */
   defaultRequestMethod: HttpMethod;
+  /** Default request timeout (seconds). Used when no `@timeout` directive
+      is set on the request. Per-request `@timeout` always wins. */
+  defaultTimeoutSec: number;
 
   // Request editor state
   requestTab: string;
@@ -64,6 +67,7 @@ interface EditorState {
   // Editor preference actions
   setVimMode: (on: boolean) => void;
   setDefaultRequestMethod: (method: HttpMethod) => void;
+  setDefaultTimeoutSec: (sec: number) => void;
 
   // Inline request creation
   createInlineTab: (opts?: { method?: HttpMethod; url?: string }) => string;
@@ -96,6 +100,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   splitDirection: (localStorage.getItem('invoker:split-direction') as SplitDirection) || 'horizontal',
   vimMode: localStorage.getItem('invoker:vim-mode') === '1',
   defaultRequestMethod: (localStorage.getItem('invoker:default-request-method') as HttpMethod) || 'GET',
+  defaultTimeoutSec: Number(localStorage.getItem('invoker:default-timeout-sec')) || 30,
 
   requestTab: 'Body',
   responseTab: 'Body',
@@ -175,6 +180,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setDefaultRequestMethod: (method) => {
     set({ defaultRequestMethod: method });
     localStorage.setItem('invoker:default-request-method', method);
+  },
+
+  setDefaultTimeoutSec: (sec) => {
+    // Clamp to a sane range so a typo or stale setting doesn't hang
+    // requests forever or fail them instantly.
+    const clamped = Math.max(1, Math.min(600, Math.floor(sec)));
+    set({ defaultTimeoutSec: clamped });
+    localStorage.setItem('invoker:default-timeout-sec', String(clamped));
   },
 
   createInlineTab: (opts) => {

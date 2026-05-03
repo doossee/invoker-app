@@ -206,12 +206,16 @@ function PageTitle({ children, note }: { children: React.ReactNode; note?: strin
 /*  Pages                                                              */
 /* ------------------------------------------------------------------ */
 function GeneralPage() {
-  // Default request method is the first General row to be wired through
-  // to actual behaviour: createInlineTab() reads this when ⌘N or + opens
-  // an untitled request. The rest of the rows below are still visual
-  // (timeout, redirects, ...) — they'll get wired one PR at a time.
+  // Default request method is wired (PR #35).
+  // Default timeout wired here (this PR) — falls through to useRequest
+  // which injects an `@timeout` directive when the request doesn't
+  // declare one. Per-request `@timeout` always wins.
+  // Other rows (redirects, SSL, ...) still cosmetic until each gets
+  // its own follow-up PR.
   const defaultMethod = useEditorStore((s) => s.defaultRequestMethod);
   const setDefaultMethod = useEditorStore((s) => s.setDefaultRequestMethod);
+  const defaultTimeoutSec = useEditorStore((s) => s.defaultTimeoutSec);
+  const setDefaultTimeoutSec = useEditorStore((s) => s.setDefaultTimeoutSec);
 
   return (
     <>
@@ -223,8 +227,12 @@ function GeneralPage() {
           onChange={(v) => setDefaultMethod(v as 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE')}
         />
       </Row>
-      <Row label="Request timeout" hint="Maximum time to wait for a response">
-        <Select value="30s" options={['10s', '30s', '60s', '120s']} />
+      <Row label="Request timeout" hint="Maximum time to wait for a response (per-request @timeout overrides)">
+        <Select
+          value={`${defaultTimeoutSec}s`}
+          options={['10s', '30s', '60s', '120s']}
+          onChange={(v) => setDefaultTimeoutSec(parseInt(v.replace(/\D/g, ''), 10))}
+        />
       </Row>
       <Row label="Follow redirects"><Toggle on /></Row>
       <Row label="Verify SSL certificates"><Toggle on /></Row>
