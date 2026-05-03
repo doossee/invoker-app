@@ -87,6 +87,9 @@ export function useOpenCollection() {
     loadCollectionToStore({ ivkFiles: sampleCollection, basePath: '(sample)' });
     setCollectionPath('(sample)');
     loadDocsToStore(sampleDocs);
+    // Remember the sample was loaded so "Open last on launch" works in
+    // browser-demo mode without needing a real folder path.
+    localStorage.setItem('invoker:last-collection-path', '(sample)');
   }, [loadCollectionToStore, setCollectionPath, loadDocsToStore]);
 
   return { openCollection, loadSample, loading, canOpenFolder, isTauriApp, hasBrowserApi };
