@@ -372,7 +372,7 @@ function TableView({ data }: { data: unknown }) {
           borderTop: `1px solid ${TOKENS.strokeSoft}`,
         }}
       >
-        {rows.length} rows
+        {rows.length} {rows.length === 1 ? 'row' : 'rows'}
       </div>
     </div>
   );
@@ -399,7 +399,33 @@ function CellValue({ value, column }: { value: unknown; column: string }) {
       </span>
     );
   }
-  if (typeof value === 'object') return <span style={{ color: TOKENS.fg3 }}>{JSON.stringify(value)}</span>;
+  if (typeof value === 'object') {
+    // Object/array cells used to render the entire JSON.stringify, which
+    // produced multi-hundred-character cells for any non-flat shape (e.g.
+    // httpbin's headers map). Show a compact summary chip so the table
+    // stays scannable; the full JSON is one click away in Pretty/Raw view.
+    const isArr = Array.isArray(value);
+    const count = isArr
+      ? (value as unknown[]).length
+      : Object.keys(value as Record<string, unknown>).length;
+    const label = isArr
+      ? `[${count} item${count === 1 ? '' : 's'}]`
+      : `{${count} key${count === 1 ? '' : 's'}}`;
+    return (
+      <span
+        title={JSON.stringify(value).slice(0, 400)}
+        style={{
+          color: TOKENS.fg3,
+          fontStyle: 'italic',
+          padding: '0 6px',
+          borderRadius: 3,
+          background: TOKENS.s3,
+        }}
+      >
+        {label}
+      </span>
+    );
+  }
   return <span style={{ color: TOKENS.fg1 }}>{String(value)}</span>;
 }
 
