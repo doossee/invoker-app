@@ -63,10 +63,17 @@ chore(deps): bump @codemirror/state to 6.5.1
 
 Every feature, fix, and refactor lands with tests. Skipping tests is not a tradeoff this project makes — write the failing test first, watch it fail, then make it pass.
 
-- React components, hooks, stores, lib utils → **`vitest`** (`npm test`)
-- Build / release CLI scripts (`scripts/release.{mjs,test.mjs}`) → **`node:test`** (`npm run release:test`)
+Three runners coexist by design — pick the right one for what you're testing:
 
-Tests live next to the code they cover: `Foo.tsx` ↔ `Foo.test.tsx`. Vitest finds anything matching `*.{test,spec}.{ts,tsx}` under `src/`.
+| Runner | Where | Command | What it covers |
+|---|---|---|---|
+| **`vitest`** | `src/**/*.test.{ts,tsx}` (co-located) | `npm test` | Unit + integration: pure functions, components, hooks, stores. jsdom env. |
+| **Playwright** | `e2e/*.spec.ts` | `npm run test:e2e` | E2E: real Chromium against `npm run dev`. User flows from welcome → action → result. |
+| **`node:test`** | `scripts/*.test.mjs` | `npm run release:test` | CLI scripts (release.mjs etc.) — plain Node, no DOM. |
+
+Run all three: `npm run test:all`.
+
+Vitest tests live next to the code they cover: `Foo.tsx` ↔ `Foo.test.tsx`. Playwright tests group by user flow in `e2e/<flow>.spec.ts` (e.g. `open-collection.spec.ts`, `send-request.spec.ts`).
 
 What we cover:
 
@@ -113,7 +120,10 @@ CI runs the same set, so a failure locally is a failure on the PR.
 
 ## Reporting bugs
 
-Open an issue at https://github.com/doossee/invoker-app/issues with:
+Two paths:
+
+- **For maintainers + active contributors**: add to [`docs/BUGS.md`](docs/BUGS.md) — the in-repo bug inventory. Each entry maps directly to a TDD cycle: failing test that reproduces → fix → test stays as regression coverage.
+- **For external reporters**: open an issue at https://github.com/doossee/invoker-app/issues with:
 
 1. What you tried (steps)
 2. What you expected

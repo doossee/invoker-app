@@ -16,9 +16,10 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test-setup.ts'],
-    // Exclude scripts/release.test.mjs — that file runs under node:test
-    // (different runner, no DOM, no JSX). See npm run release:test.
-    exclude: ['node_modules', 'dist', 'src-tauri', 'scripts'],
+    // Exclude:
+    //   - scripts/release.test.mjs → uses node:test (npm run release:test)
+    //   - e2e/*.spec.ts → uses Playwright (npm run test:e2e)
+    exclude: ['node_modules', 'dist', 'src-tauri', 'scripts', 'e2e'],
     css: true,
   },
 });
