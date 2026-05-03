@@ -3,6 +3,7 @@ import { Send, Loader2, ChevronDown } from 'lucide-react';
 import type { HttpMethod } from 'ivkjs';
 import { useEnv } from '@/hooks/useEnv';
 import { HighlightedText } from '@/components/shared/VariableTokens';
+import { parseCurl, type ParsedCurl } from '@/lib/curl-parser';
 
 const METHODS: HttpMethod[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
@@ -21,9 +22,24 @@ interface Props {
   onUrlChange: (url: string) => void;
   onSend: () => void;
   loading: boolean;
+  /**
+   * Optional: when the user pastes a `curl …` command into the URL field,
+   * the parser fires this with the full {method,url,headers,body}. If
+   * omitted, cURL detection is disabled and the raw text stays in the URL
+   * input (current behaviour).
+   */
+  onCurlParsed?: (parsed: ParsedCurl) => void;
 }
 
-export function UrlBar({ method, url, onMethodChange, onUrlChange, onSend, loading }: Props) {
+export function UrlBar({
+  method,
+  url,
+  onMethodChange,
+  onUrlChange,
+  onSend,
+  loading,
+  onCurlParsed,
+}: Props) {
   const color = methodColors[method] ?? 'var(--ivk-on-surface)';
   const { get: resolveVar, setVariable } = useEnv();
   // Toggle the overlay off while the input is focused so typing feels normal
@@ -79,14 +95,24 @@ export function UrlBar({ method, url, onMethodChange, onUrlChange, onSend, loadi
           type="text"
           value={url}
           onChange={(e) => onUrlChange(e.target.value)}
+          onPaste={(e) => {
+            if (!onCurlParsed) return;
+            const text = e.clipboardData.getData('text');
+            const parsed = parseCurl(text);
+            if (!parsed) return;
+            // Hand off to the editor to dispatch method/url/headers/body
+            // atomically. Cancel the default paste so the raw curl string
+            // doesn't briefly appear in the URL field before we replace
+            // it with the parsed URL.
+            e.preventDefault();
+            onCurlParsed(parsed);
+          }}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !loading) onSend();
           }}
-          // Don't advertise "paste cURL" until a parser ships — see
-          // docs/BUGS.md → Missing features → "Real cURL → request import".
-          placeholder="Enter request URL"
+          placeholder={onCurlParsed ? 'Enter URL, or paste a curl command' : 'Enter request URL'}
           className="flex-1 bg-transparent text-[13px] font-mono px-3 focus:outline-none min-w-0"
           style={{
             // Hide the input's own text glyphs while not focused so the
