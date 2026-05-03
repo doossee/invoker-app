@@ -5,11 +5,27 @@ interface ThemeContextValue {
   theme: InvokerTheme;
   setTheme: (id: string) => void;
   themes: InvokerTheme[];
+  /** When true, the theme follows the OS `prefers-color-scheme`: dark
+      → invoker-dark, light → invoker-light. Picking a specific theme
+      via setTheme turns this off. */
+  followSystem: boolean;
+  setFollowSystem: (on: boolean) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 const STORAGE_KEY = 'invoker:theme';
+const FOLLOW_SYSTEM_KEY = 'invoker:theme-follow-system';
+
+/** What theme the OS preference points at right now. */
+function systemPreferredTheme(): string {
+  if (typeof window !== 'undefined' && window.matchMedia) {
+    return window.matchMedia('(prefers-color-scheme: light)').matches
+      ? 'invoker-light'
+      : 'invoker-dark';
+  }
+  return 'invoker-dark';
+}
 
 /** Map a theme's colors object to CSS custom properties on the root element. */
 function applyTheme(theme: InvokerTheme) {
@@ -81,7 +97,11 @@ function applyTheme(theme: InvokerTheme) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [followSystem, setFollowSystemState] = useState<boolean>(() => {
+    return localStorage.getItem(FOLLOW_SYSTEM_KEY) === '1';
+  });
   const [themeId, setThemeId] = useState<string>(() => {
+    if (localStorage.getItem(FOLLOW_SYSTEM_KEY) === '1') return systemPreferredTheme();
     return localStorage.getItem(STORAGE_KEY) ?? 'invoker-dark';
   });
 
@@ -92,13 +112,37 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     applyTheme(theme);
   }, [theme]);
 
+  // When following system, listen for OS preference changes and re-pick.
+  useEffect(() => {
+    if (!followSystem || typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(prefers-color-scheme: light)');
+    const onChange = () => setThemeId(systemPreferredTheme());
+    // Modern browsers: addEventListener; some older ones still use addListener.
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+    else mq.addListener(onChange);
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener('change', onChange);
+      else mq.removeListener(onChange);
+    };
+  }, [followSystem]);
+
   const setTheme = useCallback((id: string) => {
+    // Picking an explicit theme turns off follow-system — that's the
+    // standard pattern (VSCode, GitHub, Linear, …).
     setThemeId(id);
+    setFollowSystemState(false);
     localStorage.setItem(STORAGE_KEY, id);
+    localStorage.setItem(FOLLOW_SYSTEM_KEY, '0');
+  }, []);
+
+  const setFollowSystem = useCallback((on: boolean) => {
+    setFollowSystemState(on);
+    localStorage.setItem(FOLLOW_SYSTEM_KEY, on ? '1' : '0');
+    if (on) setThemeId(systemPreferredTheme());
   }, []);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, themes }}>
+    <ThemeContext.Provider value={{ theme, setTheme, themes, followSystem, setFollowSystem }}>
       {children}
     </ThemeContext.Provider>
   );
