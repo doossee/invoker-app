@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { EditorView, keymap, lineNumbers, placeholder } from '@codemirror/view';
 import { Compartment, EditorState } from '@codemirror/state';
 import { json } from '@codemirror/lang-json';
@@ -22,6 +22,11 @@ export function BodyTab({ body, onChange }: Props) {
 
   const envManager = useEnvStore((s) => s.envManager);
   const vimMode = useEditorStore((s) => s.vimMode);
+
+  // Status of the last "Format JSON" attempt. Briefly flips to
+  // 'error' (or 'empty') when the JSON parse fails / nothing to
+  // format, then resets to 'idle' so the button label can revert.
+  const [formatStatus, setFormatStatus] = useState<'idle' | 'error' | 'empty'>('idle');
 
   // Create editor on mount
   useEffect(() => {
@@ -90,14 +95,30 @@ export function BodyTab({ body, onChange }: Props) {
     const view = viewRef.current;
     if (!view) return;
     const text = view.state.doc.toString();
+    if (text.trim() === '') {
+      // Nothing to format. Surface the empty case so users who hit
+      // ⌘⇧F by reflex know the action ran (it just had nothing to
+      // do); auto-resets below.
+      setFormatStatus('empty');
+      window.setTimeout(() => setFormatStatus('idle'), 1500);
+      return;
+    }
     try {
       const formatted = JSON.stringify(JSON.parse(text), null, 2);
       view.dispatch({
         changes: { from: 0, to: text.length, insert: formatted },
       });
       onChangeRef.current(formatted);
+      // Clear any prior error label so a successful format doesn't
+      // leave the red text behind.
+      setFormatStatus('idle');
     } catch {
-      // Not valid JSON — silently ignore
+      // Not valid JSON. Was previously a silent ignore — users
+      // pressing the button on an XML / form-data / plain-text body
+      // got zero feedback and assumed the button was broken. Briefly
+      // flip the label to "Invalid JSON" then reset.
+      setFormatStatus('error');
+      window.setTimeout(() => setFormatStatus('idle'), 1500);
     }
   }, []);
 
@@ -121,16 +142,36 @@ export function BodyTab({ body, onChange }: Props) {
       >
         <button
           onClick={formatJson}
+          title={
+            formatStatus === 'error'
+              ? 'Body is not valid JSON'
+              : formatStatus === 'empty'
+                ? 'Nothing to format'
+                : 'Format the body as JSON (⌘⇧F)'
+          }
           style={{
             background: 'transparent',
             border: 'none',
-            color: '#767575',
+            // Red while the parse error is being shown; otherwise the
+            // usual subtle gray so the label doesn't compete with the
+            // editor.
+            color:
+              formatStatus === 'error'
+                ? '#e58484'
+                : formatStatus === 'empty'
+                  ? '#a89472'
+                  : '#767575',
             fontSize: 11,
             cursor: 'pointer',
             fontFamily: "'JetBrains Mono', monospace",
+            transition: 'color 0.15s',
           }}
         >
-          Format JSON
+          {formatStatus === 'error'
+            ? 'Invalid JSON'
+            : formatStatus === 'empty'
+              ? 'Nothing to format'
+              : 'Format JSON'}
         </button>
       </div>
     </div>
