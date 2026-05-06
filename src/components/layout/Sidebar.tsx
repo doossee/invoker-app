@@ -390,7 +390,28 @@ function EnvFooter({
   onManageEnv: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
   const settings = useEnvStore((s) => s.settings);
+
+  // Close on outside click + Escape — matches the CollectionHeader
+  // dropdown pattern at the top of the sidebar. Without this the
+  // env dropdown stayed open when the user clicked elsewhere on the
+  // page (only env-pick / Manage click closed it).
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onMouseDown = (e: MouseEvent) => {
+      if (!wrapperRef.current?.contains(e.target as Node)) setMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    window.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [menuOpen]);
 
   const activeEnv = settings.environments[settings.activeEnvironmentIndex];
   const envName = activeEnv?.name ?? 'No environment';
@@ -403,6 +424,7 @@ function EnvFooter({
 
   return (
     <div
+      ref={wrapperRef}
       style={{
         padding: '8px 10px',
         display: 'flex',
