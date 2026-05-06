@@ -96,10 +96,25 @@ function ViewModePill({
   const [copied, setCopied] = useState(false);
   const handleCopy = () => {
     if (!bodyText) return;
-    navigator.clipboard.writeText(bodyText).then(() => {
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1500);
-    });
+    navigator.clipboard
+      .writeText(bodyText)
+      .then(() => {
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 1500);
+      })
+      .catch((e: unknown) => {
+        // Same fix as the EnvSettings Export button: clipboard
+        // rejections (non-secure context, denied permission, old
+        // Safari) need to be surfaced or the user thinks the copy
+        // worked. The full body is logged to console as a fallback.
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error('Response body clipboard write failed:', e);
+        console.info('Response body payload:', bodyText);
+        // eslint-disable-next-line no-alert
+        window.alert(
+          `Couldn't copy to clipboard: ${msg}\n\nThe full body is logged to the console as a fallback.`,
+        );
+      });
   };
   return (
     <div
