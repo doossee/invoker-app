@@ -5,6 +5,38 @@ import { useCollectionStore } from '@/stores/collection-store';
 
 export type SplitDirection = 'horizontal' | 'vertical';
 
+/* ------------------------------------------------------------------ */
+/*  localStorage load helpers                                          */
+/*                                                                      */
+/*  The previous load path did `Number(localStorage.getItem(k)) || N`  */
+/*  and `localStorage.getItem(k) as Foo`, both of which trust whatever */
+/*  is stored. A user (or a buggy past version) writing -99 / 99999    */
+/*  / "garbage" propagated unchecked into every consumer that read     */
+/*  the value. The helpers below clamp + validate at load time so      */
+/*  corrupted state can't soft-brick the app on cold start.            */
+/* ------------------------------------------------------------------ */
+
+const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as const;
+const SPLIT_DIRECTIONS = ['horizontal', 'vertical'] as const;
+
+function loadInt(key: string, def: number, min: number, max: number): number {
+  const raw = localStorage.getItem(key);
+  if (raw === null) return def;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return def;
+  return Math.max(min, Math.min(max, Math.floor(n)));
+}
+
+function loadEnum<T extends readonly string[]>(
+  key: string,
+  allowed: T,
+  def: T[number],
+): T[number] {
+  const raw = localStorage.getItem(key);
+  if (raw === null) return def;
+  return (allowed as readonly string[]).includes(raw) ? (raw as T[number]) : def;
+}
+
 export interface TabData {
   kind: 'ivk' | 'folder' | 'doc';
   path: string;
@@ -100,13 +132,18 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   tabs: [],
   activeTabPath: null,
 
-  sidebarWidth: Number(localStorage.getItem('invoker:sidebar-width')) || 260,
+  // Sidebar width clamped 180–600px so a corrupted stored value can't
+  // hide the editor entirely or render the sidebar at -50px width.
+  sidebarWidth: loadInt('invoker:sidebar-width', 260, 180, 600),
   sidebarCollapsed: localStorage.getItem('invoker:sidebar-collapsed') === '1',
-  responseHeight: Number(localStorage.getItem('invoker:response-height')) || 300,
-  splitDirection: (localStorage.getItem('invoker:split-direction') as SplitDirection) || 'horizontal',
+  // Response panel height clamped 120–800px for the same reason.
+  responseHeight: loadInt('invoker:response-height', 300, 120, 800),
+  splitDirection: loadEnum('invoker:split-direction', SPLIT_DIRECTIONS, 'horizontal'),
   vimMode: localStorage.getItem('invoker:vim-mode') === '1',
-  defaultRequestMethod: (localStorage.getItem('invoker:default-request-method') as HttpMethod) || 'GET',
-  defaultTimeoutSec: Number(localStorage.getItem('invoker:default-timeout-sec')) || 30,
+  defaultRequestMethod: loadEnum('invoker:default-request-method', HTTP_METHODS, 'GET'),
+  // Timeout clamped 1–600s — matches the setter's clamp range so the
+  // load and write paths agree.
+  defaultTimeoutSec: loadInt('invoker:default-timeout-sec', 30, 1, 600),
   // Default ON — most users want their workspace back on next launch.
   // localStorage stores '0' to opt out so the default flips to ON without
   // needing an explicit '1' write on first launch.
