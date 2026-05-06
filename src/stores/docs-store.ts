@@ -17,9 +17,25 @@ interface DocsState {
    * survive a reload. Returns true if the disk write happened.
    */
   saveDoc: (path: string, content: string, collectionPath: string | null) => Promise<boolean>;
+  /**
+   * Create a new `.md` doc inside `parentFolder` (empty string =
+   * collection root). Returns the new path on success, null on
+   * conflict. In Tauri with a real folder, also writes the file to
+   * disk via `@tauri-apps/plugin-fs.writeTextFile`.
+   *
+   * @param initialContent  optional seed content. Defaults to empty
+   *   string; the "New folder" creation flow passes a placeholder
+   *   header so the doc isn't completely blank.
+   */
+  createDoc: (
+    parentFolder: string,
+    name: string,
+    collectionPath: string | null,
+    initialContent?: string,
+  ) => Promise<string | null>;
 }
 
-export const useDocsStore = create<DocsState>((set) => ({
+export const useDocsStore = create<DocsState>((set, get) => ({
   docs: [],
 
   loadDocs: (docs) => set({ docs }),
@@ -39,5 +55,36 @@ export const useDocsStore = create<DocsState>((set) => ({
       return true;
     }
     return false;
+  },
+
+  createDoc: async (parentFolder, name, collectionPath, initialContent = '') => {
+    const cleanedName = name.endsWith('.md') ? name : `${name}.md`;
+    const folder = parentFolder ? parentFolder.replace(/\/$/, '') + '/' : '';
+    const newPath = `${folder}${cleanedName}`;
+    const state = get();
+    if (state.docs.some((d) => d.path === newPath)) return null;
+    // Tauri disk write FIRST so a fs error aborts before the in-
+    // memory state diverges (matches saveDoc / collection-store
+    // patterns).
+    const virtual =
+      !collectionPath ||
+      collectionPath === '(sample)' ||
+      collectionPath === '(published)';
+    if (isTauri() && !virtual) {
+      const { writeTextFile } = await import('@tauri-apps/plugin-fs');
+      const sep = collectionPath!.endsWith('/') ? '' : '/';
+      await writeTextFile(`${collectionPath}${sep}${newPath}`, initialContent);
+    }
+    set({
+      docs: [
+        ...state.docs,
+        {
+          path: newPath,
+          title: cleanedName.replace(/\.md$/, ''),
+          content: initialContent,
+        },
+      ],
+    });
+    return newPath;
   },
 }));

@@ -1,5 +1,18 @@
 import { useEffect, useMemo, useState, createContext, useContext } from 'react';
-import { ChevronRight, ChevronDown, FileText, Folder, FolderOpen, BookOpen, Sparkles, Pencil, Trash2 } from 'lucide-react';
+import {
+  ChevronRight,
+  ChevronDown,
+  FileText,
+  Folder,
+  FolderOpen,
+  BookOpen,
+  Sparkles,
+  Pencil,
+  Trash2,
+  Plus,
+  FolderPlus,
+  FilePlus,
+} from 'lucide-react';
 import { parseIvk, type HttpMethod } from 'ivkjs';
 import { useCollectionStore } from '@/stores/collection-store';
 import { useDocsStore } from '@/stores/docs-store';
@@ -115,7 +128,17 @@ function countFiles(node: TreeNode): number {
 /*  Browser-mode in-memory only. Tauri integration (rename/delete on    */
 /*  disk via @tauri-apps/plugin-fs) is a follow-up.                     */
 /* ------------------------------------------------------------------ */
-type CtxMenuState = { x: number; y: number; path: string; isIvk: boolean } | null;
+/**
+ * Right-click context menu state. `kind` drives which menu items
+ * render — `.ivk` files get Rename/Delete only, folders get the
+ * three Create actions, and `root` (right-click empty tree area)
+ * gets Create only since there's nothing to rename or delete.
+ */
+type CtxMenuState =
+  | { x: number; y: number; kind: 'ivk'; path: string }
+  | { x: number; y: number; kind: 'folder'; path: string }
+  | { x: number; y: number; kind: 'root' }
+  | null;
 const CtxMenuContext = createContext<{ open: (s: CtxMenuState) => void } | null>(null);
 
 function ContextMenu({ state, onClose }: { state: CtxMenuState; onClose: () => void }) {
@@ -123,6 +146,10 @@ function ContextMenu({ state, onClose }: { state: CtxMenuState; onClose: () => v
   const tabs = useEditorStore((s) => s.tabs);
   const renameFile = useCollectionStore((s) => s.renameFile);
   const deleteFile = useCollectionStore((s) => s.deleteFile);
+  const createFile = useCollectionStore((s) => s.createFile);
+  const createFolder = useCollectionStore((s) => s.createFolder);
+  const createDoc = useDocsStore((s) => s.createDoc);
+  const collectionPath = useCollectionStore((s) => s.collectionPath);
 
   // Click-outside / Escape to dismiss.
   useEffect(() => {
@@ -151,7 +178,19 @@ function ContextMenu({ state, onClose }: { state: CtxMenuState; onClose: () => v
 
   if (!state) return null;
 
+  // For ivk-file context menus, `state.path` is the file. For folder
+  // menus, `state.path` is the folder. For root menus, no path —
+  // creates land at collection root (parentFolder === '').
+  const parentFolder =
+    state.kind === 'ivk'
+      ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        state.path.split('/').slice(0, -1).join('/')
+      : state.kind === 'folder'
+        ? state.path
+        : '';
+
   const handleRename = async () => {
+    if (state.kind !== 'ivk') return;
     onClose();
     const current = state.path.split('/').pop()?.replace('.ivk', '') ?? state.path;
     // eslint-disable-next-line no-alert
@@ -185,7 +224,7 @@ function ContextMenu({ state, onClose }: { state: CtxMenuState; onClose: () => v
   };
 
   const handleDelete = async () => {
-    if (!state) return;
+    if (state.kind !== 'ivk') return;
     const path = state.path;
     onClose();
     const name = path.split('/').pop() ?? path;
@@ -198,6 +237,111 @@ function ContextMenu({ state, onClose }: { state: CtxMenuState; onClose: () => v
       // Disk-side failure (Tauri only). Surface the message.
       // eslint-disable-next-line no-alert
       window.alert(`Delete failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
+  const handleNewRequest = async () => {
+    onClose();
+    // eslint-disable-next-line no-alert
+    const name = window.prompt('Name for the new request (without .ivk):', 'untitled');
+    if (!name || !name.trim()) return;
+    let newPath: string | null;
+    try {
+      newPath = await createFile(parentFolder, name.trim());
+    } catch (err) {
+      // eslint-disable-next-line no-alert
+      window.alert(`Couldn't create the request: ${err instanceof Error ? err.message : String(err)}`);
+      return;
+    }
+    if (newPath === null) {
+      // eslint-disable-next-line no-alert
+      window.alert(`A request named "${name.trim()}" already exists in this folder.`);
+      return;
+    }
+    // Open the new file as a tab + expand the parent folder so it's
+    // visible in the tree.
+    if (parentFolder) {
+      // Ensure the parent folder shows the new file in its tree.
+      const expanded = useCollectionStore.getState().expandedFolders;
+      if (!expanded.has(parentFolder)) {
+        useCollectionStore.getState().toggleFolder(parentFolder);
+      }
+    }
+    useEditorStore.getState().openTab({ kind: 'ivk', path: newPath, name: name.trim() });
+  };
+
+  const handleNewDoc = async () => {
+    onClose();
+    // eslint-disable-next-line no-alert
+    const name = window.prompt('Name for the new doc (without .md):', 'untitled');
+    if (!name || !name.trim()) return;
+    let newPath: string | null;
+    try {
+      newPath = await createDoc(parentFolder, name.trim(), collectionPath);
+    } catch (err) {
+      // eslint-disable-next-line no-alert
+      window.alert(`Couldn't create the doc: ${err instanceof Error ? err.message : String(err)}`);
+      return;
+    }
+    if (newPath === null) {
+      // eslint-disable-next-line no-alert
+      window.alert(`A doc named "${name.trim()}" already exists in this folder.`);
+      return;
+    }
+    if (parentFolder) {
+      const expanded = useCollectionStore.getState().expandedFolders;
+      if (!expanded.has(parentFolder)) {
+        useCollectionStore.getState().toggleFolder(parentFolder);
+      }
+    }
+    useEditorStore.getState().openTab({ kind: 'doc', path: newPath, name: name.trim() });
+  };
+
+  const handleNewFolder = async () => {
+    onClose();
+    // eslint-disable-next-line no-alert
+    const name = window.prompt('Name for the new folder:', 'untitled');
+    if (!name || !name.trim() || name.includes('/')) {
+      if (name && name.includes('/')) {
+        // eslint-disable-next-line no-alert
+        window.alert('Folder names cannot contain "/" — create a nested folder by right-clicking the new one after.');
+      }
+      return;
+    }
+    let newPath: string | null;
+    try {
+      newPath = await createFolder(parentFolder, name.trim());
+    } catch (err) {
+      // eslint-disable-next-line no-alert
+      window.alert(`Couldn't create the folder: ${err instanceof Error ? err.message : String(err)}`);
+      return;
+    }
+    if (newPath === null) {
+      // eslint-disable-next-line no-alert
+      window.alert(`A folder named "${name.trim()}" already exists here.`);
+      return;
+    }
+    // Drop a placeholder README.md so the folder is visible in the tree
+    // (folders are derived from file paths in browser-mode and only
+    // implicitly exist on disk in Tauri-mode).
+    const readmePath = await useDocsStore
+      .getState()
+      .createDoc(newPath, 'README', collectionPath, `# ${name.trim()}\n`);
+    if (parentFolder) {
+      const expanded = useCollectionStore.getState().expandedFolders;
+      if (!expanded.has(parentFolder)) {
+        useCollectionStore.getState().toggleFolder(parentFolder);
+      }
+    }
+    // Auto-expand the new folder so the user can see the README.
+    useCollectionStore.getState().toggleFolder(newPath);
+    if (readmePath) {
+      useEditorStore.getState().openTab({
+        kind: 'folder',
+        path: newPath,
+        name: name.trim(),
+        hasReadme: true,
+      });
     }
   };
 
@@ -224,57 +368,69 @@ function ContextMenu({ state, onClose }: { state: CtxMenuState; onClose: () => v
         fontSize: 12,
       }}
     >
-      <button
-        role="menuitem"
-        onClick={handleRename}
-        disabled={!state.isIvk}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          width: '100%',
-          padding: '6px 10px',
-          background: 'transparent',
-          border: 'none',
-          color: state.isIvk ? TOKENS.fg1 : TOKENS.fg4,
-          cursor: state.isIvk ? 'pointer' : 'not-allowed',
-          fontFamily: 'inherit',
-          fontSize: 12,
-          textAlign: 'left' as const,
-          borderRadius: 4,
-        }}
-        onMouseEnter={(e) => state.isIvk && (e.currentTarget.style.background = TOKENS.s3)}
-        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-      >
-        <Pencil size={11} />
-        Rename
-      </button>
-      <button
-        role="menuitem"
-        onClick={handleDelete}
-        disabled={!state.isIvk}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          width: '100%',
-          padding: '6px 10px',
-          background: 'transparent',
-          border: 'none',
-          color: state.isIvk ? '#e58484' : TOKENS.fg4,
-          cursor: state.isIvk ? 'pointer' : 'not-allowed',
-          fontFamily: 'inherit',
-          fontSize: 12,
-          textAlign: 'left' as const,
-          borderRadius: 4,
-        }}
-        onMouseEnter={(e) => state.isIvk && (e.currentTarget.style.background = 'rgba(229,88,88,0.10)')}
-        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-      >
-        <Trash2 size={11} />
-        Delete
-      </button>
+      {/* Create actions on folders + root. Hidden on .ivk-file menus
+          (which keep just Rename/Delete). */}
+      {(state.kind === 'folder' || state.kind === 'root') && (
+        <>
+          <MenuItem icon={<FilePlus size={11} />} label="New request" onClick={handleNewRequest} />
+          <MenuItem icon={<BookOpen size={11} />} label="New doc" onClick={handleNewDoc} />
+          <MenuItem icon={<FolderPlus size={11} />} label="New folder" onClick={handleNewFolder} />
+        </>
+      )}
+
+      {state.kind === 'ivk' && (
+        <>
+          <MenuItem icon={<Pencil size={11} />} label="Rename" onClick={handleRename} />
+          <MenuItem
+            icon={<Trash2 size={11} />}
+            label="Delete"
+            onClick={handleDelete}
+            danger
+          />
+        </>
+      )}
     </div>
+  );
+}
+
+function MenuItem({
+  icon,
+  label,
+  onClick,
+  danger,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  danger?: boolean;
+}) {
+  const baseColor = danger ? '#e58484' : TOKENS.fg1;
+  const hoverBg = danger ? 'rgba(229,88,88,0.10)' : TOKENS.s3;
+  return (
+    <button
+      role="menuitem"
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        width: '100%',
+        padding: '6px 10px',
+        background: 'transparent',
+        border: 'none',
+        color: baseColor,
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        fontSize: 12,
+        textAlign: 'left' as const,
+        borderRadius: 4,
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = hoverBg)}
+      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+    >
+      {icon}
+      {label}
+    </button>
   );
 }
 
@@ -310,10 +466,24 @@ function TreeItem({ node, depth = 0, searchQuery }: { node: TreeNode; depth?: nu
       }
     };
 
+    const ctxMenuFolder = useContext(CtxMenuContext);
+
     return (
       <div>
         <button
           onClick={handleClick}
+          onContextMenu={(e) => {
+            // Right-click a folder row → New request / New doc / New
+            // folder menu rooted at this folder.
+            if (!ctxMenuFolder) return;
+            e.preventDefault();
+            ctxMenuFolder.open({
+              x: e.clientX,
+              y: e.clientY,
+              kind: 'folder',
+              path: node.path,
+            });
+          }}
           style={{
             width: '100%',
             display: 'flex',
@@ -405,12 +575,13 @@ function TreeItem({ node, depth = 0, searchQuery }: { node: TreeNode; depth?: nu
     <button
       onClick={handleClick}
       onContextMenu={(e) => {
-        // Right-click — only opens the menu for ivk files. Folders + .md
-        // docs aren't supported by the in-memory rename/delete actions
-        // yet (tracked in BUGS.md as a follow-up).
+        // Right-click on .ivk files opens Rename / Delete. Right-click
+        // on folders is handled in the folder branch above (New
+        // request / New doc / New folder). .md docs don't get a
+        // context menu yet — rename/delete on docs is a follow-up.
         if (!isIvk || !ctxMenu) return;
         e.preventDefault();
-        ctxMenu.open({ x: e.clientX, y: e.clientY, path: node.path, isIvk: true });
+        ctxMenu.open({ x: e.clientX, y: e.clientY, kind: 'ivk', path: node.path });
       }}
       style={{
         width: '100%',
@@ -563,7 +734,18 @@ export function UnifiedTree({ searchQuery }: UnifiedTreeProps) {
 
   return (
     <CtxMenuContext.Provider value={{ open: setCtxMenu }}>
-      <div style={{ paddingTop: 4, paddingBottom: 4 }}>
+      <div
+        style={{ paddingTop: 4, paddingBottom: 4, minHeight: '100%' }}
+        // Right-click on empty space inside the tree (below all rows
+        // or in the gap between rows) opens the root-level Create
+        // menu. Right-click on a row is handled by the row's own
+        // onContextMenu and `e.preventDefault()` keeps it from
+        // bubbling here.
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setCtxMenu({ x: e.clientX, y: e.clientY, kind: 'root' });
+        }}
+      >
         {filteredTree.map((node) => (
           <TreeItem key={node.path} node={node} searchQuery={searchQuery} />
         ))}
