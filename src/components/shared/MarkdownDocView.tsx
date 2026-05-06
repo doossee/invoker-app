@@ -3,6 +3,12 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { Eye, Pencil, Wand2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { remarkWikilinks } from '@/lib/remark-wikilinks';
+import { slugifyHeading } from '@/lib/wikilinks';
+import { useDocsStore } from '@/stores/docs-store';
+// `useEditorStore` is also imported below; the cross-doc anchor
+// override pulls openTab via `getState()` so the second import line
+// stays as the canonical hook reference for hook-style consumers.
 import {
   EditorView,
   keymap,
@@ -287,14 +293,108 @@ export function MarkdownPreview({ content, components }: { content: string; comp
   // renderers in FolderTabBody continue to take precedence.
   const merged: React.ComponentProps<typeof ReactMarkdown>['components'] = {
     code: ivkCodeBlockRenderer,
+    // Add `id` attributes to headings so `[[#anchor]]` wikilinks
+    // (rewritten as `<a href="#slug">` by remarkWikilinks) actually
+    // scroll to the right place.
+    h1: HeadingWithId('h1'),
+    h2: HeadingWithId('h2'),
+    h3: HeadingWithId('h3'),
+    h4: HeadingWithId('h4'),
+    h5: HeadingWithId('h5'),
+    h6: HeadingWithId('h6'),
+    // Intercept `invoker:doc/...` cross-doc wikilinks and route them
+    // through the editor-store as new tabs. Browsers wouldn't know
+    // what to do with the custom scheme otherwise.
+    a: WikilinkAwareAnchor,
     ...(components ?? {}),
   };
   return (
     <div className="invoker-prose">
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={merged}>
+      <ReactMarkdown remarkPlugins={[remarkGfm, remarkWikilinks]} components={merged}>
         {content}
       </ReactMarkdown>
     </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Heading renderer (adds `id` for in-page anchor links)              */
+/* ------------------------------------------------------------------ */
+function HeadingWithId(tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6') {
+  return function Heading(props: React.HTMLAttributes<HTMLHeadingElement> & { children?: ReactNode }) {
+    const text = childrenToString(props.children);
+    const id = slugifyHeading(text);
+    return createElement(tag, { ...props, id }, props.children);
+  };
+}
+
+function childrenToString(children: ReactNode): string {
+  if (children == null) return '';
+  if (typeof children === 'string' || typeof children === 'number') {
+    return String(children);
+  }
+  if (Array.isArray(children)) return children.map(childrenToString).join('');
+  if (typeof children === 'object' && 'props' in children) {
+    return childrenToString((children as { props: { children?: ReactNode } }).props.children);
+  }
+  return '';
+}
+
+/* ------------------------------------------------------------------ */
+/*  Anchor renderer (handles `invoker:doc/<target>` cross-doc links)   */
+/* ------------------------------------------------------------------ */
+function WikilinkAwareAnchor({ href, children, ...rest }: React.AnchorHTMLAttributes<HTMLAnchorElement>) {
+  const isCrossDoc = typeof href === 'string' && href.startsWith('invoker:doc/');
+
+  if (!isCrossDoc) {
+    // Pass-through for normal links + in-page anchors. The browser
+    // handles `#slug` natively now that headings have `id`s.
+    return <a href={href} {...rest}>{children}</a>;
+  }
+
+  // `invoker:doc/<target>` where target is a doc path or basename,
+  // optionally with a trailing `#anchor` for scroll target.
+  const raw = href!.slice('invoker:doc/'.length);
+  const hashIdx = raw.indexOf('#');
+  const docPart = hashIdx === -1 ? raw : raw.slice(0, hashIdx);
+  const anchor = hashIdx === -1 ? null : raw.slice(hashIdx + 1);
+
+  const onClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    const docs = useDocsStore.getState().docs;
+    // Resolution: exact path match first, then basename match without
+    // `.md`. Mirrors Obsidian's "search vault by filename" behaviour.
+    const target =
+      docs.find((d) => d.path === docPart) ??
+      docs.find((d) => d.path === `${docPart}.md`) ??
+      docs.find((d) => d.path.split('/').pop() === `${docPart}.md`) ??
+      docs.find((d) => d.path.split('/').pop()?.replace(/\.md$/, '') === docPart);
+    if (!target) {
+      // Unresolved — surface so the user knows the link is broken
+      // rather than silently swallowing the click.
+      // eslint-disable-next-line no-alert
+      window.alert(
+        `Couldn't find a doc matching "${docPart}". Wikilinks resolve by full path or by basename across all loaded docs.`,
+      );
+      return;
+    }
+    const name = target.path.split('/').pop()?.replace(/\.md$/, '') ?? target.path;
+    useEditorStore.getState().openTab({ kind: 'doc', path: target.path, name });
+    // Scroll to the anchor inside the freshly-opened doc on the next
+    // paint. The browser doesn't auto-scroll because we're navigating
+    // app-state, not the URL.
+    if (anchor) {
+      window.setTimeout(() => {
+        const el = document.getElementById(anchor);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
+    }
+  };
+
+  return (
+    <a href={href} onClick={onClick} data-invoker-wikilink="true" {...rest}>
+      {children}
+    </a>
   );
 }
 

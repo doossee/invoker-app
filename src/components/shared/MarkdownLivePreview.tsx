@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm';
 import { TOKENS } from '@/components/shared/primitives';
 import { useEditorStore } from '@/stores/editor-store';
 import { ivkCodeBlockRenderer } from '@/components/shared/InlineIvkBlock';
+import { remarkWikilinks } from '@/lib/remark-wikilinks';
 
 /**
  * React-based "Live" markdown view.
@@ -296,7 +297,7 @@ export function MarkdownLivePreview({ value, onChange, components }: Props) {
                 marginLeft: vimSelected ? -8 : 0,
               }}
             >
-              <ReactMarkdown remarkPlugins={[remarkGfm]} components={mergedComponents}>
+              <ReactMarkdown remarkPlugins={[remarkGfm, remarkWikilinks]} components={mergedComponents}>
                 {block.text}
               </ReactMarkdown>
             </div>
