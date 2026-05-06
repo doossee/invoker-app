@@ -394,7 +394,12 @@ function EnvFooter({
 
   const activeEnv = settings.environments[settings.activeEnvironmentIndex];
   const envName = activeEnv?.name ?? 'No environment';
-  const dotColor = ENV_COLORS[envName.toLowerCase()] ?? TOKENS.fg3;
+  // Prefer the per-env `color` field (set by the env defaults at
+  // load time and editable via Settings → Environments) over the
+  // name-based ENV_COLORS map. Falls back to the name lookup so
+  // legacy environments without an explicit color still render
+  // the right color for known names; final fallback is muted gray.
+  const dotColor = activeEnv?.color ?? ENV_COLORS[envName.toLowerCase()] ?? TOKENS.fg3;
 
   return (
     <div
@@ -496,7 +501,7 @@ function EnvDropdown({ onClose, onManage }: { onClose: () => void; onManage: () 
       }}
     >
       {settings.environments.map((env, idx) => {
-        const color = ENV_COLORS[env.name.toLowerCase()] ?? TOKENS.fg3;
+        const color = env.color ?? ENV_COLORS[env.name.toLowerCase()] ?? TOKENS.fg3;
         const isActive = idx === settings.activeEnvironmentIndex;
         return (
           <button
