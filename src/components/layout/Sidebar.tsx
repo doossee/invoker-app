@@ -37,6 +37,11 @@ interface Props {
 export function Sidebar({ children, onOpenSettings, searchQuery, onSearchChange }: Props) {
   const openCommandPalette = useEditorStore((s) => s.setCommandPaletteOpen);
   const setEnvSettingsOpen = useEditorStore((s) => s.setEnvSettingsOpen);
+  const sidebarWidth = useEditorStore((s) => s.sidebarWidth);
+  // Below 230px the ⌘K hint chips eat enough horizontal space that
+  // the input placeholder gets clipped. Drop the decorative hint
+  // there; the keyboard shortcut still works either way.
+  const showKbdHint = sidebarWidth >= 230;
   const createInlineTab = useEditorStore((s) => s.createInlineTab);
 
   return (
@@ -66,6 +71,7 @@ export function Sidebar({ children, onOpenSettings, searchQuery, onSearchChange 
             background: TOKENS.s3,
             borderRadius: 7,
             boxShadow: `inset 0 0 0 1px ${TOKENS.strokeSoft}`,
+            minWidth: 0,
           }}
         >
           <Search size={11} style={{ color: TOKENS.fg3, flexShrink: 0 }} />
@@ -75,7 +81,13 @@ export function Sidebar({ children, onOpenSettings, searchQuery, onSearchChange 
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search requests..."
             style={{
+              // `flex: 1` alone keeps the input at content width
+              // (default `min-width: auto`) — the Kbd chips after it
+              // overflow the row when the sidebar is resized narrow.
+              // `minWidth: 0` lets the input shrink so the chips
+              // stay aligned (or hide via `showKbdHint` below).
               flex: 1,
+              minWidth: 0,
               background: 'transparent',
               border: 'none',
               outline: 'none',
@@ -84,7 +96,16 @@ export function Sidebar({ children, onOpenSettings, searchQuery, onSearchChange 
               fontFamily: 'inherit',
             }}
           />
-          <Kbd>⌘K</Kbd>
+          {/* One chip per key so each glyph gets its own padded slot,
+              matching the dashboard / welcome / Settings → Keyboard
+              pattern. Hidden below 230px sidebar width — the chips
+              would otherwise eat the input placeholder. */}
+          {showKbdHint && (
+            <span style={{ display: 'inline-flex', gap: 3, flexShrink: 0 }}>
+              <Kbd>⌘</Kbd>
+              <Kbd>K</Kbd>
+            </span>
+          )}
         </div>
       </div>
 
@@ -97,6 +118,7 @@ export function Sidebar({ children, onOpenSettings, searchQuery, onSearchChange 
           style={{
             display: 'flex',
             width: '100%',
+            minWidth: 0,
             borderRadius: 8,
             overflow: 'hidden',
             boxShadow: `inset 0 0 0 1px ${TOKENS.strokeSoft}`,
@@ -108,6 +130,7 @@ export function Sidebar({ children, onOpenSettings, searchQuery, onSearchChange 
             title="Create a new untitled request (⌘N)"
             style={{
               flex: 1,
+              minWidth: 0,
               display: 'flex',
               alignItems: 'center',
               gap: 6,
@@ -118,10 +141,17 @@ export function Sidebar({ children, onOpenSettings, searchQuery, onSearchChange 
               fontSize: 12,
               fontFamily: 'inherit',
               cursor: 'pointer',
+              // Truncate the label rather than overflow the chip
+              // when the sidebar narrows below the label's natural
+              // width.
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
             }}
           >
-            <Plus size={12} />
-            New Request
+            <Plus size={12} style={{ flexShrink: 0 }} />
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              New Request
+            </span>
           </button>
           <div style={{ width: 1, background: TOKENS.strokeSoft }} />
           <button
