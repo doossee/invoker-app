@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import {
-  Plus,
   Settings,
   Search,
   ChevronDown,
@@ -10,6 +9,10 @@ import {
   FolderOpen,
   Sparkles,
   PanelLeftClose,
+  FilePlus,
+  FolderPlus,
+  RefreshCw,
+  ChevronsDownUp,
 } from 'lucide-react';
 import { InvokerMark, Kbd, TOKENS } from '@/components/shared/primitives';
 import { useEditorStore } from '@/stores/editor-store';
@@ -17,6 +20,8 @@ import { useEnvStore } from '@/stores/env-store';
 import { useCollectionStore } from '@/stores/collection-store';
 import { useDocsStore } from '@/stores/docs-store';
 import { useOpenCollection } from '@/hooks/useOpenCollection';
+import { isTauri } from '@/lib/platform';
+import { loadCollection as loadFromDisk } from '@/lib/file-system';
 
 const ENV_COLORS: Record<string, string> = {
   development: '#22c55e',
@@ -35,14 +40,12 @@ interface Props {
 }
 
 export function Sidebar({ children, onOpenSettings, searchQuery, onSearchChange }: Props) {
-  const openCommandPalette = useEditorStore((s) => s.setCommandPaletteOpen);
   const setEnvSettingsOpen = useEditorStore((s) => s.setEnvSettingsOpen);
   const sidebarWidth = useEditorStore((s) => s.sidebarWidth);
   // Below 230px the ⌘K hint chips eat enough horizontal space that
   // the input placeholder gets clipped. Drop the decorative hint
   // there; the keyboard shortcut still works either way.
   const showKbdHint = sidebarWidth >= 230;
-  const createInlineTab = useEditorStore((s) => s.createInlineTab);
 
   return (
     <div
@@ -112,64 +115,11 @@ export function Sidebar({ children, onOpenSettings, searchQuery, onSearchChange 
       {/* Divider */}
       <div style={{ margin: '0 10px', height: 1, background: TOKENS.strokeSoft }} />
 
-      {/* New Request Button */}
-      <div style={{ padding: '8px 10px' }}>
-        <div
-          style={{
-            display: 'flex',
-            width: '100%',
-            minWidth: 0,
-            borderRadius: 8,
-            overflow: 'hidden',
-            boxShadow: `inset 0 0 0 1px ${TOKENS.strokeSoft}`,
-            background: TOKENS.s3,
-          }}
-        >
-          <button
-            onClick={() => createInlineTab()}
-            title="Create a new untitled request (⌘N)"
-            style={{
-              flex: 1,
-              minWidth: 0,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '6px 12px',
-              background: 'transparent',
-              border: 'none',
-              color: TOKENS.fg1,
-              fontSize: 12,
-              fontFamily: 'inherit',
-              cursor: 'pointer',
-              // Truncate the label rather than overflow the chip
-              // when the sidebar narrows below the label's natural
-              // width.
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-            }}
-          >
-            <Plus size={12} style={{ flexShrink: 0 }} />
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              New Request
-            </span>
-          </button>
-          <div style={{ width: 1, background: TOKENS.strokeSoft }} />
-          <button
-            onClick={() => openCommandPalette(true)}
-            title="Open command palette (⌘K)"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              padding: '0 8px',
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            <ChevronDown size={11} style={{ color: TOKENS.fg2 }} />
-          </button>
-        </div>
-      </div>
+      {/* Toolbar — VSCode Explorer style: file-system actions on the
+          left, editor-only actions (palette / new inline tab) on the
+          right separated by spacer. Hover-only highlight matches the
+          rest of the sidebar. */}
+      <SidebarToolbar />
 
       {/* File Tree */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 4px' }}>
@@ -615,5 +565,154 @@ function EnvDropdown({ onClose, onManage }: { onClose: () => void; onManage: () 
         Manage environments...
       </button>
     </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Sidebar toolbar — VSCode Explorer style                            */
+/*                                                                      */
+/*  Four icon buttons centered above the file tree:                     */
+/*    1. New file    → prompt → createFile('', name) + open as tab      */
+/*    2. New folder  → prompt → createFolder + auto-README              */
+/*    3. Refresh     → re-scan disk (Tauri) / reload sample             */
+/*    4. Collapse all → clears expandedFolders                          */
+/*                                                                      */
+/*  These are additive to the right-click context menu shipped in #88   */
+/*  — discoverable, single-click access to the same flows.              */
+/* ------------------------------------------------------------------ */
+function SidebarToolbar() {
+  const createFile = useCollectionStore((s) => s.createFile);
+  const createFolder = useCollectionStore((s) => s.createFolder);
+  const createDoc = useDocsStore((s) => s.createDoc);
+  const collapseAllFolders = useCollectionStore((s) => s.collapseAllFolders);
+  const collectionPath = useCollectionStore((s) => s.collectionPath);
+  const setCollectionPath = useCollectionStore((s) => s.setCollectionPath);
+  const loadCollectionToStore = useCollectionStore((s) => s.loadCollection);
+  const loadDocsToStore = useDocsStore((s) => s.loadDocs);
+  const openTab = useEditorStore((s) => s.openTab);
+
+  const handleNewFile = async () => {
+    // eslint-disable-next-line no-alert
+    const name = window.prompt('Name for the new request (without .ivk):', 'untitled');
+    if (!name || !name.trim()) return;
+    let newPath: string | null;
+    try {
+      newPath = await createFile('', name.trim());
+    } catch (err) {
+      // eslint-disable-next-line no-alert
+      window.alert(`Couldn't create the request: ${err instanceof Error ? err.message : String(err)}`);
+      return;
+    }
+    if (newPath === null) {
+      // eslint-disable-next-line no-alert
+      window.alert(`A request named "${name.trim()}" already exists at the collection root.`);
+      return;
+    }
+    openTab({ kind: 'ivk', path: newPath, name: name.trim() });
+  };
+
+  const handleNewFolder = async () => {
+    // eslint-disable-next-line no-alert
+    const name = window.prompt('Name for the new folder:', 'untitled');
+    if (!name || !name.trim() || name.includes('/')) {
+      if (name && name.includes('/')) {
+        // eslint-disable-next-line no-alert
+        window.alert('Folder names cannot contain "/" — create a nested folder by right-clicking the new one after.');
+      }
+      return;
+    }
+    let newPath: string | null;
+    try {
+      newPath = await createFolder('', name.trim());
+    } catch (err) {
+      // eslint-disable-next-line no-alert
+      window.alert(`Couldn't create the folder: ${err instanceof Error ? err.message : String(err)}`);
+      return;
+    }
+    if (newPath === null) {
+      // eslint-disable-next-line no-alert
+      window.alert(`A folder named "${name.trim()}" already exists at the root.`);
+      return;
+    }
+    // Drop a placeholder README.md so the folder is visible in the
+    // tree (folders are derived from file paths in browser-mode).
+    await createDoc(newPath, 'README', collectionPath, `# ${name.trim()}\n`);
+    useCollectionStore.getState().toggleFolder(newPath);
+    openTab({ kind: 'folder', path: newPath, name: name.trim(), hasReadme: true });
+  };
+
+  const handleRefresh = async () => {
+    // Re-scan in Tauri only — the browser File System Access API
+    // requires a fresh user-gesture pick on every read, and the
+    // sample collection's "refresh" is identical to what's already
+    // loaded so it's a no-op there.
+    if (!isTauri() || !collectionPath || collectionPath === '(sample)' || collectionPath === '(published)') {
+      return;
+    }
+    try {
+      const data = await loadFromDisk(collectionPath);
+      loadCollectionToStore({ ivkFiles: data.ivkFiles, basePath: data.basePath });
+      setCollectionPath(collectionPath);
+      loadDocsToStore(data.mdFiles);
+    } catch (err) {
+      // eslint-disable-next-line no-alert
+      window.alert(`Refresh failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 2,
+        padding: '6px 10px',
+      }}
+    >
+      <ToolbarBtn icon={<FilePlus size={13} />} title="New request" onClick={handleNewFile} />
+      <ToolbarBtn icon={<FolderPlus size={13} />} title="New folder" onClick={handleNewFolder} />
+      <ToolbarBtn icon={<RefreshCw size={13} />} title="Refresh from disk" onClick={handleRefresh} />
+      <ToolbarBtn icon={<ChevronsDownUp size={13} />} title="Collapse all folders" onClick={collapseAllFolders} />
+    </div>
+  );
+}
+
+function ToolbarBtn({
+  icon,
+  title,
+  onClick,
+}: {
+  icon: ReactNode;
+  title: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      aria-label={title}
+      style={{
+        width: 26,
+        height: 26,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'transparent',
+        border: 'none',
+        borderRadius: 5,
+        color: TOKENS.fg2,
+        cursor: 'pointer',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = TOKENS.s3;
+        e.currentTarget.style.color = TOKENS.fg1;
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'transparent';
+        e.currentTarget.style.color = TOKENS.fg2;
+      }}
+    >
+      {icon}
+    </button>
   );
 }

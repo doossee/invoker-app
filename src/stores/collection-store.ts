@@ -55,6 +55,9 @@ interface CollectionState {
    * empty folder isn't visible until something lands in it.
    */
   createFolder: (parentFolder: string, name: string) => Promise<string | null>;
+  /** Clears every entry in `expandedFolders` — wired to the
+   *  collapse-all toolbar button (VSCode Explorer convention). */
+  collapseAllFolders: () => void;
 }
 
 export const useCollectionStore = create<CollectionState>((set, get) => ({
@@ -295,4 +298,6 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     }
     return newPath;
   },
+
+  collapseAllFolders: () => set({ expandedFolders: new Set<string>() }),
 }));
