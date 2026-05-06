@@ -88,6 +88,19 @@ export function EnvSettings({ onClose }: Props) {
   }
 
   function handleDelete(index: number) {
+    // Confirm before deleting — envs hold N variables and the delete
+    // is destructive (no undo, no soft-delete). Same precedent as
+    // PR #25 (⌘W confirms before discarding dirty edits) and PR #51
+    // (sidebar Delete confirms). Native window.confirm to avoid
+    // a custom modal for a single edge case.
+    const env = settings.environments[index];
+    if (!env) return;
+    const count = varCount(env);
+    const msg = count > 0
+      ? `Delete environment "${env.name}" (${count} variable${count === 1 ? '' : 's'})? This cannot be undone.`
+      : `Delete environment "${env.name}"? This cannot be undone.`;
+    // eslint-disable-next-line no-alert
+    if (!window.confirm(msg)) return;
     deleteEnvironment(index);
     if (expandedIndex === index) setExpandedIndex(null);
     else if (expandedIndex !== null && expandedIndex > index) {
