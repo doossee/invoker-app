@@ -149,7 +149,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           nextActive = next[idx].path;
         }
       }
-      return { tabs: next, activeTabPath: nextActive };
+      // Evict the cached response too. Previously the cache entry
+      // outlived the tab — reopening showed a stale body, and many
+      // open/close cycles leaked memory unboundedly (one entry per
+      // path × every Send).
+      const { [path]: _evicted, ...rest } = state.responseCache;
+      return { tabs: next, activeTabPath: nextActive, responseCache: rest };
     }),
 
   setActiveTab: (path) => set({ activeTabPath: path }),
