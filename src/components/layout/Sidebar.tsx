@@ -84,7 +84,15 @@ export function Sidebar({ children, onOpenSettings, searchQuery, onSearchChange 
               fontFamily: 'inherit',
             }}
           />
-          <Kbd>⌘K</Kbd>
+          {/* One chip per key so each glyph gets its own padded slot,
+              matching the dashboard / welcome / Settings → Keyboard
+              pattern. The previous single-chip `⌘K` form fit two
+              glyphs into a chip whose `minWidth: 18` was sized for
+              one — the result was visually cramped. */}
+          <span style={{ display: 'inline-flex', gap: 3, flexShrink: 0 }}>
+            <Kbd>⌘</Kbd>
+            <Kbd>K</Kbd>
+          </span>
         </div>
       </div>
 
