@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import {
+  Plus,
   Settings,
   Search,
   ChevronDown,
@@ -13,6 +14,7 @@ import {
   FolderPlus,
   RefreshCw,
   ChevronsDownUp,
+  BookOpen,
 } from 'lucide-react';
 import { InvokerMark, Kbd, TOKENS } from '@/components/shared/primitives';
 import { useEditorStore } from '@/stores/editor-store';
@@ -611,6 +613,26 @@ function SidebarToolbar() {
     openTab({ kind: 'ivk', path: newPath, name: name.trim() });
   };
 
+  const handleNewDoc = async () => {
+    // eslint-disable-next-line no-alert
+    const name = window.prompt('Name for the new doc (without .md):', 'untitled');
+    if (!name || !name.trim()) return;
+    let newPath: string | null;
+    try {
+      newPath = await createDoc('', name.trim(), collectionPath);
+    } catch (err) {
+      // eslint-disable-next-line no-alert
+      window.alert(`Couldn't create the doc: ${err instanceof Error ? err.message : String(err)}`);
+      return;
+    }
+    if (newPath === null) {
+      // eslint-disable-next-line no-alert
+      window.alert(`A doc named "${name.trim()}" already exists at the collection root.`);
+      return;
+    }
+    openTab({ kind: 'doc', path: newPath, name: name.trim() });
+  };
+
   const handleNewFolder = async () => {
     // eslint-disable-next-line no-alert
     const name = window.prompt('Name for the new folder:', 'untitled');
@@ -660,20 +682,129 @@ function SidebarToolbar() {
     }
   };
 
+  // Postman / Bruno-style "+ popup" pattern: one big plus button
+  // that opens a menu listing every create option. Discoverable
+  // without filling the toolbar with separate icon slots, and
+  // keeps the sidebar compact at narrow widths.
+  const [popupOpen, setPopupOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+  // Click-outside / Escape to dismiss (matches CollectionHeader's
+  // dropdown pattern).
+  useEffect(() => {
+    if (!popupOpen) return;
+    const onMouseDown = (e: MouseEvent) => {
+      if (!wrapperRef.current?.contains(e.target as Node)) setPopupOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPopupOpen(false);
+    };
+    window.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [popupOpen]);
+
+  const closeAnd = (fn: () => void | Promise<unknown>) => async () => {
+    setPopupOpen(false);
+    await fn();
+  };
+
   return (
     <div
+      ref={wrapperRef}
       style={{
         display: 'flex',
         alignItems: 'center',
         gap: 2,
         padding: '6px 10px',
+        position: 'relative',
       }}
     >
-      <ToolbarBtn icon={<FilePlus size={13} />} title="New request" onClick={handleNewFile} />
-      <ToolbarBtn icon={<FolderPlus size={13} />} title="New folder" onClick={handleNewFolder} />
+      <ToolbarBtn
+        icon={<Plus size={14} />}
+        title="New… (request, doc, folder)"
+        onClick={() => setPopupOpen((v) => !v)}
+        active={popupOpen}
+      />
       <ToolbarBtn icon={<RefreshCw size={13} />} title="Refresh from disk" onClick={handleRefresh} />
       <ToolbarBtn icon={<ChevronsDownUp size={13} />} title="Collapse all folders" onClick={collapseAllFolders} />
+
+      {popupOpen && (
+        <div
+          role="menu"
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 10,
+            marginTop: 4,
+            minWidth: 180,
+            background: TOKENS.s2,
+            borderRadius: 8,
+            boxShadow: `inset 0 0 0 1px ${TOKENS.stroke}, 0 8px 24px rgba(0,0,0,0.4)`,
+            padding: 4,
+            fontFamily: 'inherit',
+            fontSize: 12,
+            zIndex: 100,
+          }}
+        >
+          <PopupItem
+            icon={<FilePlus size={12} />}
+            label="New request"
+            onClick={closeAnd(handleNewFile)}
+          />
+          <PopupItem
+            icon={<BookOpen size={12} />}
+            label="New doc"
+            onClick={closeAnd(handleNewDoc)}
+          />
+          <PopupItem
+            icon={<FolderPlus size={12} />}
+            label="New folder"
+            onClick={closeAnd(handleNewFolder)}
+          />
+        </div>
+      )}
     </div>
+  );
+}
+
+function PopupItem({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      role="menuitem"
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        width: '100%',
+        padding: '6px 10px',
+        background: 'transparent',
+        border: 'none',
+        color: TOKENS.fg1,
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        fontSize: 12,
+        textAlign: 'left' as const,
+        borderRadius: 4,
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = TOKENS.s3)}
+      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+    >
+      {icon}
+      {label}
+    </button>
   );
 }
 
@@ -681,10 +812,14 @@ function ToolbarBtn({
   icon,
   title,
   onClick,
+  active,
 }: {
   icon: ReactNode;
   title: string;
   onClick: () => void;
+  /** Stays in the highlighted state (used by the "+" toggle so the
+   *  popup-open state reads at-a-glance). */
+  active?: boolean;
 }) {
   return (
     <button
@@ -697,10 +832,10 @@ function ToolbarBtn({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'transparent',
+        background: active ? TOKENS.s3 : 'transparent',
         border: 'none',
         borderRadius: 5,
-        color: TOKENS.fg2,
+        color: active ? TOKENS.fg1 : TOKENS.fg2,
         cursor: 'pointer',
       }}
       onMouseEnter={(e) => {
@@ -708,8 +843,8 @@ function ToolbarBtn({
         e.currentTarget.style.color = TOKENS.fg1;
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.background = 'transparent';
-        e.currentTarget.style.color = TOKENS.fg2;
+        e.currentTarget.style.background = active ? TOKENS.s3 : 'transparent';
+        e.currentTarget.style.color = active ? TOKENS.fg1 : TOKENS.fg2;
       }}
     >
       {icon}
