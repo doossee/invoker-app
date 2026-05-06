@@ -477,6 +477,10 @@ function TreeItem({ node, depth = 0, searchQuery }: { node: TreeNode; depth?: nu
             // folder menu rooted at this folder.
             if (!ctxMenuFolder) return;
             e.preventDefault();
+            // Stop propagation so the tree-wrapper's root-level
+            // onContextMenu doesn't fire after this and overwrite
+            // the menu state to `kind: 'root'`.
+            e.stopPropagation();
             ctxMenuFolder.open({
               x: e.clientX,
               y: e.clientY,
@@ -581,6 +585,9 @@ function TreeItem({ node, depth = 0, searchQuery }: { node: TreeNode; depth?: nu
         // context menu yet — rename/delete on docs is a follow-up.
         if (!isIvk || !ctxMenu) return;
         e.preventDefault();
+        // Stop propagation so the tree-wrapper's root-level handler
+        // doesn't fire after this and overwrite the state.
+        e.stopPropagation();
         ctxMenu.open({ x: e.clientX, y: e.clientY, kind: 'ivk', path: node.path });
       }}
       style={{
