@@ -34,7 +34,7 @@ src/
 ├── main.tsx                    ← React entry
 ├── App.tsx                     ← top-level layout, keyboard shortcuts, mode detection
 ├── components/
-│   ├── layout/                 ← Sidebar, TopBar, ResizablePanel, StatusBar
+│   ├── layout/                 ← Sidebar, ResizablePanel, StatusBar
 │   ├── editor/                 ← RequestEditor, UrlBar, HeadersTab, BodyTab, ScriptsTab, AuthTab, ResponsePanel, ...
 │   ├── collection/             ← UnifiedTree (file browser)
 │   ├── docs/                   ← markdown rendering
