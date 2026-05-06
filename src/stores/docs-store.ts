@@ -2,13 +2,14 @@ import { create } from 'zustand';
 import type { DocFile } from '@/data/sample-docs';
 import { isTauri } from '@/lib/platform';
 
+/**
+ * `activeDocPath`, `setActiveDoc`, `clearActiveDoc`, `expandedFolders`,
+ * and `toggleFolder` were dropped along with the standalone DocsTree
+ * surface — UnifiedTree (collection-store) handles tree expansion now.
+ * The fields had no callers after DocsTree was removed.
+ */
 interface DocsState {
-  activeDocPath: string | null;
-  expandedFolders: Set<string>;
   docs: DocFile[];
-  setActiveDoc: (path: string) => void;
-  toggleFolder: (path: string) => void;
-  clearActiveDoc: () => void;
   loadDocs: (docs: DocFile[]) => void;
   /**
    * Persist a doc's edited content. Updates in-memory state for every mode,
@@ -19,20 +20,7 @@ interface DocsState {
 }
 
 export const useDocsStore = create<DocsState>((set) => ({
-  activeDocPath: null,
-  expandedFolders: new Set<string>(),
   docs: [],
-
-  setActiveDoc: (path) => set({ activeDocPath: path }),
-  clearActiveDoc: () => set({ activeDocPath: null }),
-
-  toggleFolder: (folder) =>
-    set((state) => {
-      const next = new Set(state.expandedFolders);
-      if (next.has(folder)) next.delete(folder);
-      else next.add(folder);
-      return { expandedFolders: next };
-    }),
 
   loadDocs: (docs) => set({ docs }),
 
