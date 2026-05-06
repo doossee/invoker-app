@@ -6,6 +6,26 @@ function getStorageKey(): string {
   return isPublished() ? 'invoker:visitor-env' : 'invoker:env';
 }
 
+/**
+ * Color palette for new envs created via `addEnvironment`. Picked to
+ * match the existing dev/stage/prod hues used in `loadSettings` and
+ * `Sidebar`'s ENV_COLORS map, plus a few extras so users adding a 4th
+ * or 5th environment get visually distinct dots.
+ *
+ * `addEnvironment` walks the palette, skipping colors already in use,
+ * and falls back to round-robin once every hue is taken.
+ */
+const ENV_COLOR_PALETTE = [
+  '#22c55e', // green (dev)
+  '#f59e0b', // amber (stage)
+  '#f97758', // red-orange (prod)
+  '#3b82f6', // blue
+  '#a855f7', // purple
+  '#ec4899', // pink
+  '#06b6d4', // cyan
+  '#facc15', // yellow
+] as const;
+
 function loadSettings(): InvokerSettings {
   try {
     const stored = localStorage.getItem(getStorageKey());
@@ -91,12 +111,31 @@ export const useEnvStore = create<EnvState>((set, get) => {
     },
 
     addEnvironment: (name) => {
-      set((state) => ({
-        settings: {
-          ...state.settings,
-          environments: [...state.settings.environments, { name, variables: {} }],
-        },
-      }));
+      set((state) => {
+        // Pick a color from a small visually-distinct palette,
+        // skipping colors already in use so each new env gets a
+        // dot that's easy to tell apart at a glance. Falls back to
+        // cycling once we run out of fresh hues. (Sidebar's env dot
+        // honors `env.color` after PR #72; without an explicit color
+        // here, the dot fell through to a muted gray and looked
+        // indistinguishable from a missing env.)
+        const used = new Set(
+          state.settings.environments.map((e) => e.color).filter(Boolean) as string[],
+        );
+        const fresh = ENV_COLOR_PALETTE.find((c) => !used.has(c));
+        const color =
+          fresh ??
+          ENV_COLOR_PALETTE[state.settings.environments.length % ENV_COLOR_PALETTE.length]!;
+        return {
+          settings: {
+            ...state.settings,
+            environments: [
+              ...state.settings.environments,
+              { name, variables: {}, color },
+            ],
+          },
+        };
+      });
       get().persist();
     },
 
