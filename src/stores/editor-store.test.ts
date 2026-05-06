@@ -53,4 +53,34 @@ describe('editor-store tab lifecycle', () => {
     const tab = useEditorStore.getState().tabs[0];
     expect(tab.dirty).toBe(true);
   });
+
+  it('closeTab evicts the cached response so reopen starts clean', () => {
+    // Regression: closeTab used to filter the tabs array but leave the
+    // entry in responseCache. Reopening the tab read the stale cached
+    // response — confusing for the user (they expect a fresh send) and
+    // a memory leak across many open/close cycles.
+    open('c.ivk');
+    useEditorStore.getState().cacheResponse('c.ivk', {
+      response: { status: 200, headers: {}, body: 'old', time: 50, size: 3 },
+      testResults: [],
+      logs: [],
+    });
+    expect(useEditorStore.getState().getResponse('c.ivk')).toBeDefined();
+
+    useEditorStore.getState().closeTab('c.ivk');
+    expect(useEditorStore.getState().getResponse('c.ivk')).toBeUndefined();
+  });
+
+  it('closeTab leaves OTHER tabs\' cached responses intact', () => {
+    open('d.ivk');
+    open('e.ivk');
+    const result = {
+      response: { status: 200, headers: {}, body: 'kept', time: 50, size: 4 },
+      testResults: [],
+      logs: [],
+    };
+    useEditorStore.getState().cacheResponse('e.ivk', result);
+    useEditorStore.getState().closeTab('d.ivk');
+    expect(useEditorStore.getState().getResponse('e.ivk')?.response.body).toBe('kept');
+  });
 });
