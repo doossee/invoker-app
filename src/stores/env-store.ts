@@ -70,8 +70,24 @@ export const useEnvStore = create<EnvState>((set, get) => {
     },
 
     setVariable: (name, value) => {
+      // Delegate to ivkjs's EnvManager so script-side `ivk.env.set()`
+      // and React-side calls share one runtimeVars / variables map.
+      // EnvManager.set mutates the active env's `variables` in place
+      // (so the request runner sees the new value immediately) — but
+      // that mutation alone doesn't change any references zustand
+      // selectors compare against. Rebuild the environments array
+      // immutably so deep selectors re-render. (Same root cause as
+      // the resetToDefaults / setAuthorDefaults fixes above.)
       get().envManager.set(name, value);
-      set((state) => ({ settings: { ...state.settings } })); // trigger re-render
+      set((state) => {
+        const idx = state.settings.activeEnvironmentIndex;
+        const target = state.settings.environments[idx];
+        if (!target) return { settings: { ...state.settings } };
+        const nextEnvs = state.settings.environments.map((e, i) =>
+          i === idx ? { ...e, variables: { ...e.variables } } : e,
+        );
+        return { settings: { ...state.settings, environments: nextEnvs } };
+      });
     },
 
     addEnvironment: (name) => {
@@ -102,26 +118,42 @@ export const useEnvStore = create<EnvState>((set, get) => {
     setAuthorDefaults: (defaults) => {
       set({ authorDefaults: defaults });
       const state = get();
-      const env = state.settings.environments[state.settings.activeEnvironmentIndex];
-      if (env) {
-        for (const [key, value] of Object.entries(defaults)) {
-          if (!env.variables[key]) {
-            env.variables[key] = value;
-          }
-        }
-        set({ settings: { ...state.settings } });
+      const idx = state.settings.activeEnvironmentIndex;
+      const target = state.settings.environments[idx];
+      if (!target) {
+        get().persist();
+        return;
       }
+      // Same immutability fix as resetToDefaults below — was mutating
+      // `env.variables[key]` in place, so zustand selectors deeper than
+      // `s.settings` skipped the re-render.
+      const mergedVars = { ...target.variables };
+      for (const [key, value] of Object.entries(defaults)) {
+        if (!mergedVars[key]) mergedVars[key] = value;
+      }
+      const nextEnvs = state.settings.environments.map((e, i) =>
+        i === idx ? { ...e, variables: mergedVars } : e,
+      );
+      set({ settings: { ...state.settings, environments: nextEnvs } });
       get().persist();
     },
 
     resetToDefaults: () => {
       const state = get();
       const defaults = state.authorDefaults;
-      const env = state.settings.environments[state.settings.activeEnvironmentIndex];
-      if (env) {
-        env.variables = { ...defaults };
-        set({ settings: { ...state.settings } });
-      }
+      const idx = state.settings.activeEnvironmentIndex;
+      const target = state.settings.environments[idx];
+      if (!target) return;
+      // Rebuild the environments array immutably so every reference
+      // along the path (environments → environments[idx] → .variables)
+      // changes. The previous implementation mutated `env.variables`
+      // in place and only shallow-cloned `settings`, so zustand
+      // selectors subscribing to deeper paths skipped the re-render
+      // (see `env-store-reset.test.ts` for the contract).
+      const nextEnvs = state.settings.environments.map((e, i) =>
+        i === idx ? { ...e, variables: { ...defaults } } : e,
+      );
+      set({ settings: { ...state.settings, environments: nextEnvs } });
       get().persist();
     },
   };
