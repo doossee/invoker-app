@@ -111,10 +111,28 @@ export function EnvSettings({ onClose }: Props) {
 
   function handleExport() {
     const text = JSON.stringify(settings.environments, null, 2);
-    navigator.clipboard.writeText(text).then(() => {
-      setCopyDone(true);
-      setTimeout(() => setCopyDone(false), 2000);
-    });
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        setCopyDone(true);
+        setTimeout(() => setCopyDone(false), 2000);
+      })
+      .catch((e: unknown) => {
+        // Clipboard writes can reject in non-secure contexts (HTTP),
+        // when clipboard permission is denied, or in older Safari
+        // versions. Previously the `.then()` chain had no `.catch()`
+        // — the button label stayed unchanged with no clue the action
+        // failed. Surface via alert (same precedent as PR #65 for
+        // save errors); the serialised JSON is also logged to console
+        // so power users can copy from DevTools as a fallback.
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error('Env export clipboard write failed:', e);
+        console.info('Env export payload:', text);
+        // eslint-disable-next-line no-alert
+        window.alert(
+          `Couldn't copy to clipboard: ${msg}\n\nThe full JSON is logged to the console as a fallback.`,
+        );
+      });
   }
 
   function handleImport() {
