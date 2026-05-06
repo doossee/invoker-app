@@ -3,6 +3,7 @@ import { X, Plus, Trash2, ChevronDown, ChevronRight, Copy, RotateCcw } from 'luc
 import { useEnvStore } from '@/stores/env-store';
 import { KeyValueTable } from '@/components/shared/KeyValueTable';
 import { isPublished } from '@/lib/platform';
+import { validateEnvImport } from '@/lib/validate-env-import';
 import type { IvkEnvironment } from 'ivkjs';
 
 interface Props {
@@ -117,23 +118,34 @@ export function EnvSettings({ onClose }: Props) {
   }
 
   function handleImport() {
+    let parsed: unknown;
     try {
-      const parsed = JSON.parse(importText);
-      if (!Array.isArray(parsed)) throw new Error('Expected an array of environments');
-      useEnvStore.setState((state) => ({
-        settings: {
-          ...state.settings,
-          environments: parsed as IvkEnvironment[],
-          activeEnvironmentIndex: 0,
-        },
-      }));
-      persist();
-      setImportText('');
-      setImportError('');
-      setActiveEnv(0);
+      parsed = JSON.parse(importText);
     } catch (e) {
       setImportError(e instanceof Error ? e.message : 'Invalid JSON');
+      return;
     }
+    // Validate each entry's shape before committing to the store.
+    // Previously the import did `parsed as IvkEnvironment[]` after a
+    // top-level `Array.isArray` check — any array of arbitrary shape
+    // was accepted and crashed the app downstream where reading
+    // `env.variables` / `env.name` threw on undefined.
+    const result = validateEnvImport(parsed);
+    if (!result.ok) {
+      setImportError(result.error);
+      return;
+    }
+    useEnvStore.setState((state) => ({
+      settings: {
+        ...state.settings,
+        environments: result.envs,
+        activeEnvironmentIndex: 0,
+      },
+    }));
+    persist();
+    setImportText('');
+    setImportError('');
+    setActiveEnv(0);
   }
 
   const varCount = (env: IvkEnvironment) => Object.keys(env.variables || {}).length;
