@@ -38,6 +38,26 @@ interface CollectionState {
    * true if a file was actually removed (regardless of mode).
    */
   deleteFile: (path: string) => Promise<boolean>;
+  /**
+   * Create a new `.ivk` request file inside `parentFolder` (empty
+   * string = collection root). Seeds the file with the editor-store's
+   * `defaultRequestMethod` + `https://` placeholder URL so parseIvk
+   * always succeeds. Returns the new path on success, null on
+   * conflict. In Tauri with a real folder, also writes the file to
+   * disk via `@tauri-apps/plugin-fs.writeTextFile`.
+   */
+  createFile: (parentFolder: string, name: string) => Promise<string | null>;
+  /**
+   * Create a new folder inside `parentFolder` (empty string = root).
+   * Tauri: real `mkdir`. Browser-mode: returns the path so callers
+   * can drop a placeholder file (typically a `README.md`) inside —
+   * folders are derived from file paths in browser-mode, so an
+   * empty folder isn't visible until something lands in it.
+   */
+  createFolder: (parentFolder: string, name: string) => Promise<string | null>;
+  /** Clears every entry in `expandedFolders` — wired to the
+   *  collapse-all toolbar button (VSCode Explorer convention). */
+  collapseAllFolders: () => void;
 }
 
 export const useCollectionStore = create<CollectionState>((set, get) => ({
@@ -206,4 +226,78 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     if (state.activeFilePath === path) set({ activeFilePath: null });
     return true;
   },
+
+  createFile: async (parentFolder, name) => {
+    const cleanedName = name.endsWith('.ivk') ? name : `${name}.ivk`;
+    const folder = parentFolder ? parentFolder.replace(/\/$/, '') + '/' : '';
+    const newPath = `${folder}${cleanedName}`;
+    const state = get();
+    if (
+      state.files.some((f) => f.path === newPath) ||
+      state.inlineFiles[newPath]
+    ) {
+      return null;
+    }
+    // Seed with the editor-store's default method so the new
+    // request renders correctly in the editor immediately. The
+    // `https://` URL placeholder ensures parseIvk has both a
+    // method and a URL on the request line — without the URL,
+    // ivkjs's parser falls back to GET regardless of the method
+    // we wrote.
+    const { useEditorStore } = await import('./editor-store');
+    const method = useEditorStore.getState().defaultRequestMethod;
+    const content = `${method} https://\n`;
+    // Tauri disk write FIRST so a fs error aborts before the in-
+    // memory state diverges (matches saveRequest / renameFile /
+    // deleteFile pattern).
+    const collectionPath = get().collectionPath;
+    const virtual =
+      !collectionPath ||
+      collectionPath === '(sample)' ||
+      collectionPath === '(published)';
+    if (isTauri() && !virtual) {
+      const { writeTextFile } = await import('@tauri-apps/plugin-fs');
+      const sep = collectionPath!.endsWith('/') ? '' : '/';
+      await writeTextFile(`${collectionPath}${sep}${newPath}`, content);
+    }
+    set({
+      files: [
+        ...state.files,
+        {
+          path: newPath,
+          name: cleanedName.replace(/\.ivk$/, ''),
+          content,
+        },
+      ],
+    });
+    return newPath;
+  },
+
+  createFolder: async (parentFolder, name) => {
+    const folder = parentFolder ? parentFolder.replace(/\/$/, '') + '/' : '';
+    const newPath = `${folder}${name}`;
+    const state = get();
+    // Conflict check: a folder exists if any file path is rooted at
+    // that prefix.
+    const folderTaken = state.files.some(
+      (f) => f.path === newPath || f.path.startsWith(newPath + '/'),
+    );
+    if (folderTaken) return null;
+    // Tauri: real mkdir. The folder is empty afterwards; the caller
+    // (UnifiedTree) is responsible for dropping a placeholder file
+    // inside if browser-mode visibility matters.
+    const collectionPath = get().collectionPath;
+    const virtual =
+      !collectionPath ||
+      collectionPath === '(sample)' ||
+      collectionPath === '(published)';
+    if (isTauri() && !virtual) {
+      const { mkdir } = await import('@tauri-apps/plugin-fs');
+      const sep = collectionPath!.endsWith('/') ? '' : '/';
+      await mkdir(`${collectionPath}${sep}${newPath}`, { recursive: true });
+    }
+    return newPath;
+  },
+
+  collapseAllFolders: () => set({ expandedFolders: new Set<string>() }),
 }));
