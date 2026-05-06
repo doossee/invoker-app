@@ -84,3 +84,69 @@ describe('editor-store tab lifecycle', () => {
     expect(useEditorStore.getState().getResponse('e.ivk')?.response.body).toBe('kept');
   });
 });
+
+describe('editor-store purgeStaleTabs', () => {
+  beforeEach(() => {
+    useEditorStore.setState({ tabs: [], activeTabPath: null, responseCache: {} });
+  });
+
+  function open(path: string, extra: Partial<TabData> = {}) {
+    useEditorStore.getState().openTab({ kind: 'ivk', path, name: path, ...extra });
+  }
+
+  it('drops tabs whose paths are NOT in the valid set', () => {
+    open('keep.ivk');
+    open('drop.ivk');
+    useEditorStore.getState().purgeStaleTabs(new Set(['keep.ivk']));
+    const paths = useEditorStore.getState().tabs.map((t) => t.path);
+    expect(paths).toEqual(['keep.ivk']);
+  });
+
+  it('preserves inline/ tabs even if not in the valid set', () => {
+    open('inline/Untitled-abc.ivk');
+    open('drop.ivk');
+    useEditorStore.getState().purgeStaleTabs(new Set([]));
+    const paths = useEditorStore.getState().tabs.map((t) => t.path);
+    expect(paths).toEqual(['inline/Untitled-abc.ivk']);
+  });
+
+  it('falls back the active tab when the active tab gets dropped', () => {
+    open('a.ivk');
+    open('drop.ivk');
+    useEditorStore.getState().setActiveTab('drop.ivk');
+    useEditorStore.getState().purgeStaleTabs(new Set(['a.ivk']));
+    expect(useEditorStore.getState().activeTabPath).toBe('a.ivk');
+  });
+
+  it('sets activeTabPath to null when every tab is dropped', () => {
+    open('a.ivk');
+    useEditorStore.getState().setActiveTab('a.ivk');
+    useEditorStore.getState().purgeStaleTabs(new Set([]));
+    expect(useEditorStore.getState().tabs).toHaveLength(0);
+    expect(useEditorStore.getState().activeTabPath).toBeNull();
+  });
+
+  it('evicts cached responses for dropped tabs', () => {
+    open('keep.ivk');
+    open('drop.ivk');
+    const result = {
+      response: { status: 200, headers: {}, body: 'X', time: 50, size: 1 },
+      testResults: [],
+      logs: [],
+    };
+    useEditorStore.getState().cacheResponse('keep.ivk', result);
+    useEditorStore.getState().cacheResponse('drop.ivk', result);
+    useEditorStore.getState().purgeStaleTabs(new Set(['keep.ivk']));
+    expect(useEditorStore.getState().getResponse('keep.ivk')).toBeDefined();
+    expect(useEditorStore.getState().getResponse('drop.ivk')).toBeUndefined();
+  });
+
+  it('is a no-op when every tab is in the valid set', () => {
+    open('a.ivk');
+    open('b.ivk');
+    const tabsBefore = useEditorStore.getState().tabs;
+    useEditorStore.getState().purgeStaleTabs(new Set(['a.ivk', 'b.ivk']));
+    // Same array reference — no spurious re-render trigger
+    expect(useEditorStore.getState().tabs).toBe(tabsBefore);
+  });
+});

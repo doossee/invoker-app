@@ -264,6 +264,31 @@ export function App() {
     return unwatch;
   }, [collectionPath]);
 
+  // Drop tabs whose paths no longer exist in the loaded collection.
+  // Fires on every collection swap (sample → real folder, folder A →
+  // folder B, etc.) so stale tabs from the previous collection don't
+  // hang around showing empty editor surfaces. Inline tabs (untitled
+  // requests) are preserved — they live only in memory anyway.
+  // The purgeStaleTabs action is a no-op fast-path when nothing
+  // needs dropping, so this also runs harmlessly on file
+  // additions/removals within a single collection.
+  useEffect(() => {
+    const valid = new Set<string>();
+    for (const f of collectionFiles) valid.add(f.path);
+    for (const d of collectionDocs) {
+      valid.add(d.path);
+      // Folder tabs reference the FOLDER path (e.g. `playground`),
+      // not the README's `playground/README.md`. Fold the parent
+      // directory in so a folder tab survives if its README is in
+      // the new collection.
+      const lower = d.path.toLowerCase();
+      if (lower.endsWith('/readme.md')) {
+        valid.add(d.path.slice(0, -'/README.md'.length));
+      }
+    }
+    useEditorStore.getState().purgeStaleTabs(valid);
+  }, [collectionFiles, collectionDocs]);
+
   // Determine content view
   const hasActiveTab = !!activeTab;
   const showIvk = activeTab?.kind === 'ivk';

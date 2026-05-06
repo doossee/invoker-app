@@ -93,6 +93,16 @@ interface EditorState {
   markDirty: (path: string, dirty: boolean) => void;
   /** Patch fields on an existing tab (e.g. method changed in the editor). */
   updateTab: (path: string, patch: Partial<TabData>) => void;
+  /**
+   * Drop tabs whose path no longer exists in the loaded collection.
+   * Called from `App.tsx` when the active collection changes (user
+   * switched folders, sample → real, etc.). Inline tabs (path starts
+   * with `inline/`) are always preserved — they live in memory only.
+   *
+   * @param valid `Set` of paths that ARE present in the new collection
+   *   (both `.ivk` and `.md` paths, plus folder paths for folder tabs).
+   */
+  purgeStaleTabs: (valid: ReadonlySet<string>) => void;
 
   // Layout actions
   setSidebarWidth: (w: number) => void;
@@ -207,6 +217,30 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set((state) => ({
       tabs: state.tabs.map((t) => (t.path === path ? { ...t, ...patch } : t)),
     })),
+
+  purgeStaleTabs: (valid) =>
+    set((state) => {
+      const keep = state.tabs.filter(
+        (t) => valid.has(t.path) || t.path.startsWith('inline/'),
+      );
+      if (keep.length === state.tabs.length) return state; // no-op fast path
+      const droppedPaths = new Set(
+        state.tabs.filter((t) => !keep.includes(t)).map((t) => t.path),
+      );
+      // Evict cached responses for the dropped tabs (mirrors the
+      // single-tab eviction in closeTab from PR #80).
+      const responseCache: typeof state.responseCache = {};
+      for (const [path, result] of Object.entries(state.responseCache)) {
+        if (!droppedPaths.has(path)) responseCache[path] = result;
+      }
+      // If the active tab got dropped, fall back to the first kept tab
+      // (or null if everything's gone).
+      const nextActive =
+        state.activeTabPath && droppedPaths.has(state.activeTabPath)
+          ? (keep[0]?.path ?? null)
+          : state.activeTabPath;
+      return { tabs: keep, activeTabPath: nextActive, responseCache };
+    }),
 
   setSidebarWidth: (w) => {
     set({ sidebarWidth: w });
