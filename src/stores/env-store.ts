@@ -26,12 +26,66 @@ const ENV_COLOR_PALETTE = [
   '#facc15', // yellow
 ] as const;
 
+/**
+ * Defensive shape check for parsed localStorage. The previous
+ * `JSON.parse(stored) as InvokerSettings` cast accepted any valid
+ * JSON — corrupted state from older Invoker versions or hand-edits
+ * crashed downstream consumers reading
+ * `settings.environments[N].variables` etc.
+ *
+ * Returns the value as-is if every structural check passes, or null
+ * to signal "fall through to defaults". We don't try to repair
+ * partial data — corrupted state means the user lost some config
+ * (rare) but the app keeps working.
+ */
+function validateLoadedSettings(value: unknown): InvokerSettings | null {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return null;
+  }
+  const obj = value as Record<string, unknown>;
+  if (!Array.isArray(obj.environments) || obj.environments.length === 0) return null;
+  for (const env of obj.environments) {
+    if (typeof env !== 'object' || env === null || Array.isArray(env)) return null;
+    const e = env as Record<string, unknown>;
+    if (typeof e.name !== 'string' || e.name.trim() === '') return null;
+    if (
+      typeof e.variables !== 'object' ||
+      e.variables === null ||
+      Array.isArray(e.variables)
+    ) {
+      return null;
+    }
+  }
+  // activeEnvironmentIndex must be in-range; coerce out-of-range to 0
+  // rather than fall through (preserves the user's environments).
+  const idx =
+    typeof obj.activeEnvironmentIndex === 'number' &&
+    obj.activeEnvironmentIndex >= 0 &&
+    obj.activeEnvironmentIndex < obj.environments.length
+      ? obj.activeEnvironmentIndex
+      : 0;
+  return {
+    ...DEFAULT_SETTINGS,
+    ...(obj as Partial<InvokerSettings>),
+    activeEnvironmentIndex: idx,
+  };
+}
+
 function loadSettings(): InvokerSettings {
   try {
     const stored = localStorage.getItem(getStorageKey());
-    if (stored) return JSON.parse(stored) as InvokerSettings;
+    if (stored) {
+      const parsed = JSON.parse(stored) as unknown;
+      const validated = validateLoadedSettings(parsed);
+      if (validated) return validated;
+      // Validated null → corrupted state. Keep going so the defaults
+      // below take over; surface to the console for diagnosability.
+      console.warn(
+        '[invoker] env-store: stored settings failed validation, falling back to defaults',
+      );
+    }
   } catch {
-    // ignore
+    // ignore — JSON.parse threw, or storage access denied
   }
   // Default with httpbin for demo
   return {
