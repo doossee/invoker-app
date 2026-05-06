@@ -171,24 +171,53 @@ export function App() {
   }, [activeTabPath, commandPaletteOpen, setCommandPaletteOpen, createInlineTab, toggleSidebar]);
 
   // Auto-collapse sidebar on narrow viewports (mobile-responsive fallback).
-  // Also restores it when viewport widens again, but only if the user hasn't
-  // manually collapsed it — we track that via a width threshold.
+  // Restores it when viewport widens again — but ONLY if the most recent
+  // collapse was triggered by us (auto), not by the user clicking the
+  // collapse button. The previous implementation tracked `userCollapsed`
+  // but never set it to `true` on a manual click, so any manual collapse
+  // got auto-restored on the next viewport-widen event. Tracking via
+  // a store subscription here distinguishes auto-collapse (we set the
+  // flag) from manual collapse (the flag stays clear).
   useEffect(() => {
     const MOBILE_BREAKPOINT = 720;
-    let userCollapsed = false;
+    let lastWasAuto = false;
+    let resizeJustFired = false;
+    let prevCollapsed = useEditorStore.getState().sidebarCollapsed;
+
+    const unsubscribe = useEditorStore.subscribe((state) => {
+      const collapsed = state.sidebarCollapsed;
+      if (collapsed !== prevCollapsed) {
+        // Any change we DIDN'T just trigger via onResize is manual.
+        if (!resizeJustFired) lastWasAuto = false;
+        prevCollapsed = collapsed;
+      }
+    });
+
     const onResize = () => {
       const narrow = window.innerWidth < MOBILE_BREAKPOINT;
       const current = useEditorStore.getState().sidebarCollapsed;
       if (narrow && !current) {
-        userCollapsed = false; // reset: this was auto
+        resizeJustFired = true;
+        lastWasAuto = true;
         setSidebarCollapsed(true);
-      } else if (!narrow && current && !userCollapsed) {
+        queueMicrotask(() => {
+          resizeJustFired = false;
+        });
+      } else if (!narrow && current && lastWasAuto) {
+        resizeJustFired = true;
+        lastWasAuto = false;
         setSidebarCollapsed(false);
+        queueMicrotask(() => {
+          resizeJustFired = false;
+        });
       }
     };
     onResize();
     window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      unsubscribe();
+    };
   }, [setSidebarCollapsed]);
 
   // Published mode: load manifest at startup
