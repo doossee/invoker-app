@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import {
-  Plus,
   Settings,
   Search,
   ChevronDown,
@@ -12,8 +11,6 @@ import {
   PanelLeftClose,
   FilePlus,
   FolderPlus,
-  RefreshCw,
-  ChevronsDownUp,
   BookOpen,
 } from 'lucide-react';
 import { InvokerMark, Kbd, TOKENS } from '@/components/shared/primitives';
@@ -22,8 +19,6 @@ import { useEnvStore } from '@/stores/env-store';
 import { useCollectionStore } from '@/stores/collection-store';
 import { useDocsStore } from '@/stores/docs-store';
 import { useOpenCollection } from '@/hooks/useOpenCollection';
-import { isTauri } from '@/lib/platform';
-import { loadCollection as loadFromDisk } from '@/lib/file-system';
 
 const ENV_COLORS: Record<string, string> = {
   development: '#22c55e',
@@ -117,11 +112,10 @@ export function Sidebar({ children, onOpenSettings, searchQuery, onSearchChange 
       {/* Divider */}
       <div style={{ margin: '0 10px', height: 1, background: TOKENS.strokeSoft }} />
 
-      {/* Toolbar — VSCode Explorer style: file-system actions on the
-          left, editor-only actions (palette / new inline tab) on the
-          right separated by spacer. Hover-only highlight matches the
-          rest of the sidebar. */}
-      <SidebarToolbar />
+      {/* Single labeled "+ New…" row that opens a popup with Request /
+          Doc / Folder. Refresh + collapse-all moved to the kebab on
+          the collection header. */}
+      <NewItemRow />
 
       {/* File Tree */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 4px' }}>
@@ -571,26 +565,15 @@ function EnvDropdown({ onClose, onManage }: { onClose: () => void; onManage: () 
 }
 
 /* ------------------------------------------------------------------ */
-/*  Sidebar toolbar — VSCode Explorer style                            */
-/*                                                                      */
-/*  Four icon buttons centered above the file tree:                     */
-/*    1. New file    → prompt → createFile('', name) + open as tab      */
-/*    2. New folder  → prompt → createFolder + auto-README              */
-/*    3. Refresh     → re-scan disk (Tauri) / reload sample             */
-/*    4. Collapse all → clears expandedFolders                          */
-/*                                                                      */
-/*  These are additive to the right-click context menu shipped in #88   */
-/*  — discoverable, single-click access to the same flows.              */
+/*  New-item row — single labeled trigger that opens a Request /      */
+/*  Doc / Folder popup. Replaces the icon-cluster toolbar from #88.   */
+/*  Handlers and copy match the right-click flow in UnifiedTree.      */
 /* ------------------------------------------------------------------ */
-function SidebarToolbar() {
+function NewItemRow() {
   const createFile = useCollectionStore((s) => s.createFile);
   const createFolder = useCollectionStore((s) => s.createFolder);
   const createDoc = useDocsStore((s) => s.createDoc);
-  const collapseAllFolders = useCollectionStore((s) => s.collapseAllFolders);
   const collectionPath = useCollectionStore((s) => s.collectionPath);
-  const setCollectionPath = useCollectionStore((s) => s.setCollectionPath);
-  const loadCollectionToStore = useCollectionStore((s) => s.loadCollection);
-  const loadDocsToStore = useDocsStore((s) => s.loadDocs);
   const openTab = useEditorStore((s) => s.openTab);
 
   const handleNewFile = async () => {
@@ -656,41 +639,14 @@ function SidebarToolbar() {
       window.alert(`A folder named "${name.trim()}" already exists at the root.`);
       return;
     }
-    // Drop a placeholder README.md so the folder is visible in the
-    // tree (folders are derived from file paths in browser-mode).
     await createDoc(newPath, 'README', collectionPath, `# ${name.trim()}\n`);
     useCollectionStore.getState().toggleFolder(newPath);
     openTab({ kind: 'folder', path: newPath, name: name.trim(), hasReadme: true });
   };
 
-  const handleRefresh = async () => {
-    // Re-scan in Tauri only — the browser File System Access API
-    // requires a fresh user-gesture pick on every read, and the
-    // sample collection's "refresh" is identical to what's already
-    // loaded so it's a no-op there.
-    if (!isTauri() || !collectionPath || collectionPath === '(sample)' || collectionPath === '(published)') {
-      return;
-    }
-    try {
-      const data = await loadFromDisk(collectionPath);
-      loadCollectionToStore({ ivkFiles: data.ivkFiles, basePath: data.basePath });
-      setCollectionPath(collectionPath);
-      loadDocsToStore(data.mdFiles);
-    } catch (err) {
-      // eslint-disable-next-line no-alert
-      window.alert(`Refresh failed: ${err instanceof Error ? err.message : String(err)}`);
-    }
-  };
-
-  // Postman / Bruno-style "+ popup" pattern: one big plus button
-  // that opens a menu listing every create option. Discoverable
-  // without filling the toolbar with separate icon slots, and
-  // keeps the sidebar compact at narrow widths.
   const [popupOpen, setPopupOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
-  // Click-outside / Escape to dismiss (matches CollectionHeader's
-  // dropdown pattern).
   useEffect(() => {
     if (!popupOpen) return;
     const onMouseDown = (e: MouseEvent) => {
@@ -713,24 +669,49 @@ function SidebarToolbar() {
   };
 
   return (
-    <div
-      ref={wrapperRef}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 2,
-        padding: '6px 10px',
-        position: 'relative',
-      }}
-    >
-      <ToolbarBtn
-        icon={<Plus size={14} />}
-        title="New… (request, doc, folder)"
+    <div ref={wrapperRef} style={{ padding: '4px 10px 6px', position: 'relative' }}>
+      <button
         onClick={() => setPopupOpen((v) => !v)}
-        active={popupOpen}
-      />
-      <ToolbarBtn icon={<RefreshCw size={13} />} title="Refresh from disk" onClick={handleRefresh} />
-      <ToolbarBtn icon={<ChevronsDownUp size={13} />} title="Collapse all folders" onClick={collapseAllFolders} />
+        aria-label="New… (request, doc, folder)"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          width: '100%',
+          padding: '7px 8px',
+          background: popupOpen ? 'rgba(255,255,255,0.06)' : 'transparent',
+          border: 'none',
+          borderRadius: 6,
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          fontSize: 12,
+          color: TOKENS.fg1,
+          textAlign: 'left' as const,
+        }}
+        onMouseEnter={(e) => {
+          if (!popupOpen) e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+        }}
+        onMouseLeave={(e) => {
+          if (!popupOpen) e.currentTarget.style.background = 'transparent';
+        }}
+      >
+        <span
+          style={{
+            width: 16,
+            height: 16,
+            display: 'grid',
+            placeItems: 'center',
+            background: 'rgba(230,193,136,0.12)',
+            color: TOKENS.amber,
+            borderRadius: 4,
+            fontSize: 12,
+            lineHeight: 1,
+          }}
+        >
+          +
+        </span>
+        <span>New…</span>
+      </button>
 
       {popupOpen && (
         <div
@@ -739,8 +720,8 @@ function SidebarToolbar() {
             position: 'absolute',
             top: '100%',
             left: 10,
+            right: 10,
             marginTop: 4,
-            minWidth: 180,
             background: TOKENS.s2,
             borderRadius: 8,
             boxShadow: `inset 0 0 0 1px ${TOKENS.stroke}, 0 8px 24px rgba(0,0,0,0.4)`,
@@ -808,46 +789,3 @@ function PopupItem({
   );
 }
 
-function ToolbarBtn({
-  icon,
-  title,
-  onClick,
-  active,
-}: {
-  icon: ReactNode;
-  title: string;
-  onClick: () => void;
-  /** Stays in the highlighted state (used by the "+" toggle so the
-   *  popup-open state reads at-a-glance). */
-  active?: boolean;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      title={title}
-      aria-label={title}
-      style={{
-        width: 26,
-        height: 26,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: active ? TOKENS.s3 : 'transparent',
-        border: 'none',
-        borderRadius: 5,
-        color: active ? TOKENS.fg1 : TOKENS.fg2,
-        cursor: 'pointer',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = TOKENS.s3;
-        e.currentTarget.style.color = TOKENS.fg1;
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = active ? TOKENS.s3 : 'transparent';
-        e.currentTarget.style.color = active ? TOKENS.fg1 : TOKENS.fg2;
-      }}
-    >
-      {icon}
-    </button>
-  );
-}

@@ -85,3 +85,20 @@ test('Folder context menu shows all three Create items + no Rename/Delete', asyn
   await expect(page.getByRole('menuitem', { name: /^Rename$/ })).toHaveCount(0);
   await expect(page.getByRole('menuitem', { name: /^Delete$/ })).toHaveCount(0);
 });
+
+test('Sidebar "+ New…" row opens popup with Request / Doc / Folder', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.clear();
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: /try sample/i }).first().click();
+  await expect(page.getByText(/Sample collection/i).first()).toBeVisible();
+
+  // Click the labeled "+ New…" row.
+  await page.getByRole('button', { name: /^New… \(request, doc, folder\)$/ }).click();
+
+  // All three create options visible in the popup.
+  await expect(page.getByRole('menuitem', { name: /^New request$/ })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: /^New doc$/ })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: /^New folder$/ })).toBeVisible();
+});
