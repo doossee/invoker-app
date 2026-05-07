@@ -15,6 +15,8 @@ import { SettingsModal } from '@/components/modals/SettingsModal';
 import { useEditorStore } from '@/stores/editor-store';
 import { useCollectionStore } from '@/stores/collection-store';
 import { useEnvStore } from '@/stores/env-store';
+import { usePinnedStore } from '@/stores/pinned-store';
+import { useRecentStore } from '@/stores/recent-store';
 import { watchCollection, loadCollection, loadFromManifest } from '@/lib/file-system';
 import { isPublished, isTauri } from '@/lib/platform';
 import { sampleCollection } from '@/data/sample-collection';
@@ -317,6 +319,14 @@ export function App() {
     }
     useEditorStore.getState().purgeStaleTabs(valid);
   }, [collectionFiles, collectionDocs]);
+
+  // Per-collection stores (pinned + recent) key their localStorage by
+  // collection path, so they need to rehydrate when the user switches
+  // folders. Cross-store coordination lives in App.tsx per CLAUDE.md.
+  useEffect(() => {
+    usePinnedStore.getState().setCollectionPath(collectionPath);
+    useRecentStore.getState().setCollectionPath(collectionPath);
+  }, [collectionPath]);
 
   // Determine content view
   const hasActiveTab = !!activeTab;

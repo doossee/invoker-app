@@ -150,3 +150,54 @@ describe('editor-store purgeStaleTabs', () => {
     expect(useEditorStore.getState().tabs).toBe(tabsBefore);
   });
 });
+
+describe('editor-store / recent-store integration', () => {
+  beforeEach(async () => {
+    localStorage.clear();
+    useEditorStore.setState({ tabs: [], activeTabPath: null });
+    // Explicit reset of recent-store so each test starts from a known
+    // empty state regardless of whether setCollectionPath reloads or
+    // short-circuits in the future.
+    const { useRecentStore } = await import('./recent-store');
+    useRecentStore.setState({ recent: [], collectionPath: null });
+  });
+
+  it('openTab marks the path as recently opened', async () => {
+    const { useRecentStore } = await import('./recent-store');
+    useRecentStore.getState().setCollectionPath('/test');
+
+    useEditorStore.getState().openTab({
+      kind: 'ivk',
+      path: 'a/b.ivk',
+      name: 'b',
+    });
+
+    // Flush the lazy `import('./recent-store')` inside openTab. A bare
+    // `await Promise.resolve()` isn't enough — vitest's module loader
+    // resolves dynamic imports across more than one microtask tick even
+    // when the module is already cached. setTimeout(0) drains the
+    // current task plus the queued microtasks reliably.
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(useRecentStore.getState().recent.map((r) => r.path)).toEqual([
+      'a/b.ivk',
+    ]);
+  });
+
+  it('openTab does NOT mark inline paths as recent', async () => {
+    const { useRecentStore } = await import('./recent-store');
+    useRecentStore.getState().setCollectionPath('/test');
+
+    useEditorStore.getState().openTab({
+      kind: 'ivk',
+      path: 'inline/Untitled-abc.ivk',
+      name: 'Untitled',
+    });
+
+    // Same flush as above — defensive in case openTab ever queues work
+    // for inline paths in the future.
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(useRecentStore.getState().recent).toEqual([]);
+  });
+});

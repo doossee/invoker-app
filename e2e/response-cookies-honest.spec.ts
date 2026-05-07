@@ -26,9 +26,12 @@ test('Response → Cookies tab renders the honest browser-mode empty state', asy
   await page.getByRole('button', { name: /try sample/i }).first().click();
   await expect(page.getByText(/Sample collection/i).first()).toBeVisible();
 
-  // Open the 01-hello-world request (GET to httpbin.org). The dashboard
-  // surfaces it directly so we don't need to expand the playground
-  // folder first.
+  // Expand the playground folder so its files are in the DOM.
+  // (The old dashboard used to surface this file directly; the new
+  // Pinned/Recent dashboard starts empty.)
+  await page.getByText(/^playground$/).first().click();
+
+  // Open the 01-hello-world request (GET to httpbin.org).
   await page.getByText(/01-hello-world/i).first().click();
 
   // Send the request.

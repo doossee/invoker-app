@@ -14,6 +14,9 @@ test('⌘W on a dirty tab prompts a confirm; cancelling keeps the tab open', asy
   await page.getByRole('button', { name: /try sample/i }).first().click();
   await expect(page.getByText(/Sample collection/i).first()).toBeVisible();
 
+  // Expand the playground folder so its files are in the DOM.
+  await page.getByText(/^playground$/).first().click();
+
   // Open a request (any will do).
   await page.getByText(/01-hello-world/i).first().click();
 
@@ -47,6 +50,7 @@ test('⌘W on a dirty tab actually closes when the user accepts the confirm', as
   await page.goto('/');
   await page.getByRole('button', { name: /try sample/i }).first().click();
   await expect(page.getByText(/Sample collection/i).first()).toBeVisible();
+  await page.getByText(/^playground$/).first().click();
   await page.getByText(/01-hello-world/i).first().click();
 
   const urlInput = page.locator('input[placeholder*="URL" i]').first();
@@ -68,6 +72,7 @@ test('⌘W on a CLEAN tab closes immediately (no confirm)', async ({ page }) => 
   await page.goto('/');
   await page.getByRole('button', { name: /try sample/i }).first().click();
   await expect(page.getByText(/Sample collection/i).first()).toBeVisible();
+  await page.getByText(/^playground$/).first().click();
   await page.getByText(/01-hello-world/i).first().click();
 
   // No edit — tab is clean.

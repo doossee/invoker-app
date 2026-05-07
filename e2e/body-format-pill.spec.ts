@@ -24,6 +24,9 @@ test('body editor does not render the dead format pill (json/raw/form-data/binar
   await page.getByRole('button', { name: /try sample/i }).first().click();
   await expect(page.getByText(/Sample collection/i).first()).toBeVisible();
 
+  // Expand the playground folder so its files are in the DOM.
+  await page.getByText(/^playground$/).first().click();
+
   // Open a POST request that has a JSON body (so the Body tab is meaningful)
   await page.getByText(/04-post-json/i).first().click();
 

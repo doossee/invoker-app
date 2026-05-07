@@ -18,6 +18,9 @@ test('Format JSON button shows feedback on invalid input', async ({ page }) => {
   await page.getByRole('button', { name: /try sample/i }).first().click();
   await expect(page.getByText(/Sample collection/i).first()).toBeVisible();
 
+  // Expand the playground folder so its files are in the DOM.
+  await page.getByText(/^playground$/).first().click();
+
   // Open the JSON-bodied request.
   await page.getByText(/04-post-json/i).first().click();
 
@@ -53,6 +56,9 @@ test('Format JSON button shows "Nothing to format" on empty body', async ({
   await page.goto('/');
   await page.getByRole('button', { name: /try sample/i }).first().click();
   await expect(page.getByText(/Sample collection/i).first()).toBeVisible();
+
+  // Expand the playground folder so its files are in the DOM.
+  await page.getByText(/^playground$/).first().click();
 
   // Open a GET request (no body by default).
   await page.getByText(/01-hello-world/i).first().click();

@@ -12,6 +12,9 @@ test('pasting a curl command into the URL bar populates method/url/headers/body'
   await page.getByRole('button', { name: /try sample/i }).first().click();
   await expect(page.getByText(/Sample collection/i).first()).toBeVisible();
 
+  // Expand the playground folder so its files are in the DOM.
+  await page.getByText(/^playground$/).first().click();
+
   // Open a request so the URL bar is mounted with a known starting state.
   await page.getByText(/01-hello-world/i).first().click();
 

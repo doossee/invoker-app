@@ -12,11 +12,14 @@ import {
   Plus,
   FolderPlus,
   FilePlus,
+  Pin,
+  PinOff,
 } from 'lucide-react';
 import { parseIvk, type HttpMethod } from 'ivkjs';
 import { useCollectionStore } from '@/stores/collection-store';
 import { useDocsStore } from '@/stores/docs-store';
 import { useEditorStore, type TabData } from '@/stores/editor-store';
+import { usePinnedStore } from '@/stores/pinned-store';
 import { useOpenCollection } from '@/hooks/useOpenCollection';
 import { TOKENS, MethodBadge } from '@/components/shared/primitives';
 
@@ -150,6 +153,14 @@ function ContextMenu({ state, onClose }: { state: CtxMenuState; onClose: () => v
   const createFolder = useCollectionStore((s) => s.createFolder);
   const createDoc = useDocsStore((s) => s.createDoc);
   const collectionPath = useCollectionStore((s) => s.collectionPath);
+  const togglePin = usePinnedStore((s) => s.togglePin);
+  const isPinned = usePinnedStore((s) => s.isPinned);
+
+  const handleTogglePin = () => {
+    if (state?.kind !== 'ivk' && state?.kind !== 'folder') return;
+    togglePin(state.path);
+    onClose();
+  };
 
   // Click-outside / Escape to dismiss.
   useEffect(() => {
@@ -375,11 +386,26 @@ function ContextMenu({ state, onClose }: { state: CtxMenuState; onClose: () => v
           <MenuItem icon={<FilePlus size={11} />} label="New request" onClick={handleNewRequest} />
           <MenuItem icon={<BookOpen size={11} />} label="New doc" onClick={handleNewDoc} />
           <MenuItem icon={<FolderPlus size={11} />} label="New folder" onClick={handleNewFolder} />
+          {state.kind === 'folder' && (
+            <>
+              <div style={{ height: 1, background: TOKENS.strokeSoft, margin: '4px 0' }} />
+              <MenuItem
+                icon={isPinned(state.path) ? <PinOff size={11} /> : <Pin size={11} />}
+                label={isPinned(state.path) ? 'Unpin folder' : 'Pin folder'}
+                onClick={handleTogglePin}
+              />
+            </>
+          )}
         </>
       )}
 
       {state.kind === 'ivk' && (
         <>
+          <MenuItem
+            icon={isPinned(state.path) ? <PinOff size={11} /> : <Pin size={11} />}
+            label={isPinned(state.path) ? 'Unpin' : 'Pin'}
+            onClick={handleTogglePin}
+          />
           <MenuItem icon={<Pencil size={11} />} label="Rename" onClick={handleRename} />
           <MenuItem
             icon={<Trash2 size={11} />}

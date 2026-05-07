@@ -2,7 +2,6 @@ import { useState } from 'react';
 import {
   FolderOpen,
   BookOpen,
-  Plus,
   Send,
   ArrowRight,
   Terminal,
@@ -71,12 +70,12 @@ export function WelcomePage() {
     >
       <div style={{ maxWidth: 1040, margin: '0 auto', padding: '48px 40px 64px' }}>
         {/* ============ HERO ============ */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20, marginBottom: 44 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 36 }}>
           <div
             style={{
-              width: 56,
-              height: 56,
-              borderRadius: 14,
+              width: 40,
+              height: 40,
+              borderRadius: 10,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -85,38 +84,28 @@ export function WelcomePage() {
               boxShadow: `inset 0 0 0 1px ${TOKENS.strokeHot}`,
             }}
           >
-            <InvokerMark size={30} />
+            <InvokerMark size={22} />
           </div>
           <div style={{ flex: 1 }}>
             <div
               style={{
                 fontFamily: "'Manrope', sans-serif",
-                fontWeight: 700,
-                fontSize: 34,
+                fontWeight: 600,
+                fontSize: 26,
                 letterSpacing: '-0.02em',
-                lineHeight: 1.1,
+                lineHeight: 1.15,
                 color: TOKENS.fg1,
               }}
             >
               A git-native API workspace.
             </div>
-            <div style={{ marginTop: 10, color: TOKENS.fg2, fontSize: 15, maxWidth: 520, lineHeight: 1.5 }}>
+            <div style={{ marginTop: 10, color: TOKENS.fg2, fontSize: 13, maxWidth: 520, lineHeight: 1.5 }}>
               Requests live as plain{' '}
               <code style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: TOKENS.amber }}>.ivk</code>{' '}
               files next to their code. Docs are{' '}
               <code style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: TOKENS.amber }}>README.md</code>{' '}
               in folders. Publish as a static site — no server, no account.
             </div>
-          </div>
-          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-            <GhostBtn onClick={() => setCommandPaletteOpen(true)}>
-              <BookOpen size={13} />
-              Docs
-            </GhostBtn>
-            <PrimaryBtn onClick={() => createInlineTab()}>
-              <Plus size={13} />
-              New request
-            </PrimaryBtn>
           </div>
         </div>
 
@@ -278,10 +267,12 @@ export function WelcomePage() {
           <div style={{ flex: 1, height: 1, background: TOKENS.strokeSoft }} />
           <div
             style={{
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: 10,
+              fontFamily: "'Inter', system-ui, sans-serif",
+              fontSize: 11,
+              fontWeight: 600,
               color: TOKENS.fg3,
-              letterSpacing: '0.12em',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
             }}
           >
             LEARN · 3 MIN

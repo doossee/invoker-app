@@ -34,6 +34,8 @@ test.describe('smoke', () => {
     // After loading, the sidebar header changes to "Sample collection"
     // with a request count (sample has ~12 requests).
     await expect(page.getByText(/Sample collection/i).first()).toBeVisible();
+    // Expand the playground folder so its files are in the DOM.
+    await page.getByText(/^playground$/).first().click();
     // At least one .ivk file from the sample appears in the tree.
     // The sample includes "playground/01-hello-world.ivk".
     await expect(page.getByText(/hello.world|hello world/i).first()).toBeVisible();

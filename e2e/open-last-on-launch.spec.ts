@@ -17,8 +17,10 @@ test('Try sample is remembered → next launch auto-loads it', async ({ page }) 
   await page.evaluate(() => localStorage.clear());
   await page.reload();
 
-  // First load: welcome page, no collection.
-  await expect(page.getByText(/No collection loaded/i)).toBeVisible();
+  // First load: empty state. Anchor on the sidebar collection-header
+  // copy that fires when files+docs are both empty (Sidebar.tsx
+  // CollectionHeader summary path: "Open a folder to start").
+  await expect(page.getByText(/Open a folder to start/i).first()).toBeVisible();
 
   // Click Try sample.
   await page.getByRole('button', { name: /try sample/i }).first().click();
@@ -35,8 +37,8 @@ test('Try sample is remembered → next launch auto-loads it', async ({ page }) 
   await expect(page.getByText(/Sample collection/i).first()).toBeVisible({
     timeout: 5_000,
   });
-  // The Welcome page's "No collection loaded" text should be gone.
-  await expect(page.getByText(/No collection loaded/i)).toHaveCount(0);
+  // The empty-state sidebar copy should be gone (sample is loaded now).
+  await expect(page.getByText(/Open a folder to start/i)).toHaveCount(0);
 });
 
 test('Toggling "Open last collection on launch" off prevents auto-load', async ({ page }) => {
@@ -49,7 +51,7 @@ test('Toggling "Open last collection on launch" off prevents auto-load', async (
   await page.reload();
 
   // Should NOT auto-load — we opted out via the toggle.
-  await expect(page.getByText(/No collection loaded/i)).toBeVisible({
+  await expect(page.getByText(/Open a folder to start/i).first()).toBeVisible({
     timeout: 5_000,
   });
 });

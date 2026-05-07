@@ -15,6 +15,9 @@ test('editor tabs row no longer renders the dead History button', async ({ page 
   await page.getByRole('button', { name: /try sample/i }).first().click();
   await expect(page.getByText(/Sample collection/i).first()).toBeVisible();
 
+  // Expand the playground folder so its files are in the DOM.
+  await page.getByText(/^playground$/).first().click();
+
   // Open a request — the editor-tabs row only renders Actions for `kind: ivk`
   // tabs.
   await page.getByText(/01-hello-world/i).first().click();
