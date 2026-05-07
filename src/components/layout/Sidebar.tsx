@@ -44,6 +44,20 @@ interface Props {
 export function Sidebar({ children, onOpenSettings, searchQuery, onSearchChange }: Props) {
   const setEnvSettingsOpen = useEditorStore((s) => s.setEnvSettingsOpen);
   const sidebarWidth = useEditorStore((s) => s.sidebarWidth);
+  const collectionPath = useCollectionStore((s) => s.collectionPath);
+  const filesCount = useCollectionStore((s) => s.files.length);
+  const docsCount = useDocsStore((s) => s.docs.length);
+  // No collection AND no in-memory files → render the minimal empty-state
+  // sidebar. Note: virtual collections like '(sample)' / '(published)' set
+  // collectionPath to a non-null sentinel, so they fall through to the
+  // standard sidebar even with zero files. A real Tauri folder that
+  // happens to be empty also keeps the standard sidebar (so the user
+  // sees the empty tree as confirmation). Avoids duplicating the welcome
+  // page's "Open folder" / "Try sample" CTAs.
+  const isEmpty = !collectionPath && filesCount === 0 && docsCount === 0;
+  if (isEmpty) {
+    return <EmptySidebar onOpenSettings={onOpenSettings} onManageEnv={() => setEnvSettingsOpen(true)} />;
+  }
   // Below 230px the ⌘K hint chips eat enough horizontal space that
   // the input placeholder gets clipped. Drop the decorative hint
   // there; the keyboard shortcut still works either way.
@@ -699,6 +713,55 @@ function EnvDropdown({ onClose, onManage }: { onClose: () => void; onManage: () 
         <Globe size={11} />
         Manage environments...
       </button>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Empty-state sidebar — header + one-line hint + footer.            */
+/*  All "Open folder" / "Try sample" CTAs live in WelcomePage to      */
+/*  avoid two parallel paths to the same actions in one viewport.    */
+/* ------------------------------------------------------------------ */
+function EmptySidebar({
+  onOpenSettings,
+  onManageEnv,
+}: {
+  onOpenSettings: () => void;
+  onManageEnv: () => void;
+}) {
+  return (
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
+        background: TOKENS.s2,
+        borderRadius: 14,
+        boxShadow: `inset 0 0 0 1px ${TOKENS.stroke}`,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}
+    >
+      <CollectionHeader />
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '0 16px',
+          textAlign: 'center',
+          fontSize: 11,
+          color: TOKENS.fg3,
+          lineHeight: 1.5,
+        }}
+      >
+        Open a folder from the welcome screen.
+      </div>
+      <EnvFooter
+        onOpenSettings={onOpenSettings}
+        onManageEnv={onManageEnv}
+      />
     </div>
   );
 }
