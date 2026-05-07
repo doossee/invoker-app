@@ -9,3 +9,5 @@ design-system/project/src_ref/
 test-results/
 playwright-report/
 playwright/.cache/
+# Brainstorming companion (mockups, transient sessions)
+.superpowers/
