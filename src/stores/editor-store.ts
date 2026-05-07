@@ -171,6 +171,16 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   openTab: (tab) =>
     set((state) => {
+      // Track the open in recent-store (skip ephemeral inline paths so
+      // every "+ New request" doesn't pollute the dashboard).
+      if (!tab.path.startsWith('inline/')) {
+        // Lazy-import to avoid a static circular import (recent-store
+        // doesn't know about editor-store; editor-store doesn't need
+        // recent-store at module-load time).
+        void import('./recent-store').then(({ useRecentStore }) => {
+          useRecentStore.getState().markOpened(tab.path);
+        });
+      }
       const exists = state.tabs.find((t) => t.path === tab.path);
       if (exists) {
         return { activeTabPath: tab.path };
