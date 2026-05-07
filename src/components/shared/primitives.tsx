@@ -230,11 +230,12 @@ export function TileHeader({ icon, label }: { icon: ReactNode; label: string }) 
         display: 'flex',
         alignItems: 'center',
         gap: 6,
-        fontFamily: "'JetBrains Mono', monospace",
-        fontSize: 10,
+        fontFamily: "'Inter', system-ui, sans-serif",
+        fontSize: 11,
+        fontWeight: 600,
         color: TOKENS.fg3,
-        letterSpacing: '0.1em',
-        textTransform: 'uppercase' as const,
+        letterSpacing: '0.08em',
+        textTransform: 'uppercase',
       }}
     >
       <span style={{ color: TOKENS.amber, display: 'flex' }}>{icon}</span>
