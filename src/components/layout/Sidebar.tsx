@@ -12,7 +12,6 @@ import {
   FilePlus,
   FolderPlus,
   BookOpen,
-  MoreVertical,
   RefreshCw,
   ChevronsDownUp,
 } from 'lucide-react';
@@ -131,8 +130,9 @@ export function Sidebar({ children, onOpenSettings, searchQuery, onSearchChange 
       <div style={{ margin: '0 10px', height: 1, background: TOKENS.strokeSoft }} />
 
       {/* Single labeled "+ New…" row that opens a popup with Request /
-          Doc / Folder. Refresh + collapse-all moved to the kebab on
-          the collection header. */}
+          Doc / Folder. Refresh + collapse-all live in the collection-
+          switcher dropdown (one menu = "everything you do to the
+          collection"). */}
       <NewItemRow />
 
       {/* File Tree */}
@@ -159,8 +159,6 @@ function CollectionHeader() {
   const setSidebarCollapsed = useEditorStore((s) => s.setSidebarCollapsed);
   const [menuOpen, setMenuOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const [kebabOpen, setKebabOpen] = useState(false);
-  const kebabRef = useRef<HTMLDivElement | null>(null);
 
   // Click-outside to close.
   useEffect(() => {
@@ -178,23 +176,6 @@ function CollectionHeader() {
       window.removeEventListener('keydown', escHandler);
     };
   }, [menuOpen]);
-
-  // Click-outside / Escape for the kebab.
-  useEffect(() => {
-    if (!kebabOpen) return;
-    const onMouseDown = (e: MouseEvent) => {
-      if (!kebabRef.current?.contains(e.target as Node)) setKebabOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setKebabOpen(false);
-    };
-    window.addEventListener('mousedown', onMouseDown);
-    window.addEventListener('keydown', onKey);
-    return () => {
-      window.removeEventListener('mousedown', onMouseDown);
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [kebabOpen]);
 
   const { name, summary } = useMemo(() => {
     const folders = new Set<string>();
@@ -217,14 +198,16 @@ function CollectionHeader() {
     return { name, summary: parts.join(' · ') };
   }, [files, docs, collectionPath]);
 
-  // Kebab actions — these used to live in the SidebarToolbar (PR #88).
+  // Collection-level actions — exposed through the same dropdown as the
+  // collection switcher (one menu = "everything you do to the collection",
+  // no separate icon in the corner). Used to live in the SidebarToolbar
+  // (PR #88) before the redesign.
   const collapseAllFolders = useCollectionStore((s) => s.collapseAllFolders);
   const setCollectionPath = useCollectionStore((s) => s.setCollectionPath);
   const loadCollectionToStore = useCollectionStore((s) => s.loadCollection);
   const loadDocsToStore = useDocsStore((s) => s.loadDocs);
 
   const handleRefresh = async () => {
-    setKebabOpen(false);
     if (!isTauri() || !collectionPath || collectionPath === '(sample)' || collectionPath === '(published)') {
       return;
     }
@@ -240,7 +223,6 @@ function CollectionHeader() {
   };
 
   const handleCollapseAll = () => {
-    setKebabOpen(false);
     collapseAllFolders();
   };
 
@@ -292,42 +274,6 @@ function CollectionHeader() {
         />
       </button>
 
-      {/* Kebab — collection-level actions (refresh, collapse all,
-          change folder). Replaces the icon toolbar from PR #88. */}
-      <div ref={kebabRef} style={{ position: 'absolute', top: 14, right: 40 }}>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setKebabOpen((v) => !v);
-          }}
-          title="Collection actions"
-          aria-label="Collection actions"
-          style={{
-            width: 22,
-            height: 22,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: kebabOpen ? TOKENS.s3 : 'transparent',
-            border: 'none',
-            borderRadius: 5,
-            color: TOKENS.fg2,
-            cursor: 'pointer',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = TOKENS.s3)}
-          onMouseLeave={(e) => (e.currentTarget.style.background = kebabOpen ? TOKENS.s3 : 'transparent')}
-        >
-          <MoreVertical size={13} />
-        </button>
-        {kebabOpen && (
-          <KebabMenu
-            onClose={() => setKebabOpen(false)}
-            onRefresh={handleRefresh}
-            onCollapseAll={handleCollapseAll}
-          />
-        )}
-      </div>
-
       {/* Collapse-sidebar button. Sits in the same row visually but as a
           sibling so its click doesn't bubble into the switcher button.
           Pairs with the existing PanelLeft restore button in App.tsx that
@@ -360,7 +306,13 @@ function CollectionHeader() {
         <PanelLeftClose size={13} />
       </button>
 
-      {menuOpen && <CollectionDropdown onClose={() => setMenuOpen(false)} />}
+      {menuOpen && (
+        <CollectionDropdown
+          onClose={() => setMenuOpen(false)}
+          onRefresh={handleRefresh}
+          onCollapseAll={handleCollapseAll}
+        />
+      )}
     </div>
   );
 }
@@ -368,11 +320,27 @@ function CollectionHeader() {
 /* ------------------------------------------------------------------ */
 /*  Collection switcher dropdown                                       */
 /* ------------------------------------------------------------------ */
-function CollectionDropdown({ onClose }: { onClose: () => void }) {
+function CollectionDropdown({
+  onClose,
+  onRefresh,
+  onCollapseAll,
+}: {
+  onClose: () => void;
+  onRefresh: () => void;
+  onCollapseAll: () => void;
+}) {
   const { openCollection, loadSample, loading, canOpenFolder } = useOpenCollection();
   const collectionPath = useCollectionStore((s) => s.collectionPath);
 
   const isSample = collectionPath === '(sample)';
+  // Refresh from disk only does anything when the active collection is a
+  // real Tauri folder. In browser-mode and for the sample/published
+  // collections it would silently no-op, so we hide the row entirely.
+  const showRefresh =
+    isTauri() &&
+    !!collectionPath &&
+    collectionPath !== '(sample)' &&
+    collectionPath !== '(published)';
 
   return (
     <div
@@ -390,6 +358,9 @@ function CollectionDropdown({ onClose }: { onClose: () => void }) {
         zIndex: 50,
       }}
     >
+      {/* Switch-collection actions — open a different folder or load
+          the sample. Top of the menu since they're the most-changing
+          surface ("which collection am I working in?"). */}
       <DropdownButton
         icon={<FolderOpen size={12} style={{ color: TOKENS.amber }} />}
         label={canOpenFolder ? 'Open folder…' : 'Open folder (unavailable)'}
@@ -409,56 +380,26 @@ function CollectionDropdown({ onClose }: { onClose: () => void }) {
           onClose();
         }}
       />
-    </div>
-  );
-}
 
-/* ------------------------------------------------------------------ */
-/*  Kebab menu — collection-level actions                              */
-/* ------------------------------------------------------------------ */
-function KebabMenu({
-  onClose,
-  onRefresh,
-  onCollapseAll,
-}: {
-  onClose: () => void;
-  onRefresh: () => void;
-  onCollapseAll: () => void;
-}) {
-  const { openCollection, loading, canOpenFolder } = useOpenCollection();
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        top: '100%',
-        right: 0,
-        marginTop: 4,
-        minWidth: 180,
-        background: TOKENS.s1,
-        border: `1px solid ${TOKENS.fg4}`,
-        borderRadius: 8,
-        padding: 4,
-        boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-        zIndex: 60,
-      }}
-    >
-      <DropdownButton
-        icon={<RefreshCw size={12} style={{ color: TOKENS.fg2 }} />}
-        label="Refresh from disk"
-        onClick={onRefresh}
-      />
+      {/* Operate-on-current-collection actions — refresh + collapse all.
+          Lower in the menu since they only affect the loaded collection
+          rather than swapping it out. */}
+      <div style={{ height: 1, background: TOKENS.strokeSoft, margin: '4px 0' }} />
+      {showRefresh && (
+        <DropdownButton
+          icon={<RefreshCw size={12} style={{ color: TOKENS.fg2 }} />}
+          label="Refresh from disk"
+          onClick={() => {
+            onRefresh();
+            onClose();
+          }}
+        />
+      )}
       <DropdownButton
         icon={<ChevronsDownUp size={12} style={{ color: TOKENS.fg2 }} />}
         label="Collapse all folders"
-        onClick={onCollapseAll}
-      />
-      <div style={{ height: 1, background: TOKENS.strokeSoft, margin: '4px 0' }} />
-      <DropdownButton
-        icon={<FolderOpen size={12} style={{ color: TOKENS.amber }} />}
-        label={canOpenFolder ? 'Change folder…' : 'Change folder (unavailable)'}
-        disabled={!canOpenFolder || loading}
-        onClick={async () => {
-          await openCollection();
+        onClick={() => {
+          onCollapseAll();
           onClose();
         }}
       />
