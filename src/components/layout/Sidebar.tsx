@@ -12,6 +12,9 @@ import {
   FilePlus,
   FolderPlus,
   BookOpen,
+  MoreVertical,
+  RefreshCw,
+  ChevronsDownUp,
 } from 'lucide-react';
 import { InvokerMark, Kbd, TOKENS } from '@/components/shared/primitives';
 import { useEditorStore } from '@/stores/editor-store';
@@ -19,6 +22,8 @@ import { useEnvStore } from '@/stores/env-store';
 import { useCollectionStore } from '@/stores/collection-store';
 import { useDocsStore } from '@/stores/docs-store';
 import { useOpenCollection } from '@/hooks/useOpenCollection';
+import { isTauri } from '@/lib/platform';
+import { loadCollection as loadFromDisk } from '@/lib/file-system';
 
 const ENV_COLORS: Record<string, string> = {
   development: '#22c55e',
@@ -61,16 +66,15 @@ export function Sidebar({ children, onOpenSettings, searchQuery, onSearchChange 
       <CollectionHeader />
 
       {/* Search Bar */}
-      <div style={{ padding: '0 10px 8px' }}>
+      <div style={{ padding: '0 10px 4px' }}>
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: 6,
             padding: '5px 8px',
-            background: TOKENS.s3,
+            background: 'transparent',
             borderRadius: 7,
-            boxShadow: `inset 0 0 0 1px ${TOKENS.strokeSoft}`,
             minWidth: 0,
           }}
         >
@@ -141,6 +145,8 @@ function CollectionHeader() {
   const setSidebarCollapsed = useEditorStore((s) => s.setSidebarCollapsed);
   const [menuOpen, setMenuOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const [kebabOpen, setKebabOpen] = useState(false);
+  const kebabRef = useRef<HTMLDivElement | null>(null);
 
   // Click-outside to close.
   useEffect(() => {
@@ -158,6 +164,23 @@ function CollectionHeader() {
       window.removeEventListener('keydown', escHandler);
     };
   }, [menuOpen]);
+
+  // Click-outside / Escape for the kebab.
+  useEffect(() => {
+    if (!kebabOpen) return;
+    const onMouseDown = (e: MouseEvent) => {
+      if (!kebabRef.current?.contains(e.target as Node)) setKebabOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setKebabOpen(false);
+    };
+    window.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [kebabOpen]);
 
   const { name, summary } = useMemo(() => {
     const folders = new Set<string>();
@@ -179,6 +202,33 @@ function CollectionHeader() {
     if (nfolders > 0) parts.push(`${nfolders} folder${nfolders === 1 ? '' : 's'}`);
     return { name, summary: parts.join(' · ') };
   }, [files, docs, collectionPath]);
+
+  // Kebab actions — these used to live in the SidebarToolbar (PR #88).
+  const collapseAllFolders = useCollectionStore((s) => s.collapseAllFolders);
+  const setCollectionPath = useCollectionStore((s) => s.setCollectionPath);
+  const loadCollectionToStore = useCollectionStore((s) => s.loadCollection);
+  const loadDocsToStore = useDocsStore((s) => s.loadDocs);
+
+  const handleRefresh = async () => {
+    setKebabOpen(false);
+    if (!isTauri() || !collectionPath || collectionPath === '(sample)' || collectionPath === '(published)') {
+      return;
+    }
+    try {
+      const data = await loadFromDisk(collectionPath);
+      loadCollectionToStore({ ivkFiles: data.ivkFiles, basePath: data.basePath });
+      setCollectionPath(collectionPath);
+      loadDocsToStore(data.mdFiles);
+    } catch (err) {
+      // eslint-disable-next-line no-alert
+      window.alert(`Refresh failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
+  const handleCollapseAll = () => {
+    setKebabOpen(false);
+    collapseAllFolders();
+  };
 
   const hasCollection = files.length > 0 || docs.length > 0;
 
@@ -227,6 +277,42 @@ function CollectionHeader() {
           }}
         />
       </button>
+
+      {/* Kebab — collection-level actions (refresh, collapse all,
+          change folder). Replaces the icon toolbar from PR #88. */}
+      <div ref={kebabRef} style={{ position: 'absolute', top: 14, right: 40 }}>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setKebabOpen((v) => !v);
+          }}
+          title="Collection actions"
+          aria-label="Collection actions"
+          style={{
+            width: 22,
+            height: 22,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: kebabOpen ? TOKENS.s3 : 'transparent',
+            border: 'none',
+            borderRadius: 5,
+            color: TOKENS.fg2,
+            cursor: 'pointer',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = TOKENS.s3)}
+          onMouseLeave={(e) => (e.currentTarget.style.background = kebabOpen ? TOKENS.s3 : 'transparent')}
+        >
+          <MoreVertical size={13} />
+        </button>
+        {kebabOpen && (
+          <KebabMenu
+            onClose={() => setKebabOpen(false)}
+            onRefresh={handleRefresh}
+            onCollapseAll={handleCollapseAll}
+          />
+        )}
+      </div>
 
       {/* Collapse-sidebar button. Sits in the same row visually but as a
           sibling so its click doesn't bubble into the switcher button.
@@ -306,6 +392,59 @@ function CollectionDropdown({ onClose }: { onClose: () => void }) {
         hint="Built-in demo collection, lives only in memory"
         onClick={() => {
           loadSample();
+          onClose();
+        }}
+      />
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Kebab menu — collection-level actions                              */
+/* ------------------------------------------------------------------ */
+function KebabMenu({
+  onClose,
+  onRefresh,
+  onCollapseAll,
+}: {
+  onClose: () => void;
+  onRefresh: () => void;
+  onCollapseAll: () => void;
+}) {
+  const { openCollection, loading, canOpenFolder } = useOpenCollection();
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: '100%',
+        right: 0,
+        marginTop: 4,
+        minWidth: 180,
+        background: TOKENS.s1,
+        border: `1px solid ${TOKENS.fg4}`,
+        borderRadius: 8,
+        padding: 4,
+        boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+        zIndex: 60,
+      }}
+    >
+      <DropdownButton
+        icon={<RefreshCw size={12} style={{ color: TOKENS.fg2 }} />}
+        label="Refresh from disk"
+        onClick={onRefresh}
+      />
+      <DropdownButton
+        icon={<ChevronsDownUp size={12} style={{ color: TOKENS.fg2 }} />}
+        label="Collapse all folders"
+        onClick={onCollapseAll}
+      />
+      <div style={{ height: 1, background: TOKENS.strokeSoft, margin: '4px 0' }} />
+      <DropdownButton
+        icon={<FolderOpen size={12} style={{ color: TOKENS.amber }} />}
+        label={canOpenFolder ? 'Change folder…' : 'Change folder (unavailable)'}
+        disabled={!canOpenFolder || loading}
+        onClick={async () => {
+          await openCollection();
           onClose();
         }}
       />
