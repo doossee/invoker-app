@@ -17,6 +17,9 @@ test('EditorTabs "+" button creates a new inline request tab', async ({ page }) 
   await page.getByRole('button', { name: /try sample/i }).first().click();
   await expect(page.getByText(/Sample collection/i).first()).toBeVisible();
 
+  // Expand the playground folder so its files are in the DOM.
+  await page.getByText(/^playground$/).first().click();
+
   // Open one request to mount the editor + tab row.
   await page.getByText(/01-hello-world/i).first().click();
 

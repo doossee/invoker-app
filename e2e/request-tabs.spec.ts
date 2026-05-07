@@ -13,6 +13,7 @@ test('request editor exposes a Meta tab (renamed from Params)', async ({ page })
   await page.goto('/');
   await page.getByRole('button', { name: /try sample/i }).first().click();
   await expect(page.getByText(/Sample collection/i).first()).toBeVisible();
+  await page.getByText(/^playground$/).first().click();
   await page.getByText(/04-post-json/i).first().click();
 
   await expect(page.getByRole('button', { name: /^Meta$/ })).toBeVisible();

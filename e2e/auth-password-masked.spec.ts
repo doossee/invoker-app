@@ -21,6 +21,9 @@ test('AuthTab Basic Auth password field is masked, username field is not', async
   await page.getByRole('button', { name: /try sample/i }).first().click();
   await expect(page.getByText(/Sample collection/i).first()).toBeVisible();
 
+  // Expand the playground folder so its files are in the DOM.
+  await page.getByText(/^playground$/).first().click();
+
   // Open any request to mount the editor.
   await page.getByText(/01-hello-world/i).first().click();
 
